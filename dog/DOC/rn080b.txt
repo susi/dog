@@ -1,0 +1,12 @@
+Fixes/changes:
+* Most commands are now external (standalone) programs. This
+  will reduse the size of DOG.
+* Batchfiles are reasonably stable.
+* % is the variable char $ is the prompt and eh special char
+
+New features:
+* Pipes (only one at the time for now)
+* Environmental variables can now be used in 
+	a) batchfiles %0 - %9 for the batchfile parameters
+	b) commandline %0 - %9 for the params of the previous command.
+

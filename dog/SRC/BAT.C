@@ -47,38 +47,18 @@ BYTE batch[_BAT_COMS][3] = {
 
 /***************************************************************************/
 
-void parse_vars(BYTE *s,BYTE *t)
+void parse_vars(void)
 {
-
-  BYTE *p,l,*e,i,j,ename[80],eval[127];
-  
-  *t = 0;
-  l = strlen(s);
-
-  e = t;
-
-  for(i=0;i<l;i++) {
-    if(s[i] == '$') {
-      if(isdigit(s[++i])) {
-	strcat(t,bf->args[s[i] -'0']);
-#ifdef parse_debug
-printf("parse_vars:0:t=(%s)\n",t);
-#endif
-	e += strlen(bf->args[s[i] -'0']);
-      }
-      else {
-	for(j=0;!isspace(s[i]);j++,i++) {
-	  ename[j] = s[i];
+	int i;
+	
+	for(i=0;i<bf->na;i++) {
+		strcpy(varg[i],bf->args[i]);
 	}
-	strcat(t,getevar(ename,eval)); /* replace $varname with value*/
-	e += strlen(eval);
-      }
-    }
-    else {
-      *e = s[i];
-      *(++e) = '\0';
-    }
-  }
+	for(;i<_NARGS;i++){
+		varg[i][0] = '\0';
+		bf->args[i] = NULL;
+	}
+	
 }
 /***************************************************************************/
 
@@ -133,9 +113,9 @@ printf("clearbat:3:bf:%x bf->prev:%x\n",&(*bf),bf->prev);
 void do_bat(void)
 {
 
-    BYTE ll,i,na,ch, *p,*q;
-    struct ffblk *fba;
-    FILE *fp;
+	BYTE ll,i,na,ch, *p,*q;
+	struct ffblk *fba;
+	FILE *fp;
 
 #ifdef bat_debug
 printf("do_bat:0:bf:%x name=|%s|\n",&(*bf),bf->name);
@@ -148,40 +128,34 @@ printf("do_bat:0:bf:%x name=|%s|\n",&(*bf),bf->name);
     in = 1 means old bfile name is in bf->name
     */
 
-    if(bf->in == 1) {
+	if(bf->in == 1) {
 		fba = malloc(sizeof(struct ffblk));
-        i=findfirst(bf->name,fba,0);
-        if((i==255) && (errno==ENOFILE)) {
-            fprintf(stderr,"Dogfile %s missing\n",bf->name);
-            clearbat();
-            bf->nest = 0;
-            bf->in = 0;
-            bf->line = 0;
-            bf->na = 0;
+		i=findfirst(bf->name,fba,0);
+		if((i!=0) && (errno==ENOFILE)) {
+			fprintf(stderr,"Dogfile %s missing\n",bf->name);
+			clearbat();
+			bf->nest = 0;
+			bf->in = 0;
+			bf->line = 0;
+			bf->na = 0;
 			free(fba);
-			for(i=0;i<bf->na;i++) {
-				free(bf->args[i]);
+			return;
+		}
+		else if(i==0) {
+			fp = fopen(bf->name,"r");
+			if(fp==NULL) {
+				fprintf(stderr,"Can't open DOGfile %s\n",bf->name);
+				clearbat();
+				bf->nest = 0;
+				bf->in = 0;
+				bf->line = 0;
+				bf->na = 0;
+				return;
 			}
-            return;
-        }
-        else if(i==0) {
-            fp = fopen(bf->name,"r");
-            if(fp==NULL) {
-                fprintf(stderr,"Can't open DOGfile %s\n",bf->name);
-	            clearbat();
-	            bf->nest = 0;
-	            bf->in = 0;
-	            bf->line = 0;
-	            bf->na = 0;
-                for(i=0;i<bf->na;i++) {
-                    free(bf->args[i]);
-                }
-                return;
-            }
-        }
-    }
+		}
+	}
 	free(fba);
-
+	
 #ifdef bat_debug
 printf("do_bat:1:bf->line=%d,bf->nest=%d\n",bf->line,bf->nest);
 #endif
@@ -189,104 +163,87 @@ printf("do_bat:1:bf->line=%d,bf->nest=%d\n",bf->line,bf->nest);
 
 /* Return to the previous line as the batchfile is closed after each line*/
 
-    for(i=0;i<bf->line;i++) {
-        fgets(com,200,fp);
-    }
-
+	for(i=0;i<bf->line;i++) {
+		fgets(com,200,fp);
+	}
+	
     /* end of bfile:
                     if nest = 0 return
                     if nest > 0 return one lvl down */
 
-    if (fgets(com,200,fp) == NULL ) {
-        if(bf->nest == 0) {
-            bf->in = 0;
-            bf->line = 0;
-            bf->na=0;
-            fclose(fp);
-            for(i=0;i<bf->na;i++) {
-                free(bf->args[i]);
-            }
-            return;
-        }
-        else {
-            prevbat();
-            fclose(fp);
-            for(i=0;i<bf->na;i++) {
-                free(bf->args[i]);
-            }
-            return;
-        }
+	if (fgets(com,200,fp) == NULL ) {
+		if(bf->nest == 0) {
+			bf->in = 0;
+			bf->line = 0;
+			bf->na=0;
+			fclose(fp);
+			return;
+		}
+		else {
+			prevbat();
+			fclose(fp);
+			return;
+		}
 
-    }
+	}
+	
+	/* extract $0..$9 to varg[0]..varg[9] */
 
-	/* extract $0..$9 to arg[0]..arg[9] */
+	bf->line++;
 
-    bf->line++;
-	p=malloc(200);
+	parse_vars();
 
 #ifdef parse_debug
 for(i=0;i<_NARGS;i++)
-printf("do_bat:2:bf->args[%d]=(%s)\n",i,bf->args[i]);
+printf("do_bat:2:bf->args[%d]=(%s) varg[%d]=(%s)\n",i,bf->args[i],i,varg[i]);
 #endif
 
-	parse_vars(com,p);
-	strcpy(com,p);
-	free(p);
-
-    if(redir(com)==0) {
-        com[0] = 0;
-        arg[0] = com;
-        for(i=0;i<bf->na;i++) {
-            free(bf->args[i]);
-        }
-        return;
-    }
-    ll=strlen(com);
-    na = parsecom(com,ll);
-    fclose(fp);
-
+	if(redir(com)==0) {
+		com[0] = 0;
+		arg[0] = com;
+		return;
+	}
+	ll=strlen(com);
+		
+	na = parsecom(com,ll);
+	fclose(fp);
+	
 #ifdef bat_debug
 printf("do_bat:3:ll=%d com=/%s/\n",i,com);
 #endif
 
 /* Check for ctrl break */
 
-    if(cBreak) {
-        if(bf->in) {
-            do {
-                fprintf(stderr,"Abort DOG batch (Y/N)? ");
-                ch = getchar();
-                if((ch=='y') || (ch=='Y')) {
-                    clearbat();
-                    cBreak = 0;
-                    break;
-                }
-                else if((ch=='n') || (ch=='N')) {
-                    cBreak = 0;
-                    break;
+	if(cBreak) {
+		if(bf->in) {
+			do {
+				fprintf(stderr,"Abort DOG batch (Y/N)? ");
+				ch = getchar();
+				if((ch=='y') || (ch=='Y')) {
+					clearbat();
+					cBreak = 0;
+					break;
 				}
-            } while (1);
-            fprintf(stderr,"\n");
-            for(i=0;i<bf->na;i++) {
-                free(bf->args[i]);
-            }
-            return;
-        }
-        else {
-            cBreak = 0;
-            return;
-        }
-    }
-
-    do_batcommand(na);
+				else if((ch=='n') || (ch=='N')) {
+					cBreak = 0;
+					break;
+				}
+			} while (1);
+			fprintf(stderr,"\n");
+			return;
+		}
+		else {
+			cBreak = 0;
+			return;
+		}
+	}
+	
+	do_batcommand(na);
 
 #ifdef bat_debug
 printf("do_bat:7:i=%u\n",i);
 #endif
-    for(i=0;i<bf->na;i++) {
-        free(bf->args[i]);
-    }
-    return;
+	return;
 }
 
 /**************************************************************************/
@@ -336,7 +293,6 @@ printf("do_batc:2:batch[%d]=(%s)\n",i,batch[i]);
                 printf("do_batc:3:command=(%s)\n",batch[i]);
                 return;
             default :
-                printf("do_batc:3:i=%d\n",i);
                 break;
 
         }

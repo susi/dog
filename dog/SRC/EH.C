@@ -32,10 +32,10 @@ void do_eh( BYTE n)
 
     for(i=1;i<n;i++) {
         for(j=0;j < strlen(arg[i]);j++) {
-            if(arg[i][j] == '%') {
+            if(arg[i][j] == '$') {
                 switch(arg[i][++j]) {
-                    case '%' :
-                        putchar('%');
+                    case '$' :
+                        putchar('$');
                         break;
                     case  '_':
                         putchar(' ');

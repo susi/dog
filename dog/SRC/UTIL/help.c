@@ -172,7 +172,7 @@ SZ\n\
 TP\n\
 VF\n\
 VR\n\
-XX - blah\n\n\
+XX\n\n\
 Type 'help <command>' to see how to use a command.\n\n\
 For instance, type 'help cc' to see how the 'cc' command works,\n\
 or type 'help rm' to see how the 'rm' command works.\n\n");

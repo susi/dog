@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <io.h>
 #include <process.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #define de		bug
 #define list
@@ -255,6 +256,7 @@ BYTE REDIRECTED_OUT, REDIRECTED_IN;
 struct bfile {
     BYTE name[MAXDIR];
     BYTE *args[20];
+	BYTE cline[200];
  	BYTE com[200];
     BYTE na;
     BYTE in;       /* used to determine if we are in a dog-file*/
@@ -269,6 +271,13 @@ struct red {
     BYTE redirect;
     BYTE opt[3];
 }fout, fin;
+
+struct s_pipe {
+	WORD phandle;
+	BYTE pname[MAXDIR+13];
+	BYTE pcmd[200];
+	BYTE pstatus; /*0=nopipes active 1=tmp file pending delete 2= active */
+}pip;
 
 struct ExecBlock {
 	WORD env;
