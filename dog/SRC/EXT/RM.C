@@ -28,80 +28,108 @@ History
 
 #include "ext.h"
 
+void rm_file(BYTE *patt)
+{
+	BYTE r,f,i;
+	BYTE *p;
+	BYTE fn[129]={0};
+	struct ffblk fb;
+	
+	f=findfirst(patt,&fb,0);
+	
+	if(f==0) {
+		
+		p = patt;
+		for(p+=strlen(patt)+1;*p!='\\';p--);
+		if(p>patt) {
+			*(++p)=0;
+			strcpy(fn,patt);
+			strcat(fn,fb.ff_name);
+		}
+		else
+			strcpy(fn,fb.ff_name);
+				
+		if(unlink(fn)==0) {
+			puts(fn);
+		}
+	}
+	else if((f==255) && (errno==2)) {
+		printf("%s NOT found.\n",patt);
+	}
+	
+	while(findnext(&fb)==0) {
+		
+		for(p+=strlen(patt)+1;*p!='\\';p--);
+		if(p>patt) {
+			*(++p)=0;
+			strcpy(fn,patt);
+			strcat(fn,fb.ff_name);
+		}
+		else
+			strcpy(fn,fb.ff_name);
+		
+		if(unlink(fn)==0) {
+			puts(fn);
+		}
+	}
+	return;
+}
+
+void rm_list(BYTE *list)
+{
+  BYTE fn[129]={0};
+  FILE *f;
+
+  fprintf(stderr,"list=(%s)\n",list);
+  
+  f = fopen(list,"r");
+  if(f != NULL) {
+	while(fscanf(f,"%s",&fn)!=EOF){
+	  rm_file(fn);
+	}
+	fclose(f);
+  }
+  else {
+	fprintf(stderr,"Can not open list-file: %s\n",list);
+	perror("");
+  }
+  
+  return;
+	
+}
+	
 int main(BYTE n,BYTE *arg[])
 {
-    BYTE r,f,i,*p,fn[129]={0},dir[80];
-    struct ffblk *fb;
-
-    if(n > 1) {
-        fb = malloc(sizeof(struct ffblk));
-
-        for(i=1;i<n;i++) {
-            if ((p=strstr(arg[i],"*.*"))!=NULL) {
-                printf("Removing %s - Are you sure(Y/N)? ",arg[i]);
-                /* Get character */
-
-                asm mov ah,1
-                asm int 21h
-                asm mov r,al
-                
-                putchar('\n');
-                putchar('\r');
+  BYTE r,f,i,*p,fn[129]={0},dir[80];
+  
+  if(n > 1) {		
+	for(i=1;i<n;i++) {
+	  if (arg[i][0] == '@') {
+		rm_list(&arg[i][1]);
+	  }
+	  else {
+		if((p=strstr(arg[i],"*.*"))!=NULL) {
+		printf("Removing %s - Are you sure(Y/N)? ",arg[i]);
+		/* Get character */
+		
+		asm mov ah,1
+	    asm int 21h
+		asm mov r,al
+		putchar('\n');
+		putchar('\r');
             
-                /* get to next arg if not 'Y' or 'y' */
-                if((r != 'y') && (r != 'Y'))
-                    break;
-            }
-            
-            f=findfirst(arg[i],fb,0);
-
-            if(f==0) {
-
-                p = arg[i];
-                for(p+=strlen(arg[i])+1;*p!='\\';p--);
-                if(p>arg[i]) {
-                    *(++p)=0;
-                    strcpy(fn,arg[i]);
-                    strcat(fn,fb->ff_name);
-                }
-                else
-                    strcpy(fn,fb->ff_name);
-                    
-                r=unlink(fn);
-
-                if(r==0) {
-                    puts(fn);
-                }
-            }
-            else if((f==255) && (errno==2)) {
-                printf("%s NOT found.\n",arg[i]);
-            }
-            r=findnext(fb);
-            while(r==0) {
-
-                for(p+=strlen(arg[i])+1;*p!='\\';p--);
-                if(p>arg[i]) {
-                    *(++p)=0;
-                    strcpy(fn,arg[i]);
-                    strcat(fn,fb->ff_name);
-                }
-                else
-                    strcpy(fn,fb->ff_name);
-
-                r=unlink(fn);
-                
-                if(r==0) {
-                    puts(fn);
-                }
-                r=findnext(fb);
-            }
-        
-        }
-        free(fb);
+		/* get to next arg if not 'Y' or 'y' */
+		if((r != 'y') && (r != 'Y'))
+		  break;
+		}
+		rm_file(arg[i]);
+	  }
     }
-        
-    else puts("Invalid number of arguments.");  
-    return 0;
+  }
+  else
+		puts("Invalid number of arguments.");  
+  
+  return 0;
 }
 
 
