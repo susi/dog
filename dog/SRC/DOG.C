@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-Contact autor: internet: wolf_bmb@hotmail.com
+Contact autor: internet: dog@users.sourceforge.net
                          http://www.hut.fi/~hbergenh/DOG/
 
 History
