@@ -19,8 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 History
 
 06.05.99 - BAT.C is a now also ported.
-2002-02-25 - Added support for comments in dog-files. The comment character
-             is # - WB
+
 */
 #define _BAT_COMS 8
 
@@ -251,62 +250,56 @@ printf("do_bat:7:i=%u\n",i);
 
 void do_batcommand(BYTE n)
 {
-    BYTE i;
-
+	BYTE i;
+	
 #ifdef bat_debug
-printf("do_batc:0:n = %d\n",n);
-for(i=0;i<n;i++)
-printf("do_batc:1:arg[%d]=(%s)\n",i,arg[i]);
+	printf("do_batc:0:n = %d\n",n);
+	for(i=0;i<n;i++)
+	printf("do_batc:1:arg[%d]=(%s)\n",i,arg[i]);
 #endif
-
-    if(strlen(arg[0]) == 2) {
-        for(i=0;i< _BAT_COMS;i++) {
+	
+	if(strlen(arg[0]) == 2) {
+		for(i=0;i< _BAT_COMS;i++) {
 #ifdef bat_debug_detail
-printf("do_batc:2:batch[%d]=(%s)\n",i,batch[i]);
+			printf("do_batc:2:batch[%d]=(%s)\n",i,batch[i]);
 #endif
-            if(!stricmp(arg[0], batch[i]))
-                break;
-        }
+			if(!stricmp(arg[0], batch[i]))
+			break;
+		}
 
-        switch(i) {
-            case B_C_CA :
-                do_ca( n);
-                return;
-            case B_C_DO :
-                printf("do_batc:3:command=(%s)\n",batch[i]);
-                return;
-            case B_C_44 :
-                printf("do_batc:3:command=(%s)\n",batch[i]);
-                return;
-            case B_C_GO :
-                do_go(n);
-                return;
-            case B_C_IF :
-                printf("do_batc:3:command=(%s)\n",batch[i]);
-                return;
-            case B_C_IN :
-                printf("do_batc:3:command=(%s)\n",batch[i]);
-                return;
-            case B_C_SH :
-				do_sh(n);
-                return;
-            case B_C_TI :
-                printf("do_batc:3:command=(%s)\n",batch[i]);
-                return;
-            default :
-                break;
-
-        }
-        if((arg[0][0] == ':') || (arg[0][0] == '#'))
-        	return;
-        else {
-        	do_command(n);
-          	return;
-        }
-    }
-    else {
-      	do_command(n);
-       	return;
+		switch(i) {
+		 case B_C_CA :
+			do_ca( n);
+			return;
+		 case B_C_DO :
+			printf("do_batc:3:command=(%s)\n",batch[i]);
+			return;
+		 case B_C_44 :
+			printf("do_batc:3:command=(%s)\n",batch[i]);
+			return;
+		 case B_C_GO :
+			do_go(n);
+			return;
+		 case B_C_IF :
+			printf("do_batc:3:command=(%s)\n",batch[i]);
+			return;
+		 case B_C_IN :
+			printf("do_batc:3:command=(%s)\n",batch[i]);
+			return;
+		 case B_C_SH :
+			do_sh(n);
+			return;
+		 case B_C_TI :
+			printf("do_batc:3:command=(%s)\n",batch[i]);
+			return;
+		 default :
+			do_command(n);
+			return;
+		}
+	}
+	else {
+		do_command(n);
+		return;
 	}
 }
 

@@ -156,65 +156,70 @@ C:\DOG>_
 */
 
 
-#define _NCOMS 20
+#define _NCOMS 9
+#define _NECOMS 11
 #define _NARGS 20
 
 /* PSP */
 
 #define PPID_OFS 0x0016
 #define ENVSEG_OFS 0x002C
-#define DOG_VER 081bh
+#define DOG_VER 082bh
 #define DOG_MA 0
 #define DOG_MI 8
-#define DOG_RE 0x1b
+#define DOG_RE 0x2b
 
 /* Define Global Variables */
 BYTE DOG_ma = DOG_MA, DOG_mi = DOG_MI, DOG_re = DOG_RE;
 BYTE Xit = 0, Xitable = 1, eh = 0, D=0, P[MAXDIR]; 
 BYTE comline[200]= {0}, *com = comline, *arg[_NARGS], varg[_NARGS][200], *prompt;
 BYTE commands[_NCOMS][3] = {
-  "BP",
-	"BR",
 	"CC",
 	"CD",
-	"CL",
-	"CP",
 	"CT",
 	"EH",
 	"HH",
-	"LS",
 	"MD",
-	"MV",
 	"RD",
-	"RM",
 	"SE",
+	"XX"};
+
+BYTE ext_commands[_NECOMS][3] = {
+  "BP",
+	"BR",
+	"CL",
+	"CP",
+	"LS",
+	"MV",
+	"RM",
 	"SZ",
 	"TP",
 	"VF",
-	"VR",
-	"XX"};
+	"VR"};
 
 BYTE command_des[_NCOMS][21] = {
-  "BeeP                ",
-	"BReak               ",
 	"Change Codepage     ",
 	"Change Directory    ",
-	"CLear screen        ",
-	"CoPy                ",
 	"Change Terminal     ",
 	"EcHo                ",
 	"Help                ",
-	"LiSt files          ",
 	"Make Directory      ",
-	"MoVe file (rename)  ",
 	"Remove Directory    ",
-	"ReMove files        ",
 	"Set to Environment  ",
+	"eXit                "};
+
+BYTE ext_command_des[_NECOMS][21] = {
+  "BeeP                ",
+	"BReak               ",
+	"CLear screen        ",
+	"CoPy                ",
+	"LiSt files          ",
+	"MoVe file (rename)  ",
+	"ReMove files        ",
 	"SiZe of files in dir",
 	"TyPe                ",
 	"VerFy               ",
-	"VeRsion             ",
-	"eXit                "};
+	"VeRsion             "};
 
 /* BYTE *command_help[_NCOMS]; */
 
@@ -232,26 +237,15 @@ BYTE flags;
 #define FLAG_E 0x2
 #define FLAG_C 0x4
 
-#define C_BP 0
-#define	C_BR 1
-#define	C_CC 2
-#define	C_CD 3
-#define	C_CL 4
-#define	C_CP 5
-#define	C_CT 6 
-#define C_EH 7 
-#define C_HH 8 
-#define C_LS 9 
-#define C_MD 10
-#define C_MV 11
-#define C_RD 12
-#define C_RM 13
-#define C_SE 14
-#define C_SZ 15
-#define C_TP 16
-#define C_VF 17
-#define C_VR 18
-#define C_XX 19
+#define	C_CC 0
+#define	C_CD 1
+#define	C_CT 2 
+#define C_EH 3 
+#define C_HH 4 
+#define C_MD 5
+#define C_RD 6
+#define C_SE 7
+#define C_XX 8
 
 
 

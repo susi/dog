@@ -24,6 +24,7 @@ Wolf Bergenheim (WB)
 History
 18.03.00 - Extracted from DOG.C - WB
 06.04.00 - Started - WB
+2002-03-01 - Internal and external commands are now sepatate
 */
 
 void do_hh(BYTE n)
@@ -31,9 +32,13 @@ void do_hh(BYTE n)
     BYTE i;
 
     if(n == 1) {
-        printf("The commands are:\n");
+        printf("The internal commands are:\n");
         for(i=0;i<_NCOMS;i++) {
             printf("%s %s\n",commands[i],command_des[i]);
+        }
+        printf("The external commands are:\n");
+        for(i=0;i<_NECOMS;i++) {
+            printf("%s %s\n",ext_commands[i],ext_command_des[i]);
         }
     }
 }

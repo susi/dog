@@ -137,6 +137,8 @@ History
              ${0-9} is the parameter number ${0-9} of the PREVIOUS command. -WB
 2001-07-23 - Changed the Variable char to % and the prompt char to $ for compatibility. -WB
 2002-02-21 - Added support for dod.dog if shell is permanent -WB
+2002-03-01 - Internal and external commands are now sepatate. External commands are treated no differently than any other commands.
+             $e in prompt will expand to the errorlevel. - WB
 */
 
 #include "dog.h"
@@ -430,9 +432,9 @@ BYTE initialize(int nargs, char *args[])
       sprintf(p,"COMSPEC=%s",args[0]);
       i += strlen(p)+1;
       p += i; /*point to byte after terminating 0 */
-      strcpy(p,"PATH=C:\\DOS;C:\\DOG;C:\\;..");
+      strcpy(p,"PATH=.;..;\\");
       i += strlen(p)+1;
-      p += 26;
+      p += 12;
       strcpy(p,"PROMPT=");
       strcat(p,_PROMPT);
       i += strlen(p)+1;
@@ -866,6 +868,8 @@ void printprompt(void)
         putchar('|');
         break;
        case  'e':
+				printf("%d",errorlevel);
+				break;
        case  'E':
         putchar('\x1b');
         break;
@@ -933,7 +937,7 @@ void printprompt(void)
         printf("%04u-%02u-%02u",yr,mo,day);
         break;
        case  'c':
-      case  'T':
+			 case  'T':
         
         asm MOV ah,2ch
         asm INT 21h
@@ -945,11 +949,11 @@ void printprompt(void)
         printf("%d.%02d.%02d,%02d",h,mi,s,ms);
         break;
        default :
-        ;
+        break;
       }
     }
-    else if(prompt[i++] == '%') {
-      if(prompt[i]  == '%') {
+    else if(prompt[i] == '%') {
+      if(prompt[++i]  == '%') {
 				putchar('%');
 			}
       else if(isdigit(prompt[i])) {
@@ -973,10 +977,11 @@ void printprompt(void)
 #endif
         printf("%s\b",eval);
       }
-			i++;
+/*			i++; */
     }
-    else
-    putchar(prompt[i]);
+    else {
+			putchar(prompt[i]);
+		}
   }
 
 #ifdef prompt_debug
@@ -1011,7 +1016,7 @@ int main(int nargs, char *argv[])
   }
   
   if((flags & FLAG_P) == FLAG_P) {
-    arg[0] = "dog";
+    arg[0] = "dog.dog";
     do_command(1);
   }
   
@@ -1229,17 +1234,17 @@ void do_command( BYTE na)
   BYTE dbi;
 #endif
   if (na==0) return;
-  if (arg[0][0] == ':') return;
-  if((strlen(arg[0])==2) || (arg[0][2]=='.') || (arg[0][2]=='\\')) {
+  if ((arg[0][0] == ':') ||  (arg[0][0] == '#')) return;
+  if ((strlen(arg[0])==2) || (arg[0][2]=='.') || (arg[0][2]=='\\')) {
     
     for(i=0;i<_NCOMS;i++) {
 #ifdef do_debug
       fprintf(stderr,"do_command:1: searching command(%d)=%s\n",i,commands[i]);
-      fprintf(stderr,"do_command:2: line is: /");
+      fprintf(stderr,"do_command:2: line is: ");
       for(dbi=0;dbi<na;dbi++) {
-        fprintf(stderr,"%s/",arg[dbi]);
+        fprintf(stderr,",%s",arg[dbi]);
       }
-      fprintf(stderr,"\n");
+      fprintf(stderr,",\n");
 #endif
       if(strnicmp(arg[0],commands[i],2) == 0) {
         break;
@@ -1249,19 +1254,7 @@ void do_command( BYTE na)
     fprintf(stderr,"\n");
 #endif
     switch(i) {
-      
-     case C_BP :
-      /* This is for compatibility only. */
-      do_exe(na);
-      D = getcur(P) +'A';
-      return;
-      
-     case C_BR :
-      /* This is for compatibility only. */
-      do_exe(na);
-      D = getcur(P) +'A';
-      return;
-      
+
      case C_CC :
       
       break;
@@ -1269,19 +1262,7 @@ void do_command( BYTE na)
      case C_CD :
       do_cd(na);
       break;
-      
-     case C_CL :
-      /* This is for compatibility only. */
-      do_exe(na);
-      D = getcur(P) +'A';
-      return;
-      
-     case C_CP :
-      /* This is for compatibility only. */
-      do_exe(na);
-      D = getcur(P) +'A';
-      return;
-      
+
      case C_CT :
       do_ct(na);
       break;
@@ -1294,60 +1275,18 @@ void do_command( BYTE na)
       do_hh(na);
       break;
       
-     case C_LS :
-      /* This is for compatibility only. */
-      do_exe(na);
-      D = getcur(P) +'A';
-      return;
-      
      case C_MD :
       do_mrd(na);
       break;
-      
-     case C_MV :
-      /* This is for compatibility only. */
-      do_exe(na);
-      D = getcur(P) +'A';
-      return;
       
      case C_RD :
       do_mrd(na);
       break;
       
-     case C_RM :
-      /* This is for compatibility only. */
-      do_exe(na);
-      D = getcur(P) +'A';
-      return;
-      
      case C_SE :
       do_se(na);
       break;
-      
-     case C_SZ :
-      /* This is for compatibility only. */
-      do_exe(na);
-      D = getcur(P) +'A';
-      return;
-      
-     case C_TP :
-      /* This is for compatibility only. */
-      do_exe(na);
-      D = getcur(P) +'A';
-      return;
-      
-     case C_VF :
-      /* This is for compatibility only. */
-      do_exe(na);
-      D = getcur(P) +'A';
-      return;
-      
-     case C_VR :
-      /* This is for compatibility only. */
-      do_exe(na);
-      D = getcur(P) +'A';
-      return;
-      
+
      case C_XX :
       if(Xitable==1)
       do_xx();
@@ -1500,8 +1439,8 @@ void do_exe(BYTE n)
       printf("do_exe:7:ff_name = %s\n",fb->ff_name);
 #endif
     }
-    
   }
+
   if (exec_f == NON) {
 		if(prog[1] == ':') {
 			strcpy(file,prog);
