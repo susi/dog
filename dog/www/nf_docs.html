@@ -1,0 +1,370 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+	<title>DOG - Documentation</title>
+</head>
+
+<body bgcolor="#4567ab" text="#050505" link="#ff0033" vlink="5511ff" alink="#ffffff">
+
+<!-- Left side -->
+<Table  cellspacing="5" cellpadding="10"><TR valign="top">
+<TD bgcolor="Black" width="150">
+
+<table>
+<Tr><TD>
+<img SRC="images/logo.gif" alt="[DOG-Logo]" Width=150 Height=150 border=0>
+<hr>
+</td></tr>
+
+<TR><TD>
+<A HREF="nf_main.html"
+onMouseOver="self.status='Main'; return true"
+onMouseOut="self.status='Document: Done';return true;">Main</a>
+</td></tr>
+
+<TR><TD>
+<A HREF="nf_docs.html"
+onMouseOver="self.status='Docs'; return true"
+onMouseOut="self.status='Document: Done';return true;">Documentation</a>
+</td></tr>
+
+<TR><TD>
+<A HREF="nf_license.html"
+onMouseOver="self.status='License'; return true"
+onMouseOut="self.status='Document: Done';return true;">License</a>
+</td></tr>
+
+<TR><TD>
+<A HREF="nf_test.html"
+onMouseOver="self.status='Give DOG a test'; return true"
+onMouseOut="self.status='Document: Done';return true;">Test run DOG</a>
+</td></tr>
+
+<TR><TD>
+<A HREF="nf_install.html"
+onMouseOver="self.status='Installing DOG'; return true"
+onMouseOut="self.status='Document: Done';return true;">Installation guide</a>
+</td></tr>
+
+<TR><TD>
+<A HREF="nf_links.html"
+onMouseOver="self.status='Links'; return true"
+onMouseOut="self.status='Document: Done';return true;">Links</a>
+<hr>
+</td></tr>
+
+<TR><TD>
+<A HREF="nf_FAQ.html"
+onMouseOver="self.status='DOG FAQ'; return true"
+onMouseOut="self.status='Document: Done';return true;">FAQ</a>
+<hr>
+</td></tr>
+
+<TR><TD>
+<A HREF="nf_feed.html"
+onMouseOver="self.status='Feedback'; return true"
+onMouseOut="self.status='Document: Done';return true;">Feedback</a>
+</td></tr>
+
+<TR><TD>
+<a href="mailto:dog@users.sourceforge.net"
+onMouseOver="self.status='Mail'; return true"
+onMouseOut="self.status='Document: Done';return true;">Mail</a>
+</td></tr>
+</table>
+
+<!-- Right side -->
+<TD>
+
+<center><H1>DOG Documentation</h1></center>
+<HR>
+<center><H2>Command line Syntax</h2></center>
+<tt>DOG [-P&brvbar;-E envsz&brvbar;-C command line]</tt>
+<P>
+<b>Parameters</b>: <ul>
+<li>-P - Makes DOG a PERMANENT shell.
+<li>-E envsz - Makes the environment to <tt>(envsz / 16)</tt> 16 bit pages.
+<li>-C command line - Executes the <tt>command line</tt> and exits.
+</ul>
+<hr>
+
+<hr>
+<A name="top"></a>
+<center><H2>Commands</h2></center>
+The commands are:
+      <ul>
+        <li><tt><A href="#BR">BR</a></tt> 
+        <li><tt><a href="#CC">CC</a></tt> 
+        <li><tt><a href="#CD">CD</a></tt> 
+        <li><tt><a href="#CL">CL</a></tt> 
+        <li><tt><a href="#CP">CP</a></tt> 
+        <li><tt><a href="#CT">CT</a></tt> 
+        <li><tt><a href="#EH">EH</a></tt> 
+        <li><tt><a href="#HH">HH</a></tt> 
+        <li><tt><a href="#LS">LS</a></tt> 
+        <li><tt><a href="#MD">MD</a></tt> 
+        <li><tt><a href="#NN">NN</a></tt> 
+        <li><tt><a href="#RD">RD</a></tt> 
+        <li><tt><a href="#RM">RM</a></tt> 
+        <li><tt><a href="#SE">SE</a></tt> 
+        <li><tt><a href="#SZ">SZ</a></tt>
+        <li><tt><a href="#TP">TP</a></tt> 
+        <li><tt><a href="#VF">VF</a></tt> 
+        <li><tt><a href="#VR">VR</a></tt> 
+        <li><tt><a href="#XX">XX</a></tt> 
+        <li><tt><A href="#PP">PP</a></tt> 
+      </ul>
+<hr>
+<hr>
+
+<center><H3><A name="BR">BR</A></h3></center>
+<b>Syntax</b>: <tt>BR [ON&brvbar;OFF]</tt><BR>
+<b>Parameters</b>: <ul>
+<li>ON  - Set DOS Break flag to ON (check for break on all DOS calls).
+<li>OFF - Set DOS Break flag to OFF (check for break only when reading/writing stdin/stdout/stderr).
+</ul>
+<b>Effect</b>: Toggles the DOS Break flag. In case no parameters are given
+it returns the Break Flag<BR>
+<BR>
+<A href="#top">Top</a>
+<hr>
+
+<center><H3><A name="CC">CC</A></h3></center>
+      <b>Syntax</b>: <tt>CD [Path]</tt><br>
+      <b>Parameters</b>: 
+      <ul>
+        <li>Path - The destination path. The <tt>..</tt> directory can be appended 
+          directly to cd like in DOS. e.g.<tt>cd..</tt>. The virtual directory 
+          <tt>...</tt> means <tt>..\..</tt> 
+        <li> - cd without Args returns the current directory. 
+      </ul>
+      <b>Effect</b>: Changes the current codepage to CodePage. <BR>
+<A href="#top">Top</a>
+<hr>
+
+<center><H3><A name="CD">CD</A></h3></center>
+<b>Syntax</b>: <tt>CD [Path]</tt><BR>
+<b>Parameters</b>: <ul>
+<li>Path - The destination path. The <tt>..</tt> directory can be appended directly to
+           cd like in DOS. e.g.<tt>cd..</tt>. The virtual directory <tt>...</tt>
+           means <tt>..\..</tt>
+<li>     - cd without Args returns the current directory.
+</ul>
+<b>Effect</b>: Changes the current directory to Path.
+<BR>
+<A href="#top">Top</a>
+<hr>
+
+<center><H3><A name="CL">CL</A></h3></center>
+<b>Syntax</b>: <tt>CL</tt><BR>
+<b>Effect</b>: Clears the screen. Works on 50 lines/page screens too.
+<BR>
+<A href="#top">Top</a>
+<hr>
+
+<center><H3><A name="CP">CP</A></h3></center>
+<font color="#ff0022">NOT implemented yet</font>
+<BR>
+<A href="#top">Top</a>
+<hr>
+
+<center><H3><A name="CT">CT</A></h3></center>
+      <b>Syntax</b>: <tt>CT Device</tt><br>
+      <b>Parameters</b>: 
+      <ul>
+        <li>- Device the name of the device that io is set to. Eg. CON, AUX, NUL... 
+      </ul>
+      <b>Effect</b>: Changes the current IO terminal to Device. <BR>
+<A href="#top">Top</a>
+<hr>
+
+<center>
+        <H3><A name="EH">EH</A></h3>
+      </center>
+      <center>
+      </center>
+<b>Syntax</b>: <tt>EH text</tt><BR>
+<b>Parameters</b>: <ul>
+<li>text - anything you want to type out from a DOG file.
+    <P>Use these  special characters to format the text.
+    <ul>
+    <li><tt>%%</tt> - the % sign.
+    <li><tt>%_</tt> - space
+    <li><tt>%b</tt> - vertical bar ( &brvbar; )
+    <li><tt>%e</tt> - The ESC character (ASCII 27 = 1b in hex)
+    <li><tt>%l</tt> - Left angle ( &lt; )
+    <li><tt>%g</tt> - Right angle ( &gt; )
+    <li><tt>%n</tt> - New line
+    <li><tt>%r</tt> - Carriage return
+    <li><tt>%t</tt> - Tabulator
+    </ul>
+</ul>
+<b>Effect</b>: Print a (formatted) string to stdio (normally the screen).
+EH by itself wil put a new line.
+<BR>
+<A href="#top">Top</a>
+<hr>
+
+<center><H3><A name="HH">HH</A></h3></center>
+<b>Syntax</b>: <tt>HH</tt><BR>
+<b>Effect</b>: Prints ALL the internal DOG commands.
+<BR>
+<A href="#top">Top</a>
+<hr>
+
+<center><H3><A name="LS">LS</A></h3></center>
+<b>Syntax</b>: <tt>LS [arg_list] [search pattern]</tt><BR>
+<b>Parameters</b>: <ul>
+<li>The args can be given in any order.
+<li>arg_list can be any of the following args.
+                <ul>
+                <li>-a - Any file Attribute
+                <li>-d - Directories Only
+                <li>-f - Files Only
+                <li>-h - help text
+                <li>-l - show volume label
+                <li>-? - syntax
+                </ul>
+
+<li>search pattern - a list of filenames to find. The <tt>*</tt> and
+     <tt>?</tt> wildcards are OK.
+</ul>
+
+<b>Effect</b>: List files according to switches and search pattern.
+<BR>
+<A href="#top">Top</a>
+<hr>
+
+<center><H3><A name="MD">MD</A></h3></center>
+<b>Syntax</b>: <tt>MD &lt;dir&gt;</tt><BR>
+<b>Parameters</b>: <ul>
+<li>dir - Name or Path of new directory.
+</ul>
+<b>Effect</b>: Creates a new directory as in <tt>COMMAND.COM</tt>.
+<BR>
+<A href="#top">Top</a>
+<hr>
+
+<center><H3><A name="NN">NN</A></h3></center>
+<b>Syntax</b>: <tt>NN &lt;old_name&gt; &lt;new_name&gt;</tt><BR>
+<b>Parameters</b>: <ul>
+<li>old_name - The path to the file you want to change. * and ? are OK
+<li>new_name - The path to the new filename. * and ? are OK
+</ul>
+<b>Effect</b>: Creates a new directory as in <tt>COMMAND.COM</tt>.
+<BR>
+<A href="#top">Top</a>
+<hr>
+
+<center><H3><A name="RD">RD</A></h3></center>
+<b>Syntax</b>: <tt>RD &lt;dir&gt;</tt><BR>
+<b>Parameters</b>: <ul>
+<li>dir - Name or path of EMPTY directory to remove.
+</ul>
+<b>Effect</b>: Removes a directory as in <tt>COMMAND.COM</tt>.
+<BR>
+<A href="#top">Top</a>
+<hr>
+
+<center><H3><A name="RM">RM</A></h3></center>
+<b>Syntax</b>: <tt>RM &lt;list&gt;</tt><BR>
+<b>Parameters</b>: <ul>
+<li>list - A space separated list of files you want to delete. No more multiple
+           commands to delete <tt>*.BK! *.BKP</tt> etc files!
+</ul>
+<b>Effect</b>: Delete files as per the <tt>COMMAND.COM DEL/DELETE</tt> command.
+<BR>
+<A href="#top">Top</a>
+<hr>
+
+<center><H3><A name="SE">SE</A></h3></center>
+<b>Syntax</b>: <tt>SE [env_var=[string]]</tt><BR>
+<b>Parameters</b>: <ul>
+<li>env_var - the name of the environment variable. The name is UPPERCASED
+     Predefines ones are:
+     <ul>
+       <li>PATH - A ; separated list of directories that are searched
+	    in to find a program.
+       <li>PROMPT - The string may consist of normal text and these special characters
+	    <ul>
+	      <li><tt>%%</tt> - the % sign.
+	      <li><tt>%_</tt> - space
+	      <li><tt>%b</tt> - vertical bar ( &brvbar; )
+	      <li><tt>%e</tt> - The ESC character (ASCII 27 = 1b in hex)
+	      <li><tt>%l</tt> - Left angle ( &lt; )
+	      <li><tt>%g</tt> - Right angle ( &gt; )
+	      <li><tt>%n</tt> - New line
+	      <li><tt>%r</tt> - Carriage return
+	      <li><tt>%t</tt> - Tabulator
+	      <li><tt>%p</tt> - Current drive and path
+	      <li><tt>%c</tt> - Current time.
+	    </ul>
+       <li>COMSPEC - Path to DOG
+     </ul>
+<li>string - The value that env_var should have.
+</ul>
+<b>Effect</b>: Sets the specified env_var to string in the environment.
+               Without arguments the command prints all env_vars to the screen.
+<BR>
+<A href="#top">Top</a>
+<hr>
+
+<center><H3><A name="SZ">SZ</A></h3></center>
+<b>Syntax</b>: <tt>SZ [-k&brvbar;-m]</tt><BR>
+<b>Parameters</b>: <ul>
+<li>-k - give sizes in kb
+<li>-m - give sizes in Mb
+</ul>
+<b>Effect</b>: Prints the size of the files in the current directory.
+<hr>
+
+<center>
+        <H3><A name="TP">TP</A></h3>
+      </center>
+      <center>
+      </center>
+<b>Syntax</b>: <tt>TP file_list</tt><BR>
+<b>Parameters</b>: <ul>
+<li>file_list - A space separated list of filenames.
+</ul>
+<b>Effect</b>: Types the contents of the files in file_list to stdout.
+<BR>
+<A href="#top">Top</a>
+<hr>
+
+<center><H3><A name="VF">VF</A></h3></center>
+<b>Syntax</b>: <tt>VF [ON&brvbar;OFF]</tt><BR>
+<b>Parameters</b>: <ul>
+<li>ON - Set the DOS Verify flag to ON
+<li>OFF - Set the DOS Verify flag to OFF
+</ul>
+<b>Effect</b>: If ON or OFF specified sets Verify flag to this value,
+               else returns the current setting.
+<BR>
+<A href="#top">Top</a>
+<hr>
+
+<center><H3><A name="VR">VR</A></h3></center>
+<b>Syntax</b>: <tt>VR</tt><BR>
+<b>Effect</b>: Prints the DOG and DOS version. Interprets OS/2 and
+               IBM version correctly.
+<BR>
+<A href="#top">Top</a>
+<hr>
+
+<center><H3><A name="XX">XX</A></h3></center>
+<b>Syntax</b>: <tt>XX</tt><BR>
+<b>Effect</b>: Exit the current DOG shell. Works only if the shell is not
+a primary shell.
+<BR>
+<A href="#top">Top</a>
+<hr>
+
+<!-- END of Table-->
+</TD></tr></table>
+
+
+</body>
+</html>
+
+

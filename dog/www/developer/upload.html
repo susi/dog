@@ -1,0 +1,52 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+	<title>DOG - Upload</title>
+</head>
+
+<body bgcolor="#4567ab" text="#050505" link="#ffffff" vlink="#000000" alink="#ff0000">
+<center><H1>DOG Upload</h1></center>
+<hr>
+
+<font size="+2" color="#ff0044">THIS DOESN'T WORK. DON'T TRY IT!</font><br>
+
+<center><H2>Upload your files here</h2></center>
+<hr>
+<form method="post" ENCTYPE="multipart/form-data" action="hype.tcm.hut.fi/~hbergenh/cgi-bin/upload.cgi" target="contentFrame">
+
+<font color="#ff0022"><b>You MUST fill ALL fields</b></font>
+
+<input type="hidden" name="frame" value="true">
+
+<table>
+  <tr>
+    <td>File to upload:</td>
+    <td><input type="file" name="upfile" size="20" maxlength="80"></td>
+  </tr>
+  <tr>
+    <td>First Name:</td>
+    <td><input type="text" name="Fname" Size="20" maxlength="80"></td>
+  </tr>
+  <tr>
+    <td>Last Name:</td>
+    <td><input type="text" name="Lname" Size="20" maxlength="80">
+    <input type="Reset" value="Clear"></td>
+  </tr>
+  <tr>
+    <td>Your email address:</td>
+    <td><input type="text" name="Email" Size="20" maxlength="80">
+    <input type="submit" value="Send file"></td>
+  </tr>
+</table>
+</form>
+
+<hr>
+
+<center><H2>Uploaded files are here</h2></center>
+<!--***CGI***-->
+<hr>
+
+</body>
+</html>
+
+

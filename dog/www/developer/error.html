@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+<title>DOG - BUGlist</TITLE>
+</head>
+
+<body bgcolor="#4567ab" text="#050505" link="#ffffff" vlink="#000000" alink="#ff0000">
+<center><H1>known DOG errors and BUGs</h1></center>
+Errors are (here at least) big problems (system hangs, command does opposite
+of what's intended, etc.) and BUGs are those small errors like declaring a
+variable and never using it, typos, etc.
+<hr>
+
+<center><H2>Known errors:</h2></center>
+<ul>
+<li>Control-Break handler doesn't work
+<li>Sometimes DOG gives a strange error:
+    <blockquote><code>Error writing to device AUX</code>
+    <BR>
+    AUX is NEVER referenced in the code... could be compiler error.
+    Any clues anyone?
+	<BR>
+	<font color="#ff0000">FIXED</font> by changing compiler. Changed from
+	Micro-C 3.15 (By Dunfield) to Borland C++ 3.1.
+	</blockquote>
+</ul>
+<hr>
+<center><H2>Known BUGs</h2></center>
+<ul>
+<li> 
+
+</ul>
+
+<hr>
+<center><H2>Submit a BUG / an error</h2></center>
+<form method="post" action="/cgi-bin/mailto?hbergenh@cc.hut.fi" target="contentFrame">
+<Input type="hidden" name="Subject"   value="[DOG] error/bug report">
+<Input type="hidden" name="Required"  value="reply-to name comments bugname">
+<Input type="hidden" name="Next-URL"  value="../~hbergenh/DOG/developer/bug.thanks.html">
+<Input type="hidden" name="Error-URL" value="../~hbergenh/DOG/mailto.error.html">
+
+Did you find a BUG? Fill the form below:<br>
+<font size="-1" color="#ff0000">
+*) you must fill these fields
+</font><P>
+<br>
+<center>
+*Name:<br>
+<input type="text" name="name" Size="50" maxlength="80"><br>
+
+*Email address:<br>
+<input type="text" name="Reply-To" Size="50" maxlength="80"><br>
+
+Country:<br>
+<input type="text" name="country" size="50" maxlength="80"><br>
+
+Type of error:
+BUG
+<input type="radio" name="errType" value="BUG" checked>
+ERROR
+<input type="radio" name="errType" value="ERROR">
+<br>
+
+Give the bug a name:<BR>
+<input type="text" name="bugname" size="50" maxlength="60"><BR>
+Describe the bug:<BR>
+How and where did it show up. Can you recreate the error?<BR>
+
+<textarea name="comments" rows=25 cols=80 wrap="physical"></textarea>
+<BR>
+<BR>
+<input type="submit" value="Send message"> &nbsp;
+<input type="reset" value="Clear form">
+<br>
+
+</center>
+</form>
+
+<hr>
+
+</body>
+</html>
+
+

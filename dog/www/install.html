@@ -1,0 +1,58 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+	<title>DOG - Install</title>
+</head>
+
+<body bgcolor="#4567ab" text="#050505" link="#ffffff" vlink="#000000" alink="#ff0000">
+
+<center><H1>Installing DOG</h1></center>
+
+<hr>
+<center><H3>Step one</h3></center>
+Download the <A href="download/DOGX.ZIP"><tt>DOGX.ZIP</tt></a> file.
+<HR>
+<center><H3>Step two</h3></center>
+Unzip the <tt>DOGX.ZIP</tt> file. Type these commands EXECTLY as shown.
+<blockquote>
+<code>
+  md DOG<BR>
+  copy dogx.zip \DOG<BR>
+  del dogx.zip<BR>
+  cd dog<BR>
+  unzip DOGX.ZIP<BR>
+</code>
+</blockquote>
+You can use another directory if you wish.
+Make sure your UNZIP.EXE is in your path.
+<A href="ftp://ftp.funet.fi/pub/mirrors/ftp.cdrom.com/pub/simtelnet/msdos/UNZIP.EXE">
+UNZIP.EXE</a> is a program you can use to uncompress the <tt>DOGX.ZIP</tt>
+archive.
+<HR>
+
+<center><H3>Step three</h3></center>
+Add the following line in your <tt>CONFIG.SYS</tt>-file. If you already have a shell
+command in <tt>CONFIG.SYS</tt>, just replace it with the following. Yuo can make it a
+comment by adding REM infront of it (in case you want to go back to the old shell.
+The environment given is just an example. Y can use any value you normally use for
+<tt>COMMAND.COM</tt>
+<blockquote>
+<code>
+  SHELL=C:\DOG\DOG.COM -E:512 -P
+</code>
+</blockquote>
+<HR>
+
+<center><H3>Step four</h3></center>
+Reboot your computer by pressing <tt>CONTROL-ALT-DELETE</tt>
+<HR>
+
+</body>
+</html>
+
+
+
+
+
+
+

@@ -1,0 +1,102 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+	<title>DOG - Source</title>
+</head>
+
+<body bgcolor="#4567ab" text="#050505" link="#ffffff" vlink="#000000" alink="#ff0000">
+
+<center><H1>The DOG source</h1></center>
+<HR>
+<a
+href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/dog/SRC/?cvsroot=dog">Here</a>
+you can view the files on-line.<BR>
+<font size="-1" color="#ff0044">Updated: 21/03/00</font><br>
+<ul>
+<li>
+     BAT.C  The DOG-file parser and processing
+</li>
+<li>
+     BR.C   The BR (BReak) command and its support functions
+</li>
+<li>
+     CC.C   The CC (Change Country page) command and its support functions
+</li>
+<li>
+     CL.C   The CL (CLear screen) command
+</li>
+<li>
+     CMRD.C The CD, MD and RD commands and their support functions
+</li>
+<li>
+     CP.C   The CP (CopPy) command and its support functions
+</li>
+<li>
+     CT.C   The CT (Change Tty) command and its support functions
+</li>
+<li>
+     DOG.C  The main file. The command processing.
+</li>
+<li>
+     EH.C   The EH (EcHo) command and its support functions
+</li>
+<li>
+     HH.C   The HH (Help) command and its support functions
+</li>
+<li>
+     INTS.C All functions for setting and handling INT 23, INT 24, INT 2E
+</li>
+<li>
+     LS.C   The LS (LiSt) command and its support functions
+</li>
+<li>
+     NN.C   The NN (New Name) command and its support functions
+</li>
+<li>
+     RM.C   The RM (ReMove) command and its support functions
+</li>
+<li>
+     SE.C   The SE (SetEnv) command and its support functions
+</li>
+<li>
+     SZ.C   The SZ (SiZe of files) command and its support functions
+</li>
+<li>
+     TP.C   The TP (TyPe) command and its support functions
+</li>
+<li>
+     VF.C   The VF (VeriFy) command and its support functions
+</li>
+<li>
+     VR.C   The VR (VeRsion) command and its support functions
+</li>
+<li>
+     XX.C   The XX (eXit) command and its support functions
+</li>
+</ul>
+
+<P>
+The code is made for (currently) MS-DOS 3.30.
+
+<P> DOG is made on <A href="http://community.borland.com/" target="_top">Borland</a> C++ 3.1
+Dog started out as a micro-C project but the compiler has some bugs, so I changed it.
+Earlier (when DOG was made on the Micro-C compiler) DOG wouldn't compile
+on other compilers. Now I think that it's pretty easy to port it to other
+compilers as DOG follows the Borland syntax. (The memory model is TINY so it
+will produce a .COM (memory image) file.
+
+<P>Even though DOG runs on DOS versions 5 and up, it doesn't compete with
+other command interpreters for those systems as it has no understanding on
+memory other than conventional (yet).
+<BR>
+It has no memory management (yet). And I'm still in the wind trying to split
+DOG in resident and transient parts. (Can anyone HELP??)
+
+<hr>
+If you want to you can download the source-files 
+<a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/dog/SRC/?cvsroot=dog">here</a>.
+
+
+</body>
+</html>
+
