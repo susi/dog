@@ -27,4 +27,4 @@ for %%f in ( *.com ) do del ..\..\bin\%%f
 move *.com ..\..\bin
 del *.obj
 echo done.
-echo The binary is located in ..\bin
+echo The binaries is located in ..\..\bin
