@@ -17,8 +17,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-Contact autor: internet: wolf_bmb@hotmail.com
+Contact autor: internet: dog@users.sourceforge.net
                          http://www.hut.fi/~hbergenh/DOG/
+			 
+Developers:
+Wolf Bergenheim (WB)
+Eugene Wong (EW)
 
 History
 
@@ -122,6 +126,8 @@ History
 08.12.99 - CLK renamed to DT for Day and Time.
 18.03.00 - Split DOG.C int individual files. - WB           
 25.03.00 - added code for do_ct() - WB
+02.04.00 - fixed printprompt so that month will be displayed properly and
+           changed its variable names to be more consistent with dt.c - EW
 */
 
 #include "dog.h"
@@ -761,7 +767,7 @@ BYTE getcur(BYTE *p)
 void printprompt(void)
 {
     WORD yr;
-    BYTE dow,mo,day,i,k,t,m,s,h;
+    BYTE dow,mo,day,i,k,h,mi,s,ms;
 
     prompt = malloc(200);
 
@@ -826,7 +832,7 @@ void printprompt(void)
                         INT 21h
                         MOV dow,AL  /*day of week*/
                         MOV yr,CX     /*year*/
-                        MOV m,DH     /*month*/
+                        MOV mo,DH     /*month*/
                         MOV day,DL     /*day*/
                     }
                     switch(dow) {
@@ -861,12 +867,12 @@ void printprompt(void)
                   asm {
                       MOV ah,2ch
                       INT 21h
-                      MOV t,ch     /*hours*/
-                      MOV m,cl     /*minutes*/
+                      MOV h,ch     /*hours*/
+                      MOV mi,cl     /*minutes*/
                       MOV s,dh     /*seconds*/
-                      MOV h,dl     /*hundreds*/
+                      MOV ms,dl     /*milliseconds or hundreds*/
                   }
-                  printf("%d.%02d.%02d,%02d",t,m,s,h);
+                  printf("%d.%02d.%02d,%02d",h,mi,s,ms);
                   break;
               default :
                 ;
