@@ -31,10 +31,27 @@ History
 #define FLAG_UNSET 0
 #define FLAG_SET 1
 
+void rm_dir(BYTE *dir);
+void rm_file(BYTE *patt);
+void rm_list(BYTE *list);
+
 BYTE flag_i = FLAG_UNSET;
 BYTE flag_v = FLAG_UNSET;
 BYTE flag_r = FLAG_UNSET;
 BYTE flag_h = FLAG_UNSET;
+
+void rm_dir(BYTE *dir)
+{
+  BYTE path[80];
+  strcpy(path,dir);
+  strcat(path,"\\*.*");
+#ifdef debug
+  printf("rm_dir (%d): path=(%s)[%x] dir=(%s)[%x]\n",__LINE__,path,path,dir,dir);
+#endif  
+  rm_file((BYTE *)path);
+  
+  return;
+}
 
 void rm_file(BYTE *patt)
 {
@@ -42,8 +59,15 @@ void rm_file(BYTE *patt)
   BYTE *p;
   BYTE fn[129]={0};
   struct ffblk fb;
+
+#ifdef debug	  
+  printf("rm_file (%d): patt=(%s)[%x]\n",__LINE__,patt,patt);
+#endif
   
   f=findfirst(patt,&fb,0|FA_DIREC);
+#ifdef debug	
+  printf("rm_file (%d): patt=(%s)[%x] f=%x\n",__LINE__,patt,patt,f);
+#endif
   
   if(f==0) {
 	
@@ -58,49 +82,84 @@ void rm_file(BYTE *patt)
 	  *(++p)=0;
 	  strcpy(fn,patt);
 	  strcat(fn,fb.ff_name);
-		
 	}
 	else
 	  strcpy(fn,fb.ff_name);
 	
-	if(flag_i == FLAG_SET) {
-	  printf("remove %s (Y/N)? ",fn);
-	  /* Get character */
-	  asm mov ah,1
-	  asm int 21h
-	  asm mov r,al
-	  putchar('\n');
-	  putchar('\r');
+#ifdef debug
+	printf("rm_file (%d): fn=(%s)[%x]\n",__LINE__,fn,fn);
+#endif	
+	if((fb.ff_name)[0] != '.') {
+#ifdef debug
+	  printf("rm_file (%d): fb.ff_name=(%s)[%x],ok=%x\n",__LINE__,fb.ff_name,fb.ff_name,ok);
+#endif	  
 
-	  if((r == 'y') || (r == 'Y')) {
-		if((fb.ff_attrib & FA_DIREC) == FA_DIREC)
+	  if(flag_i == FLAG_SET) {
+		printf("remove %s (Y/N)? ",fn);
+		/* Get character */
+		asm mov ah,1
+		asm int 21h
+		asm mov r,al
+		putchar('\n');
+		putchar('\r');
+		
+#ifdef debug	
+		printf("rm_file (%d): r=(%c)[%x],ok=%x\n",__LINE__,r,r,ok);
+#endif
+		if((r == 'y') || (r == 'Y')) {
+		  if((fb.ff_attrib & FA_DIREC) == FA_DIREC) {
+			if(flag_r == FLAG_SET) {
+			  rm_dir(fn);
+			}
+#ifdef debug	
+			printf("rm_file (%d): fb.ff_name=(%s)[%x],ok=%x\n",__LINE__,fb.ff_name,fb.ff_name,ok);
+#endif
+			ok = rmdir(fn);
+		  }
+		  else
+			ok = unlink(fn);
+		}
+	  }
+	  else {
+		if((fb.ff_attrib & FA_DIREC) == FA_DIREC) {
+		  if(flag_r == FLAG_SET) {
+			rm_dir(fn);
+		  }
+#ifdef debug			  
+		  printf("rm_file (%d): fb.ff_name=(%s)[%x],ok=%x\n",__LINE__,fb.ff_name,fb.ff_name,ok);
+#endif
 		  ok = rmdir(fn);
+		}
 		else
 		  ok = unlink(fn);
 	  }
 	}
-	else {
-	  if((fb.ff_attrib & FA_DIREC) == FA_DIREC)
-		ok = rmdir(fn);
-	  else
-		ok = unlink(fn);
-	}
-	
+#ifdef debug	
+	printf("rm_file (%d): fb.ff_name=(%s)[%x],ok=%x\n",__LINE__,fb.ff_name,fb.ff_name,ok);
+#endif	
 	if(ok==0) {
 	  if(flag_v == FLAG_SET) {
 		puts(fn);
 	  }
 	}
 	else if(ok == 0xff) {
-	  printf("error while removing %s ",fn);
+	  printf("error [%x] while removing %s ",errno,fn);
 	  perror("");
 	}
-
   }
   else if((f==255) && (errno==2)) {
 	printf("%s - no such file or directory.\n",patt);
-  }  
-  while(findnext(&fb)==0) {	
+  } 
+  
+#ifdef debug	
+  printf("rm_file (%d): f=(%d)[%x],ok=%x\n",__LINE__,f,f,fb.ff_name,ok);
+#endif  
+  
+  while((f=findnext(&fb))==0) {	
+#ifdef debug	
+	printf("rm_file (%d): f=(%d)[%x],ok=%d\n",__LINE__,f,f,fb.ff_name,ok);
+	printf("rm_file (%d): fb.ff_name=(%s)[%x],ok=%x\n",__LINE__,fb.ff_name,fb.ff_name,ok);
+#endif	
 	for(p+=strlen(patt)+1;(*p!='\\')&&(*p!='/');p--);
 	if(p>patt) {
 	  *(++p)=0;
@@ -110,8 +169,12 @@ void rm_file(BYTE *patt)
 	}
 	else
 	  strcpy(fn,fb.ff_name);
-	
-	if(flag_i == FLAG_SET) {
+#ifdef debug	
+	printf("rm_file (%d): fb.ff_name=(%s)[%x],ok=%x\n",__LINE__,fb.ff_name,fb.ff_name,ok);
+#endif	
+	if(fb.ff_name[0] == '.')
+	  continue; /* ignore . and .. */
+	else if(flag_i == FLAG_SET) {
 	  printf("remove %s (Y/N)? ",fn);
 	  /* Get character */
 	  asm mov ah,1
@@ -120,12 +183,19 @@ void rm_file(BYTE *patt)
 	  putchar('\n');
 	  putchar('\r');
 
+#ifdef debug	
+	  printf("rm_file (%d): r=(%c)[%x],ok=%x\n",__LINE__,r,r,ok);
+#endif
 	  if((r != 'y') && (r != 'Y'))
-		break;
+		continue;
 	}
 	
-	if((fb.ff_attrib & FA_DIREC) == FA_DIREC)
+	if((fb.ff_attrib & FA_DIREC) == FA_DIREC) {
+	  if(flag_r == FLAG_SET) {
+		rm_dir(fn);
+	  }
 	  ok = rmdir(fn);
+	}
 	else
 	  ok = unlink(fn);
 	
@@ -171,7 +241,11 @@ int main(BYTE n,BYTE *arg[])
 {
   BYTE r,f,i,*p,fn[129]={0},dir[80];
   
-  if(n > 1) {		
+  if(n > 1) {
+	if(strncmp(arg[0],"deltree")==0) {
+	  flag_r = FLAG_SET;
+	}
+	
 	/* check flags */
 	for(i=1;i<n;i++) {
 #ifdef DEBUG
@@ -182,24 +256,29 @@ int main(BYTE n,BYTE *arg[])
 		 case 'i':
 		  flag_i = FLAG_SET;
 		  break;
-		 case 'v':
-		  flag_v = FLAG_SET;
-		  break;
 		 case 'h':
 		  printf("Usage: RM [OPTION]... FILE...\n\nRemove the FILE(s).\n\n");
 		  printf("The OPTIONS are:\n\t-i: interactive mode: prompt (Y/N) for each file\n");
 		  printf("\t-v: verbose: print filename of each removed file\n");
+		  printf("\t-r: recurse sub-directories. Removes all files in subdirs too\n");
+		  printf("\t     if the program is executed as deltree -r is implicit");
 		  printf("\t-h: display this help and exit\n");
 		  printf("\nFILE is either a filename OR a filename preceeded by '@',\n"
 				 " in which case the file is opened and read, treating every\n"
 				 " line as a filename to remove.\n");
 		  printf("\nRM is part of DOG (http://dog.sf.net/)\n");
 		  return 0;
+		 case 'r':
+		  flag_r = FLAG_SET;
+		  break;
+		 case 'v':
+		  flag_v = FLAG_SET;
+		  break;
 		}
 	  }
 	}
 	for(i=1;i<n;i++) {
-#ifdef DEBUG
+#ifdef debug
 printf("main for-loop: arg = %s\n",arg[i]);
 #endif
 	  if (arg[i][0] == '@') {
