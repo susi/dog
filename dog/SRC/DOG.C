@@ -1213,7 +1213,7 @@ void do_command( BYTE na)
   BYTE dbi;
 #endif
   if (na==0) return;
-  if (arg[0][0] == ':') return;
+  if ((arg[0][0] == ':') || (arg[0][0] =='#')) return;
   if((strlen(arg[0])==2) || (arg[0][2]=='.') || (arg[0][2]=='\\')) {
     
     for(i=0;i<_NCOMS;i++) {
@@ -1347,8 +1347,10 @@ void do_command( BYTE na)
         do_cd(2);
         return;
       }
-      else if((arg[0][0] =='*') || (arg[0][0]=='?') || (arg[0][0] =='#'))
-      return;
+			/* don't execute commands starting with wildcards : TODO containing wildcards */
+      else if((arg[0][0] =='*') || (arg[0][0]=='?')) {
+				return;
+			}
       else {
         do_exe(na);
         D = getcur(P) +'A';
