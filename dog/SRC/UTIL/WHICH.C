@@ -20,18 +20,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 This program is part of DOG - The DOG Operating Ground
 
-NOTE: Compile with Micro-C 3.15: CC which.c -fop
-
 History
 
 19.07.99 - Created by Wolf Bergenheim
 26.07.99 - Added switches
+2000.10.21 - Ported to BCC - WB
 */
-#include <stdio.h>
-#include <file.h>
-
-#define BYTE unsigned char
-#define WORD unsigned int
+#include "util.h"
 
 #define FULL   (1)
 #define NFLAGS 4
@@ -41,7 +36,7 @@ History
 #define _X 2
 #define _F 3
 
-BYTE e[3][5] = {".COM",".EXE",".DOG"}
+BYTE e[3][5] = {".COM",".EXE",".DOG"};
 BYTE name[80]={0};
 BYTE f = 0;
 BYTE flags[4][3] = {
@@ -55,11 +50,7 @@ void check(BYTE *p,BYTE ext);
 
 int main(int nargs,char *args[])
 {
-    BYTE i,j,env[200],*p,env_name[80];
-    struct FF_block b,*q;
-    q=b;
-    strcpy(env_name,"PATH");
-    strcpy(name,args[1]);
+    BYTE i,j,*env_val,*p,env_name[80];
 
     if(nargs == 1) {
         puts("WHICH.COM v.1.0 by Wolf Bergenheim a utilityprogram to DOG.");
@@ -67,6 +58,9 @@ int main(int nargs,char *args[])
         puts("\n-F = Full info, -X = use DOS .BAT files in stead of DOG .DOG files");
         return 0;
     }
+
+    strcpy(env_name,"PATH");
+    strcpy(name,args[1]);
 
     for(i=2;i<nargs;i++) {
         for(j=0;j<NFLAGS;j++) {
@@ -92,17 +86,15 @@ int main(int nargs,char *args[])
 
     }
 
-/*    printf("flags %b\n",f); */
-
 
     check(".",0);
     check(".",1);
     check(".",2);
 
-    getenv(env_name,env);
-    strupr(env);
-    for(p=strtok(env,";");;p=strtok(NULL,";")) {
-        if(p==NULL) return 0;
+    env_val = getenv(env_name);
+    strupr(env_val);
+    for(p=strtok(env_val,";");;p=strtok(NULL,";")) {
+        if(p==NULL) break;
 
         check(p,0);
         check(p,1);
@@ -118,10 +110,10 @@ void check(BYTE *p,BYTE ext)
 {
 
     BYTE s[PATH_SIZE + 11],i,c,size[11];
-    struct FF_block b,*q;
+    struct ffblk b,*q;
 
-    q=b;
-    c = '';
+    q=&b;
+    c = '\0';
 
     strcpy(s,p);
     if(s[strlen(s)-1] != '\\') {
@@ -133,7 +125,7 @@ void check(BYTE *p,BYTE ext)
     i=findfirst(s,q,0);
 
     if(i==0) {
-        printf("%s%c%s",p,c,b.FF_name);
+        printf("%s%c%s",p,c,b.ff_name);
         if(f == FULL) {
             asm {
                 mov ah,03h
@@ -143,38 +135,39 @@ void check(BYTE *p,BYTE ext)
                 cmp dl,40
                 jbe same_row
                 inc dh
+            }
                 same_row:
+            asm {
                 mov dl,40
                 int 10h
 
             }
 
+            printf("%02d.%02d.%4d",b.ff_fdate & 0x1F,(b.ff_fdate >> 5) & 0x0f,(b.ff_fdate>>9)+1980);
+            printf(" %2d.%02d ",b.ff_ftime >> 11, (b.ff_ftime & 0x7e0) >> 5);
 
-            printf("%02d.%02d.%4d",b.FF_date & 0x1F,(b.FF_date >> 5) & 0x0f,(b.FF_date>>9)+1980);
-            printf(" %2d.%02d ",b.FF_time >> 11, (b.FF_time & 0x7e0) >> 5);
 
-
-            if ((b.FF_attrib & ARCHIVE) == ARCHIVE) printf("A");
-            else if((b.FF_attrib & VOLUME) == VOLUME) printf("L");
+            if ((b.ff_attrib & FA_ARCH) == FA_ARCH) printf("A");
+            else if((b.ff_attrib & FA_LABEL) == FA_LABEL) printf("L");
             else printf("-");
                 
-            if ((b.FF_attrib & SYSTEM) == SYSTEM) printf("S");
-            else if((b.FF_attrib & VOLUME) == VOLUME) printf("A");
+            if ((b.ff_attrib & FA_SYSTEM) == FA_SYSTEM) printf("S");
+            else if((b.ff_attrib & FA_LABEL) == FA_LABEL) printf("A");
             else printf("-");
 
-            if ((b.FF_attrib & READONLY) == READONLY) printf("R");
-            else if((b.FF_attrib & VOLUME) == VOLUME) printf("B");
+            if ((b.ff_attrib & FA_RDONLY) == FA_RDONLY) printf("R");
+            else if((b.ff_attrib & FA_LABEL) == FA_LABEL) printf("B");
             else printf("-");
 
-            if ((b.FF_attrib & HIDDEN) == HIDDEN) printf("H");
-            else if((b.FF_attrib & VOLUME) == VOLUME) printf("E");
+            if ((b.ff_attrib & FA_HIDDEN) == FA_HIDDEN) printf("H");
+            else if((b.ff_attrib & FA_LABEL) == FA_LABEL) printf("E");
             else printf("-");
                 
-            if ((b.FF_attrib & DIRECTORY) == DIRECTORY) printf("D");
-            else if((b.FF_attrib & VOLUME) == VOLUME) printf("L");
+            if ((b.ff_attrib & FA_DIREC) == FA_DIREC) printf("D");
+            else if((b.ff_attrib & FA_LABEL) == FA_LABEL) printf("L");
             else printf("-");
 
-            ltoa(b.FF_size,size,10);
+            ltoa(b.ff_fsize,size,10);
             printf("%9s",size);
 
         }
@@ -183,4 +176,3 @@ void check(BYTE *p,BYTE ext)
     }
     return;
 }
-

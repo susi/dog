@@ -24,7 +24,8 @@ Wolf Bergenheim (WB)
 History
 18.03.00 - Extracted from DOG.C - WB
 01.08.00 - Fixed a bug: when you type ls file that doesn't exist ls
-           would loop in DR-DOS because it returns a 1, not 18 as MS-DOS
+           would loop in DR-DOS because it returns 1, not 18 as I
+           thought it would... - WB
 
 ****************************************************************************/
 

@@ -26,7 +26,7 @@ History
 25.03.00 - started... based on the code written by David MacIlwraith
 
 */
-
+#pragma argsused
 void do_ct(BYTE n)
 {
     asm{

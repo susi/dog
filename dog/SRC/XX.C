@@ -28,10 +28,13 @@ History
 
 void do_xx(void)
 {
-
+#ifdef xx_debug
 printf("Xitable=%d Xit=%d\n",Xitable,Xit);
+#endif
     if(Xitable==1) Xit = 1;
+#ifdef xx_debug
 printf("Xitable=%d Xit=%d\n",Xitable,Xit);
+#endif
     return;
 
 }

@@ -4,7 +4,7 @@
 #include <string.h>
 /*
 Command line Syntax
-DOG [-P¦-E envsz¦-C command line] 
+DOG [-P|-E envsz|-C command line] 
 Parameters: 
 
 -P - Makes DOG a PERMANENT shell. 
@@ -14,7 +14,7 @@ Parameters:
 
 //#define no_commands 20
 
-char br[300]="\n\nSyntax: BR [ON¦OFF]\n\
+char br[300]="\n\nSyntax: BR [ON|OFF]\n\
 Parameters:\n\
 ON - Set DOS Break flag to ON [check for break on all DOS calls].\n\
 OFF - Set DOS Break flag to OFF [(check for break only when reading/writing stdin/stdout/stderr].\n\
@@ -79,7 +79,7 @@ Parameters:\n\
 dir - Name or Path of new directory.\n\
 Effect: Creates a new directory as in COMMAND.COM.\n\n";
 
-char nn[400]="\n\nSyntax: NN <old_name> <new_name>\n\
+char nn[400]="\n\nSyntax: MV <old_name> <new_name>\n\
 Parameters:\n\
 old_name - The path to the file you want to change. * and ? are OK\n\
 new_name - The path to the new filename. * and ? are OK\n\
@@ -115,7 +115,7 @@ COMSPEC - Path to DOG\n\
 string - The value that env_var should have.\n\
 Effect: Sets the specified env_var to string in the environment. Without arguments the command prints all env_vars to the screen.\n\n";
 
-char sz[400]="\n\nSyntax: SZ [-k¦-m]\n\
+char sz[400]="\n\nSyntax: SZ [-k|-m]\n\
 Parameters:\n\
 -k - give sizes in kb\n\
 -m - give sizes in Mb\n\
@@ -126,7 +126,7 @@ Parameters:\n\
 file_list - A space separated list of filenames.\n\
 Effect: Types the contents of the files in file_list to stdout.\n\\n\n";
 
-char vf[400]="\n\nSyntax: VF [ON¦OFF]\n\
+char vf[400]="\n\nSyntax: VF [ON|OFF]\n\
 Parameters:\n\
 ON - Set the DOS Verify flag to ON\n\
 OFF - Set the DOS Verify flag to OFF\n\
@@ -138,7 +138,7 @@ Effect: Prints the DOG and DOS version. Interprets OS/2 and IBM version correctl
 char xx[90]="\n\nEffect: Exit the current DOG shell.\n\
 	Works only if the shell is not a primary shell.\n\n";
 
-char * intern_commands[19]="br", "cc", "cd", "cl", "cp", "ct", "eh", "hh", "ls", "md", "nn", "rd","rm","se","sz","tp","vf","vr","xx";
+char * intern_commands[19]={"br", "cc", "cd", "cl", "cp", "ct", "eh", "hh", "ls", "md", "nn", "rd","rm","se","sz","tp","vf","vr","xx"};
 
 main(int argc, char ** argv){
 
@@ -165,7 +165,7 @@ EH\n\
 HH\n\
 LS\n\
 MD\n\
-NN\n\
+MV\n\
 RD\n\
 RM\n\
 SE\n\
@@ -218,4 +218,5 @@ else {
 	if(0==strcmp(intern_commands[18], argv[1]))
 		printf("%s\n", xx);
 }
+    return 0;
 }

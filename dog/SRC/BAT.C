@@ -180,7 +180,7 @@ printf("do_bat:0:bf:%x name=|%s|\n",&(*bf),bf->name);
 	free(fba);
 
 #ifdef bat_debug
-printf("do_bat:4:bf->line=%d,bf->nest=%d\n",bf->line,bf->nest);
+printf("do_bat:1:bf->line=%d,bf->nest=%d\n",bf->line,bf->nest);
 #endif
 
 
@@ -223,9 +223,8 @@ printf("do_bat:4:bf->line=%d,bf->nest=%d\n",bf->line,bf->nest);
 
 #ifdef parse_debug
 for(i=0;i<_NARGS;i++)
-printf("do_bat:0:bf->args[%d]=(%s)\n",i,bf->args[i]);
+printf("do_bat:2:bf->args[%d]=(%s)\n",i,bf->args[i]);
 #endif
-
 
 	parse_vars(com,p);
 	strcpy(com,p);
@@ -244,7 +243,7 @@ printf("do_bat:0:bf->args[%d]=(%s)\n",i,bf->args[i]);
     fclose(fp);
 
 #ifdef bat_debug
-printf("do_bat:5:ll=%d com=/%s/\n",i,com);
+printf("do_bat:3:ll=%d com=/%s/\n",i,com);
 #endif
 
 /* Check for ctrl break */
@@ -294,49 +293,47 @@ void do_batcommand(BYTE n)
     BYTE i;
 
 #ifdef bat_debug
-printf("n = %d\n",n);
+printf("do_batc:0:n = %d\n",n);
 for(i=0;i<n;i++)
-printf("bc:arg[%d]=(%s)\n",i,arg[i]);
+printf("do_batc:1:arg[%d]=(%s)\n",i,arg[i]);
 #endif
 
     if(strlen(arg[0]) == 2) {
         for(i=0;i< _BAT_COMS;i++) {
-#ifdef bat_debug
-printf("bc:batch[%d]=(%s)\r",i,batch[i]);
+#ifdef bat_debug_detail
+printf("do_batc:2:batch[%d]=(%s)\n",i,batch[i]);
 #endif
             if(!stricmp(arg[0], batch[i]))
                 break;
         }
 
         switch(i) {
-            case 0 :
-                do_bp(n);
-                return;
-            case 1 :
+            case B_C_CA :
                 do_ca( n);
                 return;
-            case 2 :
-                printf("%s\n",batch[i]);
+            case B_C_DO :
+                printf("do_batc:3:command=(%s)\n",batch[i]);
                 return;
-            case 3 :
-                printf("%s\n",batch[i]);
+            case B_C_44 :
+                printf("do_batc:3:command=(%s)\n",batch[i]);
                 return;
-            case 4 :
+            case B_C_GO :
                 do_go(n);
                 return;
-            case 5 :
-                printf("%s\n",batch[i]);
+            case B_C_IF :
+                printf("do_batc:3:command=(%s)\n",batch[i]);
                 return;
-            case 6 :
-                printf("%s\n",batch[i]);
+            case B_C_IN :
+                printf("do_batc:3:command=(%s)\n",batch[i]);
                 return;
-            case 7 :
+            case B_C_SH :
 				do_sh(n);
                 return;
-            case 8 :
-                printf("%s\n",batch[i]);
+            case B_C_TI :
+                printf("do_batc:3:command=(%s)\n",batch[i]);
                 return;
             default :
+                printf("do_batc:3:i=%d\n",i);
                 break;
 
         }

@@ -55,7 +55,7 @@ void do_sz(BYTE n)
         MOV mdx,DX
     }
 
-    d = (DWORD)max*(DWORD)mbx*(DWORD)mdx; 
+    d = (DWORD)max*(DWORD)mbx*(DWORD)mcx; 
     t = (DWORD)max*(DWORD)mcx*(DWORD)mdx;
 
     b = findfirst("*.*",fb,FA_NORMAL|FA_HIDDEN|FA_SYSTEM);
@@ -64,11 +64,11 @@ void do_sz(BYTE n)
             h += fb->ff_fsize;
             j++;
         }
-        else if (((fb->ff_attrib & FA_SYSTEM) == FA_SYSTEM)){
-            h += fb->ff_fsize;
-            j++;
+/*        else if (((fb->ff_attrib & FA_SYSTEM) == FA_SYSTEM)){
+            s += fb->ff_fsize;
+            i++;
         }
-
+*/
         else {
             s += fb->ff_fsize;
             i++;
@@ -84,12 +84,12 @@ void do_sz(BYTE n)
             h += fb->ff_fsize;
             j++;
         }
-
+/*
         else if (((fb->ff_attrib & FA_SYSTEM) == FA_SYSTEM)){
             h += fb->ff_fsize;
             j++;
         }
-
+*/
         else {
             s += fb->ff_fsize;
             i++;
@@ -106,10 +106,10 @@ void do_sz(BYTE n)
     }
 
     if (strnicmp(arg[1],"-m",2)==0) {
-        h /= 10264576;
-        s /= 10264576;
-        d /= 10264576;
-        t /= 10264576;
+        h /= 1048576;
+        s /= 1048576;
+        d /= 1048576;
+        t /= 1048576;
         strcpy(str,"mega");
     }
 
