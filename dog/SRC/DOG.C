@@ -153,7 +153,7 @@ BYTE initialize(int nargs, char *args[])
   BYTE far *s;
   BYTE far *d;
   BYTE far *ep;
-  WORD w,nenvsz,nenvseg,eoesz,o;
+  WORD w,nenvsz,nenvseg,eoesz,o,naliassz,naliasseg;
   
 /*
  for(i=0;i<_NCOMS;i++) { /* TEMPORARY ONLY!!! * /
@@ -202,30 +202,9 @@ BYTE initialize(int nargs, char *args[])
   while(*p!='\0') {
     if(*p=='-') {
       switch(*(++p)) {
-       case 'C': /* execute one command, then exit */
-				flags |= FLAG_C;
-				/* can't execute just one command on a permanent shell*/
-				if(sw_P == 1)
-        Xit = 3;
-				else
-        Xit = 2;
-				/* copy the arg vectors to the command */
-				for(i=1;i<nargs;i++) {
-					if(strnicmp(args[i],"-C",2)==0){
-						if(strlen(args[i]) > 2)
-            args[i] = &args[i][2];
-						else
-            i++;
-						break;
-					}
-				}
-				
-				for(j=0;i<nargs;i++,j++) {
-					arg[j] = args[i];
-				}
-				Xitable = eh = 1;
-				return j;
-				
+			 case 'A': /* set size of alias block */
+				flags |= FLAG_A;
+				break;
        case 'E': /* set the size of the environment */
 				flags |= FLAG_E;
 				nenvsz=0;
@@ -237,111 +216,20 @@ BYTE initialize(int nargs, char *args[])
 				if(nenvsz < 10) nenvsz=10;
 				if(nenvsz > 800) nenvsz=800;
 				
-				if((nenvsz << 4) < envsz) {
-					
-					asm mov AH,4ah      ;/*resize mem block BX=newsz ES=seg */
-					asm mov BX,nenvsz
-          asm mov DX,envseg
-          asm mov ES,DX
-          asm int 21h
-          asm jnc e_env_ok
-          
-          e_env_not_ok:
-					
-					asm sub ax,07h /*errors 7,8,9 possible*/
-          asm jz  e_block_dest
-          asm dec ax
-          asm jz  e_no_mem
-          asm jmp e_inv_mem
-          
-          /* probably never happens... remove? */
-          e_block_dest:
-					fprintf(stderr,"Environment block destroyed!\nBuilding new.\n");
-					e_inv_mem:
-					fprintf(stderr,"Invalid Environment!\nBuilding new.\n");
-					e_no_mem:
-					fprintf(stderr,"Environment block too small!\nBuilding new.\n");
-					
-					asm mov ah,49h
-          asm mov dx,envseg
-          asm mov es,dx
-          asm INT 21h
-          
-          rebuild = 1;
-					
-					break;
-					e_env_ok:
-					
-					nenvsz <<= 4; /* bytes */
-					eoesz = strlen(args[0]) + 4;
-					ep = MK_FP(envseg,0); /* point to beg of env*/
-#ifdef env_debug
-					printf("ep=%Fp\n",ep);
-#endif
-          
-					for(w = 0;(eoesz+w) < nenvsz;w++) {
-						if(*(ep+w) == 0){
-							o = w; /* save pos */
-#ifdef env_debug
-							printf("w=%u; ",w);
-#endif
-							
-						}
-					}
-					ep += o;
-#ifdef env_debug
-					printf("ep=%Fp\n",ep);
-#endif
-					
-					*(++ep) = 0;
-					*(++ep) = 1;
-					*(++ep) = 0;
-					q=args[0]; ep++;
-					while(*q != 0)
-          *(ep++)=*(q++);                        
-					*ep = 0;
-					
-				}
-				else {
-					
-					asm mov ah,48h
-          asm mov bx,nenvsz
-          asm int 21h
-          asm jc  l_e_not_ok
-          asm mov nenvseg,ax
-          
-          
-          goto l_e_ok;
-					l_e_not_ok:
-					goto e_env_not_ok;
-					l_e_ok:
-					
-					s = MK_FP(envseg,0);
-					d = MK_FP(nenvseg,0);
-					
-#ifdef env_debug
-					printf("envseg=%x envsz=%x\n",envseg,envsz);
-#endif
-					for(w=0;w<envsz;w++) {
-						*(d++) = *(s++);
-#ifdef env_debug
-						printf("s(%Fp)->%Fc d(%Fp)->%Fc\n",s,*s,d,*d);
-#endif
-					}
-					
-					
-					asm MOV ah,49h      ;/*free old env*/
-					asm MOV dx,envseg
-          asm MOV es,dx
-          asm INT 21h
-          
-          envsz = nenvsz;
-					envseg = nenvseg;
-					poke(_psp,ENVSEG_OFS,envseg);
-					
-				}
-				break;
+				nenvseg = envseg;
 				
+				nenvsz = mkudata(envseg, &nenvseg, envsz, nenvsz);
+				
+				if(nenvseg != envseg) {
+
+					rebuild = 1;
+					
+				}
+				envsz = nenvsz;
+				envseg = nenvseg;
+				poke(_psp,ENVSEG_OFS,envseg);
+
+				break;
 				
        case 'P':/* make a permanent shell */
 				flags |= FLAG_P;
@@ -355,24 +243,11 @@ BYTE initialize(int nargs, char *args[])
 				envsz /= 16; /*paragraphs*/
 				if(envsz < 10) envsz=10;
 				if(envsz > 800) envsz=800;
+
+				nenvseg = envseg;
 				
-				p_env_retry:
-				asm MOV bx,envsz
-        
-        p_env_not_mem_retry:
+				nenvsz = mkudata(envseg, &nenvseg, envsz, nenvsz);
 				
-				asm MOV ah,48h
-        asm INT 21h
-        asm jnc p_env_ok
-        asm sub ax,7
-        asm jz p_env_retry
-        asm dec ax
-        asm jz p_env_not_mem_retry
-        
-        p_env_ok:
-				
-				asm MOV envseg,ax
-        
         poke(_psp,ENVSEG_OFS,envseg);
 				
 				get_int();
@@ -1255,6 +1130,10 @@ void do_command( BYTE na)
 #endif
     switch(i) {
 
+		 case C_AL :
+			do_al();
+			break;
+
      case C_CC :
       
       break;
@@ -1345,6 +1224,7 @@ void do_command( BYTE na)
  **************************************
 *************************************/
 #ifndef port
+#include "al.c"
 #include "cc.c"
 #include "cmrd.c"
 #include "ct.c"

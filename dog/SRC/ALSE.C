@@ -26,8 +26,48 @@ History
 2002-03-07 - extended the setevar and getevar functions to accept a third
              parameter: the segment to work in. Renamed them to setudata and
              getudata respectively. - WB
+2002-03-08 - added mkudata().
+2002-03-10 - added do_al(). It works like do_se().
 
 **************************************************************************/
+
+void do_al( BYTE n)
+{
+  BYTE b,*p;
+  WORD w;
+  BYTE far *aliasp
+	
+	
+  if(n == 1) {
+    printf("alias @ %Fp %u(%xh) bytes\n",aliasp,aliassz,aliassz);
+    for(w=0;w<aliassz;w++) {
+      if(*(aliasp+w)== 0) {
+        if(*(aliasp+w+1) == 0)
+        break;
+        else
+        puts("");
+      }
+      else
+      printf("%Fc",*(aliasp+w));
+      
+    }
+    printf("\n\n");
+  }
+  else {
+    p = malloc(200);
+    p[0] = '\0';
+    for(b=2;b<n;b++) {
+      strcat(p,arg[b]);
+      strcat(p," ");
+    }
+    if (strlen(p) == 0) p = NULL;
+    setevar(arg[1],p);
+    free(p);
+  }
+  
+}
+
+/**************************************************************************/
 
 void do_se( BYTE n)
 {
@@ -35,7 +75,7 @@ void do_se( BYTE n)
   WORD w;
   
   if(n == 1) {
-    printf("env @ %Fp %u(%xh) bytes\n",_env,envsz,envsz);
+    printf("environment @ %Fp %u(%xh) bytes\n",_env,envsz,envsz);
     for(w=0;w<envsz;w++) {
       if(*(_env+w)== 0) {
         if(*(_env+w+1) == 0)
@@ -238,4 +278,105 @@ BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg)
   free(b);
   
   return 0;
+}
+
+/****************************************************************************/
+
+BYTE mkudata(WORD oldseg, WORD *nseg, WORD bsz, WORD nbsz);
+{
+	WORD w, newseg;
+	BYTE far *p,*s,*d;
+
+	newseg = *nseg:
+	
+	if((nbsz < bsz) || (bsz == 0)) { /* rebuild */
+		
+		asm mov AH,4ah      ;/*resize mem block BX=newsz ES=seg */
+		asm mov BX,nbsz
+		asm mov DX,oldseg
+		asm mov ES,DX
+		asm int 21h
+		asm jc e_b_not_ok
+		asm jmp e_b_ok
+		
+		e_b_not_ok:
+		
+		asm sub ax,07h /*errors 7,8,9 possible*/
+		asm jz  e_block_dest
+		asm dec ax
+		asm jz  e_no_mem
+		asm jmp e_inv_mem
+		
+		e_no_mem:
+		fprintf(stderr,"Insufficient memory to allocate!\nReallocating\n");
+		/* bx contains max available sz */
+		asm mov nbsz,bx
+		
+		/* probably never happens... remove? */
+		e_block_dest:
+ 		 fprintf(stderr,"Memory controll block destroyed.\nReallocating\n");
+		e_inv_mem:
+		 fprintf(stderr,"Invalid Address to Memory block\nReallocating\n");
+
+		asm mov ah,49h
+		asm mov dx,oldseg
+		asm mov es,dx
+		asm INT 21h
+		
+		asm mov bx,nbsz 
+		asm mov ah.48h
+		asm int 21h
+		asm jnc e_b_bok
+		asm jmp e_b_not_ok
+		
+		e_b_bok:
+		asm mov newseg,ax
+		e_b_ok:
+
+		p = MK_FP(bseg,0); /* point to beg of env*/
+#ifdef b_debug
+		printf("ep=%Fp\n",ep);
+#endif
+		*(p) = 0;
+		*(++p) = 0;
+		
+		*nseg = newseg;
+		return nbsz;
+	}
+	else {
+		asm mov bx,nbsz
+		e_b3_not_ok:
+		asm mov ah,48h
+		asm int 21h
+		asm jc e_b2_ok
+		asm mov cx,bsz
+		asm cmp cx,bx 
+		asm jlt  e_b2_not_ok
+		asm jmp e_b3_not_ok 
+		e_b2_ok:
+		asm mov newseg,ax
+
+		s = MK_FP(bseg,0);
+		d = MK_FP(nbseg,0);
+
+		nbsz <<= 4; /* bytes */
+
+#ifdef b_debug
+		printf("newseg=%x nbsz=%x\n",newseg,nbsz);
+#endif
+		for(w=0;w<nbsz;w++) {
+			*(d++) = *(s++);
+#ifdef b_debug
+			printf("s(%Fp)->%Fc d(%Fp)->%Fc\n",s,*s,d,*d);
+#endif
+		}
+		asm MOV ah,49h      ;/*free old b*/
+		asm MOV dx,oldseg
+		asm MOV es,dx
+		asm INT 21h
+
+		*nseg = newseg;
+		return (nbsz >> 4);
+		
+	}
 }
