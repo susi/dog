@@ -218,14 +218,14 @@ void do_ls(void)
 		r = findfirst(ls_f.patt[j], fb,ls_f.attrs);
 
 #ifdef ls_debug
-		fprintf(stderr,"do_ls: r=%d\n",r);
+		fprintf(stderr,"do_ls:4: r=%d\n",r);
 #endif
 
 		while(1) {
 
 #ifdef ls_debug
-fprintf(stderr,"do_ls: r=%d\n",r);
-fprintf(stderr,"do_ls: r=%d\ndate:%d time:%d\n",r,fb->ff_fdate,fb->ff_ftime);
+fprintf(stderr,"do_ls:5: r=%d\n",r);
+fprintf(stderr,"do_ls:6: r=%d\ndate:%d time:%d\n",r,fb->ff_fdate,fb->ff_ftime);
 #endif
 
 
@@ -241,7 +241,7 @@ fprintf(stderr,"do_ls: r=%d\ndate:%d time:%d\n",r,fb->ff_fdate,fb->ff_ftime);
 		}
 
 #ifdef ls_debug
-		fprintf(stderr,"do_ls: r=%d\n",r);
+		fprintf(stderr,"do_ls:7: r=%d\n",r);
 #endif
 	 if(m == 1) free(ls_f.patt[j]); /* if patt[j] was previously malloced */
 
