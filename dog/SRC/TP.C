@@ -37,7 +37,7 @@ void do_tp( BYTE n)
         return;
     }
     else if(n >1) {
-    fb = malloc(sizeof(struct ffblk));
+        fb = malloc(sizeof(struct ffblk));
         for(i=1;i<n;i++) {
             r = findfirst(arg[i],fb,FA_NORMAL);
             if(r==0) {
@@ -108,11 +108,9 @@ void do_tp( BYTE n)
             else {
                 fprintf(stderr,"\n****File not found: %s (Unknown error(%d))\n",arg[i],i);
             }
-        }
+        }     /* end of for loop */
 
-    }
+    }     /* end of the major else statement */
     free(fb);
     return;
-}
-
-
+}     /* end of main */
