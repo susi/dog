@@ -26,6 +26,10 @@ History
 
 **************************************************************************/
 
+#ifdef port
+#include "dog.h"
+#endif
+
 void do_tp( BYTE n)
 {
     FILE *fp;

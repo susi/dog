@@ -31,27 +31,30 @@ History
 
 **************************************************************************/
 
+#ifdef port
+#include "dog.h"
+#endif
+
 void do_vr(void)
 {
     WORD w,DR_vr;
     BYTE b,DOS_ma=3,DOS_mi=30,DOS_OEM=0xFD;
 
-    asm {
-        MOV ax,3000h
-        INT 21h
-        MOV DOS_ma ,al
-        MOV DOS_mi ,ah
-        MOV DOS_OEM,bh
-        MOV b,bl
-        MOV w,cx
-        mov ax, 4452h
-        stc
-        int 21h
-        jc vr_NODR
-        cmp ax, 4452h
-        je vr_NODR
-        mov DR_vr,ax
-    }
+    asm MOV ax,3000h
+    asm INT 21h
+		asm MOV DOS_ma ,al
+		asm MOV DOS_mi ,ah
+		asm MOV DOS_OEM,bh
+		asm MOV b,bl
+		asm MOV w,cx
+		asm MOV ax, 4452h
+    asm STC
+    asm INT 21h
+    asm JC vr_NODR
+    asm cmp ax, 4452h
+    asm JE vr_NODR
+		asm MOV DR_vr,ax
+    
     printf("DR-DOS Product 0x%x\n\tProviding DOS %u.%u interface\nDog version %u.%u\n",DR_vr,DOS_ma,DOS_mi,DOG_ma,DOG_mi);
     return;
 
@@ -63,13 +66,11 @@ void do_vr(void)
         case 5 :
         case 6 :
         case 7 :
-            asm{
-                mov ax,3306h
-                int 21h
-                cmp bh,50
-                je vr_NT
-                jmp vr_DOS
-            }
+			       asm MOV ax,3306h
+             asm INT 21h
+             asm CMP bh,50
+             asm JE vr_NT
+             asm JMP vr_DOS
         vr_NT:
             printf("DOS Command Prompt under Windows NT\nDog version %u.%u\n",DOG_ma,DOG_mi);
             break;
@@ -122,5 +123,4 @@ void do_vr(void)
             printf("Unknown DOS version %u.%u\nDog version %u.%u\n",DOS_ma,DOS_mi,DOG_ma,DOG_mi);
     }
 }
-
 

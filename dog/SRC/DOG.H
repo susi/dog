@@ -50,7 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define EXE 2
 #define DOG 4
 
-/* we want to use the ones in dos.h. not in dir.h */
+/* we want to use the ones in dos.h. not in dir.h NOT
 #define findfirst(A,B,C) _dos_findfirst(A,C,B)
 #define findnext _dos_findnext
 #define ffblk find_t
@@ -59,6 +59,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ff_fdate  wr_date
 #define ff_fsize  size 
 #define ff_name	  name
+*/
+
+#ifndef FA_NORMAL
+#define FA_NORMAL 0x0
+#endif
 
 #ifdef MK_FP
 #undef MK_FP
@@ -156,9 +161,9 @@ C:\DOG>_
 
 #define PPID_OFS 0x0016
 #define ENVSEG_OFS 0x002C
-#define DOG_VER 0072h
+#define DOG_VER 0073h
 #define DOG_MA 0
-#define DOG_MI 72
+#define DOG_MI 73
 
 /* Define Global Variables */
 BYTE DOG_ma = DOG_MA, DOG_mi = DOG_MI;

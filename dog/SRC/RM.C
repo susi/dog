@@ -22,9 +22,14 @@ Developers:
 Wolf Bergenheim (WB)
 
 History
-18.03.00 - Extracted from DOG.C - WB
+18.03.00 - Extracte Dbbbbbbbbeeee ,mk”lo.-p„*
+ from DOG.C - WB
 
 **************************************************************************/
+
+#ifdef port
+#include "dog.h"
+#endif
 
 void do_rm(BYTE n)
 {
@@ -38,11 +43,11 @@ void do_rm(BYTE n)
             if ((p=strstr(arg[i],"*.*"))!=NULL) {
                 printf("Removing %s - Are you sure(Y/N)? ",arg[i]);
                 /* Get character */
-                asm{
-                    mov ah,1
-                    int 21h
-                    mov r,al
-                }
+
+                asm mov ah,1
+                asm int 21h
+                asm mov r,al
+                
                 putchar('\n');
                 putchar('\r');
             

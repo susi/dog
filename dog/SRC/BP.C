@@ -26,9 +26,14 @@ History
 
 */
 
+#ifdef port
+#include "dog.h"
+#endif
+
 void do_bp(BYTE n)
 {
 	WORD t,f;
+
 #ifdef bat_debug
 	BYTE b;
 printf("n = %u\n",n);

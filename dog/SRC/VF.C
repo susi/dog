@@ -26,18 +26,22 @@ History
 
 ***************************************************************************/
 
+#ifdef port
+#include "dog.h"
+#endif
+
 void do_vf(BYTE n)
 {
 
     if (n==1) {
         printf("Verify is ");
-        asm{
-            MOV ah,54h  /*  Get verify flag */
-            INT 21h
-            MOV dl,01h
-            CMP al,dl
-            JE  on
-            }
+
+			asm MOV ah,54h  /*  Get verify flag */
+      asm INT 21h
+			asm MOV dl,01h
+      asm CMP al,dl
+      asm JE  on
+
         puts("OFF");
         return;
         on:
@@ -46,18 +50,18 @@ void do_vf(BYTE n)
     }
     if (n==2) {
         if (stricmp(arg[1],"ON")==0) {
-            asm {
-                MOV ah,2eh  /*Set Verify flag*/
-                MOV al,01h  /* to on*/
-                INT 21
-            }
+					
+					asm MOV ah,2eh  /*Set Verify flag*/
+					asm MOV al,01h  /* to on*/
+					asm INT 21
+
         }
         else if (stricmp(arg[1],"OFF")==0) {
-            asm {
-                MOV ah,2eh  /* Set Verify flag */
-                MOV al,00h  /* to off */
-                INT 21
-            }
+					
+					asm MOV ah,2eh  /* Set Verify flag */
+					asm MOV al,00h  /* to off */
+					asm INT 21
+
         }
         else {
             puts("You MUST specify either ON or OFF.");

@@ -139,11 +139,6 @@ History
 #include "bat.c"
 #include "ints.c"
 
-/*
-#include "dog.h"
-#include "bat.c"
-#include "ints.c"
-*/
 
 BYTE initialize(int nargs, char *args[])
 {
@@ -233,22 +228,22 @@ printf("envsz=%ux\n",envsz);
                     if(nenvsz > 800) nenvsz=800;
 
                     if((nenvsz << 4) < envsz) {
-                        asm {
-                            mov AH,4ah      ;/*resize mem block BX=newsz ES=seg */
-                            mov BX,nenvsz
-                            mov DX,envseg
-                            mov ES,DX
-                            int 21h
-                            jnc e_env_ok
-                        }
+
+                        asm mov AH,4ah      ;/*resize mem block BX=newsz ES=seg */
+                        asm mov BX,nenvsz
+                        asm mov DX,envseg
+                        asm mov ES,DX
+                        asm int 21h
+                        asm jnc e_env_ok
+
                         e_env_not_ok:
-                        asm {
-                            sub ax,07h /*errors 7,8,9 possible*/
-                            jz  e_block_dest
-                            dec ax
-                            jz  e_no_mem
-                            jmp e_inv_mem
-                        }
+
+                        asm sub ax,07h /*errors 7,8,9 possible*/
+                        asm jz  e_block_dest
+                        asm dec ax
+                        asm jz  e_no_mem
+                        asm jmp e_inv_mem
+
                         /* probably never happens... remove? */
                         e_block_dest:
                         fprintf(stderr,"Environment block destroyed!\nBuilding new.\n");
@@ -256,12 +251,12 @@ printf("envsz=%ux\n",envsz);
                         fprintf(stderr,"Invalid Environment!\nBuilding new.\n");
                         e_no_mem:
                         fprintf(stderr,"Environment block too small!\nBuilding new.\n");
-                        asm {
-                            mov ah,49h
-                            mov dx,envseg
-                            mov es,dx
-                            int 21h
-                        }
+
+                        asm mov ah,49h
+                        asm mov dx,envseg
+                        asm mov es,dx
+                        asm INT 21h
+
                         rebuild = 1;
     
                         break;
@@ -298,13 +293,13 @@ printf("ep=%Fp\n",ep);
 
                     }
                     else {
-                        asm {
-                            mov ah,48h
-                            mov bx,nenvsz
-                            int 21h
-                            jc  l_e_not_ok
-                            mov nenvseg,ax
-                        }
+
+                        asm mov ah,48h
+                        asm mov bx,nenvsz
+                        asm int 21h
+                        asm jc  l_e_not_ok
+                        asm mov nenvseg,ax
+
 
                         goto l_e_ok;
                         l_e_not_ok:
@@ -324,12 +319,12 @@ printf("s(%Fp)->%Fc d(%Fp)->%Fc\n",s,*s,d,*d);
 #endif
                         }
 
-                        asm {
-                            mov ah,49h      ;/*free old env*/
-                            mov dx,envseg
-                            mov es,dx
-                            int 21h
-                        }
+
+                        asm MOV ah,49h      ;/*free old env*/
+                        asm MOV dx,envseg
+                        asm MOV es,dx
+                        asm INT 21h
+
                         envsz = nenvsz;
                         envseg = nenvseg;
                         poke(_psp,ENVSEG_OFS,envseg);
@@ -351,50 +346,49 @@ printf("s(%Fp)->%Fc d(%Fp)->%Fc\n",s,*s,d,*d);
                     if(envsz > 800) envsz=800;
                     
                     p_env_retry:
-                    asm {
-                        mov bx,envsz
-                    }
+                    asm MOV bx,envsz
+
                     p_env_not_mem_retry:
-                    asm {
-                        mov ah,48h
-                        int 21h
-                        jnc p_env_ok
-                        sub ax,7
-                        jz p_env_retry
-                        dec ax
-                        jz p_env_not_mem_retry
-                    }
+
+                    asm MOV ah,48h
+                    asm INT 21h
+                    asm jnc p_env_ok
+                    asm sub ax,7
+                    asm jz p_env_retry
+                    asm dec ax
+                    asm jz p_env_not_mem_retry
+                    
                     p_env_ok:
-                    asm {
-                        mov envseg,ax
-                    }
+                    
+                    asm MOV envseg,ax
+                    
                     poke(_psp,ENVSEG_OFS,envseg);
 
                     get_int();
                     set_int();
 
                     /* make int 2e point to DOG2eFunc */
-                    asm {
+                    
                         /* save */
-                        mov ax,352eh
-                        mov i2e_o,bx
-                        mov i2e_s,es
-                        int 21h
+                    asm MOV ax,352eh
+                    asm MOV i2e_o,bx
+                    asm MOV i2e_s,es
+                    asm INT 21h
                         /* set */
-                        mov ax,252eh
-                        mov dx,offset DOG2eFunc
-                        push cs
-                        pop es
-                        int 21h
+                    asm MOV ax,252eh
+                    asm MOV dx,offset DOG2eFunc
+                    asm push cs
+                    asm pop es
+                    asm INT 21h
                         /* point int 22 termination address at DOG loop*/
-                        mov ax,2522h
-                        mov dx,offset DOG_loop
-                        mov i22_o,dx
-                        push cs
-                        pop ds
-                        mov i22_s,ds
-                        int 21h
-                    }
+                    asm MOV ax,2522h
+                    asm MOV dx,offset DOG_loop
+                    asm MOV i22_o,dx
+                    asm push cs
+                    asm pop ds
+                    asm MOV i22_s,ds
+                    asm INT 21h
+                    
 
                     /* put int handlers in to PSP */
 
@@ -461,145 +455,7 @@ printf("s(%Fp)->%Fc d(%Fp)->%Fc\n",s,*s,d,*d);
 
 /**************************************************************************/
 
-void scankey(BYTE *p,BYTE len)
-{
-    BYTE *t,curr,start,scan,key;
 
-    asm{
-        mov AH,03h
-        xor BH,BH
-        int 10h
-        mov start,DL
-        mov curr,DL
-    }
-    KBD_LOOP:
-    asm{
-        MOV AH,01h
-        INT 16h
-        JZ KBD_LOOP
-        MOV scan,AH
-        MOV key,AL
-    }
-
-    switch(key) {
-        case '\0':
-            switch(scan) {
-                case 0x48 : /*Up arrow*/
-                    break;
-                case 0x50 : /*down arrow*/
-                    break;
-
-                case 0x4B : /*left arrow*/
-                    asm{
-                        MOV AH,03h
-                        XOR BH,BH
-                        INT 10h             /*get cursor pos*/
-                        MOV AL,start           /*get start pos of cmd line*/
-                        CMP DL,AL           /*are we in the start?*/
-                        JE  left_end        /*yes*/
-                        CMP DL,00h          /*are we at poss 0?*/
-                        JNE left_same_row   /*no*/
-                        DEC DH              /*cursor goes up one line*/
-                        MOV DL,50h          /*and to the end*/
-                        JMP left_doit
-                    }
-                    left_same_row:          /*we are not in the beg of a row*/
-                    asm{DEC DL;}            /*cursor goes back one step*/
-                    left_doit:
-                    asm{
-                        MOV AH,02h
-                        INT 10h             /*move cursor to new pos*/
-                    }
-                    p--;
-                    left_end:
-                    break;
-
-                case 0x4D : /*Right arrow*/
-                    if ((curr - start < len) && ((p+curr-start+1) !='\0'))  {
-                        p++;
-                        curr++;
-                        asm{
-                            MOV AH,03h
-                            XOR BH,BH
-                            INT 10h
-                            CMP DL,50h      /*is it the end of the line?*/
-                            JNE right_same_row /*yes*/
-                            INC DH
-                            MOV DL,00h      /* move cursor to nextline pos 0*/
-                            JMP right_doit
-                        }
-                        right_same_row:
-                        asm{INC DL;}
-                        right_doit:
-                        asm{
-                            MOV AH,02h
-                            INT 10h         /* move cursor to new pos*/
-                        }
-                    }
-                    break;
-                case 0x3B : /*F1*/
-                    break;
-                case 0x3C : /*F2*/
-                    break;
-                case 0x3D : /*F3*/
-                    break;
-                case 0x3E : /*F4*/
-                    break;
-                case 0x3F : /*F5*/
-                    break;
-                case 0x40 : /*F6*/
-                    break;
-                case 0x41 : /*F7*/
-                    break;
-                case 0x42 : /*F8*/
-                    break;
-                case 0x43 : /*F9*/
-                    break;
-                case 0x44 : /*F10*/
-                    break;
-
-            }
-            break;
-
-        case '\b':
-            t = p+1;
-            *p = '\0';
-            strcat(p,t);
-            asm{
-                MOV AH,03h
-                XOR BH,BH
-                INT 10h             /*get cursor pos*/
-                PUSH DX             /*save Pos*/
-            }
-            printf("%s",t);
-            asm {
-                MOV AH,02h
-                XOR BH,BH
-                POP DX
-                INT 10h             /*restore cursor*/
-            }
-            break;
-
-        case '\r':
-            putchar('\n');
-            *p = '\0';
-            return;
-
-        default:
-            if((curr-start) < len) {
-                putchar(key);
-                *p = key;
-                p++;
-                curr++;
-            }
-            else
-                putchar('\x07');
-    }
-
-    asm{
-        JMP KBD_LOOP
-    }
-}
 
 /**************************************************************************/
 
@@ -849,11 +705,11 @@ printf("redir:6:c(%s) fin.name(%s)\n",c,fin.name);
 BYTE getcur(BYTE *p)
 {
     BYTE d,t;
-    asm {
-        MOV ax,1900h
-        INT 21h
-        MOV d,al
-    }
+
+    asm MOV ax,1900h
+    asm INT 21h
+    asm MOV d,al
+
     t = getcurdir(0,p);
 
     if (t!=0) {
@@ -930,14 +786,14 @@ void printprompt(void)
                     break;
                 case  'd':
                 case  'D':
-                    asm {
-                        MOV ah,2ah
-                        INT 21h
-                        MOV dow,AL  /*day of week*/
-                        MOV yr,CX     /*year*/
-                        MOV mo,DH     /*month*/
-                        MOV day,DL     /*day*/
-                    }
+
+                    asm MOV ah,2ah
+                    asm INT 21h
+                    asm MOV dow,AL  /*day of week*/
+                    asm MOV yr,CX     /*year*/
+                    asm MOV mo,DH     /*month*/
+                    asm MOV day,DL     /*day*/
+
                     switch(dow) {
                         case 0 :
                             printf("Sun ");
@@ -967,14 +823,14 @@ void printprompt(void)
                     break;
                 case  'c':
                 case  'T':
-                  asm {
-                      MOV ah,2ch
-                      INT 21h
-                      MOV h,ch     /*hours*/
-                      MOV mi,cl     /*minutes*/
-                      MOV s,dh     /*seconds*/
-                      MOV ms,dl     /*milliseconds or hundreds*/
-                  }
+
+                  asm MOV ah,2ch
+                  asm INT 21h
+                  asm MOV h,ch     /*hours*/
+                  asm MOV mi,cl     /*minutes*/
+                  asm MOV s,dh     /*seconds*/
+                  asm MOV ms,dl     /*milliseconds or hundreds*/
+
                   printf("%d.%02d.%02d,%02d",h,mi,s,ms);
                   break;
               default :
@@ -1021,9 +877,8 @@ int main(int nargs, char *argv[])
 /*******************************.D.O.G. .L.O.O.P****************************/
                                                                          /**/
     for(EVER) {                                                          /**/
-        asm {                                                            /**/
-            DOG_loop:                                                    /**/
-        }                                                                /**/
+                                                                         /**/
+        asm DOG_loop:                                                    /**/
                                                                          /**/
                                                                          /**/
         if(fout.redirect) {                                              /**/
@@ -1311,7 +1166,7 @@ fprintf(stderr,"\n");
 **                                  **
 **************************************
 *************************************/
-
+#ifndef port
 #include "bp.c"
 #include "br.c"
 #include "cc.c"
@@ -1330,7 +1185,7 @@ fprintf(stderr,"\n");
 #include "vf.c"
 #include "vr.c"
 #include "xx.c"
-
+#endif
 /*************************************
 **************************************
 **                                  **
@@ -1639,42 +1494,42 @@ WORD my_exe(BYTE *prog, BYTE *args){
     if ((args = parsfnm(args, &fcb1, 1)) != NULL)
           parsfnm(args, &fcb2, 1);
 
-    asm{
-        push    si
-        push    di
-        push    ds
+    
+    asm push    si
+    asm push    di
+    asm push    ds
 
-        mov     dx, prog              /* load file name */
-        push    ds
-        pop     es
-        mov     bx, eb                /* load parameter block */
-        mov     ax, 4b00h
+    asm MOV     dx, prog              /* load file name */
+    asm push    ds
+    asm pop     es
+    asm MOV     bx, eb                /* load parameter block */
+    asm MOV     ax, 4b00h
 
-        mov     Word Ptr cs:[saveSP], sp
-        mov     Word Ptr cs:[saveSS], ss
-        int     21h
-        cli
-        mov     ss, Word Ptr cs:[saveSS]
-        mov     sp, Word Ptr cs:[saveSP]
-        sti
+    asm MOV     Word Ptr cs:[saveSP], sp
+    asm MOV     Word Ptr cs:[saveSS], ss
+    asm INT     21h
+    asm cli
+    asm MOV     ss, Word Ptr cs:[saveSS]
+    asm MOV     sp, Word Ptr cs:[saveSP]
+    asm sti
 
-        jc      exec_error  /*if there was an error, the error code is in AX*/
-        xor     ax, ax      /*otherwise, clear AX */
-        mov     ah,4dh
-        int     21h
-        jmp     exec_OK
-    }
+    asm jc      exec_error  /*if there was an error, the error code is in AX*/
+    asm xor     ax, ax      /*otherwise, clear AX */
+    asm MOV     ah,4dh
+    asm INT     21h
+    asm jmp     exec_OK
+    
     exec_error:
-    asm{
-        mov        ah,77h
-    }
+    
+    asm MOV        ah,77h
+
     exec_OK:
-    asm{
-        mov     rc,ax
-        pop     ds
-        pop     di
-        pop     si
-    }
+    
+    asm MOV     rc,ax
+    asm pop     ds
+    asm pop     di
+    asm pop     si
+
     return rc;
 }
 
@@ -1690,15 +1545,15 @@ void do_chdr(BYTE dr)
 
     d = toupper(dr) - 'A';
 
-    asm {
-        MOV ah,0eh
-        MOV dl,d
-        INT 21h
-        MOV ah,19h
-        INT 21h
-        CMP al,dl
-        JE  chdr_yes
-    }
+
+    asm MOV ah,0eh
+    asm MOV dl,d
+    asm INT 21h
+    asm MOV ah,19h
+    asm INT 21h
+    asm CMP al,dl
+    asm JE  chdr_yes
+
     puts("Invalid Drive");
     chdr_yes:
     return;

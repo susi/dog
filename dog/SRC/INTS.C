@@ -20,71 +20,71 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 void get_int(void)
 {
-	asm{
-		mov ax,3523h
-		int 21h
-		mov i23_o,bx
-		mov i23_s,es
-		mov ax,3524h
-		int 21h
-		mov i24_o,bx
-		mov i24_s,es
-        int 21h
-	}
+
+	asm MOV ax,3523h
+	asm INT 21h
+	asm MOV i23_o,bx
+	asm MOV i23_s,es
+	asm MOV ax,3524h
+	asm INT 21h
+	asm MOV i24_o,bx
+	asm MOV i24_s,es
+  asm INT 21h
+
 	return;
 }
 
 void set_int(void)
 {
-	asm{
-		mov ax,2523h
-		mov dx,offset CBreak
-		push cs
-		pop es
-		int 21h
-		mov ax,2524h
-		mov dx,offset CritErr
-		push cs
-		pop es
-		int 21h
-	}
+
+	asm MOV ax,2523h
+	asm MOV dx,offset CBreak
+	asm push cs
+	asm pop es
+	asm INT 21h
+	asm MOV ax,2524h
+	asm MOV dx,offset CritErr
+  asm push cs
+	asm pop es
+	asm INT 21h
+	
 	return;
-	asm {
-CBreak:
-        push ax
-        push ds
-        push bx
-        mov ah, 51h
-        int 21h
-        cmp cs:_psp, bx
-        je localCBreak
-        pop bx
-        pop ds
-      	pop ax
-		pop bp
-        stc
-		iret /*db 0cbh*/
-    }
-    localCBreak:
-    asm{
-        pop bx
-        mov ax, cs
-        mov ds, ax
-        push ax
-        mov al, 01h
-        mov cBreak, al
-        pop ax
-        pop ds
-        pop ax
-        clc
-        pop bp
-	    iret /*    db 0cah*/
-        dw 0200h
-CritErr:
- 		iret
-DOG2eFunc:
-		mov ax,DOG_VER
-		iret
-	}
+
+	asm CBreak:
+	asm push ax
+		asm push ds
+		asm push bx
+		asm MOV ah, 51h
+		asm INT 21h
+		asm CMP cs:_psp, bx
+		asm je localCBreak
+		asm pop bx
+		asm pop ds
+		asm pop ax
+		asm pop bp
+    asm stc
+		asm iret /*db 0cbh*/
+    
+	  localCBreak:
+	
+	  asm pop bx
+		asm MOV ax, cs
+		asm MOV ds, ax
+		asm push ax
+		asm MOV al, 01h
+		asm MOV cBreak, al
+		asm pop ax
+		asm pop ds
+		asm pop ax
+		asm clc
+    asm pop bp
+		asm iret /*    db 0cah*/
+		asm dw 0200h
+		asm CritErr:
+ 		asm iret
+		asm DOG2eFunc:
+	asm MOV ax,DOG_VER
+		asm iret
+ 
 }
 

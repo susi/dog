@@ -28,16 +28,16 @@ History
 
 void do_cl(void)
 {
-    asm{
-            MOV ax,0600h
-            MOV bh,07h
-            MOV cx,0000h        /* (0,0) to*/
-            MOV dx,5079h        /* (50,79) */
-            INT 10h             /*Clear screen*/
-            MOV ah,02h
-            MOV bh,00h
-            MOV dx,0000h        /* (0,0)*/
-            INT 10h             /*Move cursor to upper left corner*/
-        }
+	
+	  asm MOV ax,0600h
+		asm MOV bh,07h
+		asm MOV cx,0000h        /* (0,0) to*/
+		asm MOV dx,5079h        /* (50,79) */
+		asm INT 10h             /*Clear screen*/
+		asm MOV ah,02h
+		asm MOV bh,00h
+		asm MOV dx,0000h        /* (0,0)*/
+		asm INT 10h             /*Move cursor to upper left corner*/
+    
 }
 

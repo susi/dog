@@ -210,5 +210,3 @@ void setevar(BYTE *varname, BYTE *value)
 
     return;
 }
-
-

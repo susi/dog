@@ -28,6 +28,10 @@ History
 
 */
 
+#ifdef port
+#include "dog.h"
+#endif
+
 void do_cd( BYTE n)
 {
     BYTE i,j,k,dir[80],*p,*q;
@@ -109,48 +113,48 @@ void do_mrd(BYTE n)
     }
 
     f = arg[0][0];        /* check the first letter to determine what func*/
-    asm {
-        mov AL,f
-        cmp AL,43h        /* C */
-        je    do_mrd_cd
-        cmp AL,4dh        /* M */
-        je    do_mrd_md
-        cmp AL,52h        /* R */
-        je    do_mrd_rd
-        cmp AL,63h        /* c */
-        je    do_mrd_cd
-        cmp AL,6dh        /* m */
-        je    do_mrd_md
-        cmp AL,72h        /* r */
-        je    do_mrd_rd
-    }
+
+    asm mov AL,f
+    asm cmp AL,43h        /* C */
+    asm je    do_mrd_cd
+    asm cmp AL,4dh        /* M */
+    asm je    do_mrd_md
+    asm cmp AL,52h        /* R */
+    asm je    do_mrd_rd
+    asm cmp AL,63h        /* c */
+    asm je    do_mrd_cd
+    asm cmp AL,6dh        /* m */
+    asm je    do_mrd_md
+    asm cmp AL,72h        /* r */
+    asm je    do_mrd_rd
+
     do_mrd_md:            /* mkdir */
-    asm {
-        mov AH,39h
-        jmp do_mrd_doit
-    }
+
+    asm mov AH,39h
+    asm jmp do_mrd_doit
+
     do_mrd_rd:            /* rmdir */
-    asm {
-        mov AH,3ah
-        jmp do_mrd_doit
-    }
+
+    asm mov AH,3ah
+    asm jmp do_mrd_doit
+
     do_mrd_cd:            /* chdir */
-    asm {
-        mov AH,3bh
-    }
+
+    asm mov AH,3bh
+
     do_mrd_doit:
-    asm {
-        mov DX,arg[2]    /*=arg[1] = first arg after command */
-        int 21h
-        jnc    do_mrd_OK
-        cmp AL,03h
-        je    do_mrd_pnf
-        cmp AL,05h
-        je    do_mrd_ad
-        cmp AL,06h
-        je    do_mrd_ih
-        jmp do_mrd_rcd
-    }
+
+    asm mov DX,arg[2]    /*=arg[1] = first arg after command */
+    asm int 21h
+    asm jnc    do_mrd_OK
+    asm cmp AL,03h
+    asm je    do_mrd_pnf
+    asm cmp AL,05h
+    asm je    do_mrd_ad
+    asm cmp AL,06h
+    asm je    do_mrd_ih
+    asm jmp do_mrd_rcd
+
     do_mrd_pnf:
     puts("Invalid path.");
     return;

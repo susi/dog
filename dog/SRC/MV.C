@@ -30,6 +30,10 @@ History
 
 **************************************************************************/
 
+#ifdef port
+#include "dog.h"
+#endif
+
 WORD newname(BYTE *oldname, BYTE *newname);
 
 void do_mv(BYTE n)
@@ -137,16 +141,16 @@ printf("%s:odir = /%s/ ndir = /%s/\n",__FILE__,odir,ndir);
 WORD newname(BYTE *oldname, BYTE *newname)
 {
     WORD r;
-    asm{
-        mov ah,56h
-        push cs
-        pop es
-        mov dx,oldname
-        mov di,newname
-        int 21h
-        jnc  nn_ok
-        mov r,ax
-    }
+    
+	  asm mov ah,56h
+		asm push cs
+		asm pop es
+		asm mov dx,oldname
+		asm mov di,newname
+		asm int 21h
+		asm jnc  nn_ok
+		asm mov r,ax
+
     return r;
     nn_ok:
     return 0;
@@ -156,15 +160,14 @@ WORD newname(BYTE *oldname, BYTE *newname)
 
 BYTE *trueName(BYTE *name,BYTE *tn)
 {
-    asm{
-        push ds
-        pop es
-        mov si,name
-        mov di,tn
-        mov ah,60h
-        int 21h
-        jnc tn_ok
-    }
+  	asm push ds
+	 	asm pop es
+		asm mov si,name
+		asm mov di,tn
+		asm mov ah,60h
+		asm int 21h
+		asm jnc tn_ok
+    
     return NULL;
     tn_ok:
     return tn;

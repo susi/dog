@@ -26,6 +26,11 @@ History
 
 ****************************************************************************/
 
+#ifdef port
+#include "dog.h"
+#endif
+
+
 BYTE cbreak(BYTE s);
 
 void do_br(BYTE n)
@@ -69,22 +74,22 @@ void do_br(BYTE n)
 
 BYTE cbreak(BYTE s)
 {
-    asm{
-        mov AH,33h
-        mov AL,s
-        cmp AL,0FFh
-        je     cbreak_query
-        mov DL,AL
-        mov AL,01h
-        int 21h
-    }
+    
+    asm MOV AH,33h
+    asm MOV AL,s
+    asm CMP AL,0FFh
+    asm JE  cbreak_query
+    asm MOV DL,AL
+    asm MOV AL,01h
+    asm INT 21h
+
     return 0;
     cbreak_query:
-    asm{
-        mov AL,00h
-        int 21h
-        mov s,DL
-    }
+
+    asm MOV AL,00h
+    asm INT 21h
+    asm MOV s,DL
+
     return s;
 }
 

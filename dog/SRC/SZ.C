@@ -26,6 +26,10 @@ History
 
 **************************************************************************/
 
+#ifdef port
+#include "dog.h"
+#endif
+
 void do_sz(BYTE n)
 {
     struct ffblk *fb;
@@ -45,15 +49,13 @@ void do_sz(BYTE n)
 
     fb = malloc(sizeof(struct ffblk));
 
-    asm{
-        mov AH,36h
-        xor dl,dl
-        int 21h
-        mov max,AX
-        mov mbx,BX
-        mov mcx,CX
-        MOV mdx,DX
-    }
+    asm mov AH,36h
+		asm xor dl,dl
+		asm int 21h
+		asm mov max,AX
+		asm mov mbx,BX
+		asm mov mcx,CX
+		asm MOV mdx,DX
 
     d = (DWORD)max*(DWORD)mbx*(DWORD)mcx; 
     t = (DWORD)max*(DWORD)mcx*(DWORD)mdx;

@@ -29,36 +29,36 @@ History
 #pragma argsused
 void do_ct(BYTE n)
 {
-    asm{
-        mov ax,3d02h            ;/* open file using handle */
-        mov dx,offset arg[1]    ;/* filename */
-        int 21h                 ;/* open file... er device */
-        jc do_ct_err
-        mov bx,ax               ;/* save handle */
-        mov ax,4400h            ;/* IOCTL - Get dev info */
-        int 21h
-        jc do_ct_err
-        test dl,80h             ;/* is it a device */
-        jz do_ct_err
-        mov ax,4406h
-        int 21h                 ;/* IOCT - Get input status */
-        jc do_ct_err
-        or al,al                ;/* is it ready? */
-        jz do_ct_dnr
-        mov ax,4407h
-        int 21h                 ;/* IOCT - Get output status */
-        jc do_ct_err
-        or al,al                ;/* is it ready? */
-        jz do_ct_dnr
-        mov cx,0003h            ;/* STDERR */
-        mov ah,46h              ;/* DUP2: make handle in CX same as */
-    }
-    do_ct_dup2:                 ;/* handle in BX = handle of input dev */
-    asm{
-        int 21h
-        jc do_ct_err
-        loop do_ct_dup2         ;/*decreases cx and jmp to label while cx>0 */
-    }
+
+	asm MOV ax,3d02h            ;/* open file using handle */
+	asm MOV dx,offset arg[1]    ;/* filename */
+	asm INT 21h                 ;/* open file... er device */
+	asm JC do_ct_err
+	asm MOV bx,ax               ;/* save handle */
+	asm MOV ax,4400h            ;/* IOCTL - Get dev info */
+	asm INT 21h
+	asm JC do_ct_err
+	asm test dl,80h             ;/* is it a device */
+	asm JZ do_ct_err
+	asm MOV ax,4406h
+	asm INT 21h                 ;/* IOCT - Get input status */
+	asm JC do_ct_err
+	asm OR al,al                ;/* is it ready? */
+	asm JZ do_ct_dnr
+	asm MOV ax,4407h
+	asm INT 21h                 ;/* IOCT - Get output status */
+	asm JC do_ct_err
+	asm OR al,al                ;/* is it ready? */
+	asm JZ do_ct_dnr
+	asm MOV cx,0003h            ;/* STDERR */
+	asm MOV ah,46h              ;/* DUP2: make handle in CX same as */
+
+  do_ct_dup2:                 ;/* handle in BX = handle of input dev */
+
+	asm INT 21h
+	asm JC do_ct_err
+	asm loop do_ct_dup2         ;/*decreases cx and jmp to label while cx>0 */
+
     return;
 
     do_ct_err:
