@@ -38,17 +38,17 @@ BYTE flag_h = FLAG_UNSET;
 
 void rm_file(BYTE *patt)
 {
-  BYTE r,f,i;
+  BYTE r,f,i,ok;
   BYTE *p;
   BYTE fn[129]={0};
   struct ffblk fb;
   
-  f=findfirst(patt,&fb,0);
+  f=findfirst(patt,&fb,0|FA_DIREC);
   
   if(f==0) {
 	
 	p = patt;
-	for(p+=strlen(patt)+1;*p!='\\';p--);
+	for(p+=strlen(patt)+1;(*p!='\\')&&(*p!='/');p--);
 	if(p>patt) {
 	  *(++p)=0;
 	  strcpy(fn,patt);
@@ -67,29 +67,35 @@ void rm_file(BYTE *patt)
 	  putchar('\r');
 
 	  if((r == 'y') || (r == 'Y')) {
-		if(unlink(fn)==0) {
-		  if(flag_v == FLAG_SET) {
-			puts(fn);
-		  }
-		}
+		if((fb.ff_attrib & FA_DIREC) == FA_DIREC)
+		  ok = rmdir(fn);
+		else
+		  ok = unlink(fn);
 	  }
 	}
 	else {
-	  if(unlink(fn)==0) {
-		if(flag_v == FLAG_SET) {
-		  puts(fn);
-		}
-	  }
-	  else {
-		printf("error while removing %s\n,fn");
+	  if((fb.ff_attrib & FA_DIREC) == FA_DIREC)
+		ok = rmdir(fn);
+	  else
+		ok = unlink(fn);
+	}
+	
+	if(ok==0) {
+	  if(flag_v == FLAG_SET) {
+		puts(fn);
 	  }
 	}
+	else {
+	  printf("error while removing %s ",fn);
+	  perror("");
+	}
+
   }
   else if((f==255) && (errno==2)) {
-	printf("%s NOT found.\n",patt);
+	printf("%s - no such file or directory.\n",patt);
   }  
   while(findnext(&fb)==0) {	
-	for(p+=strlen(patt)+1;*p!='\\';p--);
+	for(p+=strlen(patt)+1;(*p!='\\')&&(*p!='/');p--);
 	if(p>patt) {
 	  *(++p)=0;
 	  strcpy(fn,patt);
@@ -111,10 +117,19 @@ void rm_file(BYTE *patt)
 		break;
 	}
 	
-	if(unlink(fn)==0) {
+	if((fb.ff_attrib & FA_DIREC) == FA_DIREC)
+	  ok = rmdir(fn);
+	else
+	  ok = unlink(fn);
+	
+	if(ok==0) {
 	  if(flag_v == FLAG_SET) {
 		puts(fn);
 	  }
+	}
+	else {
+	  printf("error while removing %s ",fn);
+	  perror("");
 	}
   }
   return;
@@ -132,6 +147,7 @@ void rm_list(BYTE *list)
   f = fopen(list,"r");
   if(f != NULL) {
 	while(fscanf(f,"%s",&fn)!=EOF){
+	  printf("fn=%s\n",fn);
 	  rm_file(fn);
 	}
 	fclose(f);
