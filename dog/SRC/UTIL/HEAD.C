@@ -2,7 +2,7 @@
 HEAD.C - version 1.0
     Displays a certain amount of a file.
 
-Copyright (C) 1999  Wolf Bergenheim
+Copyright (C) 2000 Wolf Bergenheim
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -20,18 +20,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 This program is part of DOG - The DOG Operating Ground
 
-NOTE: Compile with Micro-C 3.15: CC head.c -fop
-
 History
 
 30.07.99 - Created by Wolf Bergenheim
 04.08.99 - Added switches.
+12.03.00 - Ported to Borland C++ 3.1
+13.03.00 - Addded arg checking
 */
-#include <file.h>
-#include <stdio.h>
-
-#define BYTE unsigned char
-#define WORD unsigned int
+#include "util.h"
 
 WORD lines = 10;
 WORD count = 0;
@@ -42,30 +38,74 @@ int main(int nargs,char *args[])
     BYTE i,p[150];
     int r;
 
-    if(nargs == 1) {
-        puts("HEAD.COM v.1.0 by Wolf Bergenheim a utilityprogram to DOG.");
-        puts("usage: HEAD filename.ext [-N lines | -C count]");
-        return 1;
-    }
-    else if(nargs == 4) {
-        if(stricmp(args[2],"-N") == 0) {
-            fp = fopen(args[1],"rvq");
-            lines = atoi(args[3]);
-        }
-        else if(stricmp(args[2],"-C") == 0) {
-            fp = fopen(args[1],"rbvq");
-            count  = atoi(args[3]);
-            for(i=0;(i<count) && ((r = fgetc(fp)) != -1);i++) {
-                putchar((BYTE)r);
+    switch(nargs) {
+        case 1:
+            puts("HEAD.COM v.1.0 by Wolf Bergenheim. Displays The top of a file.");
+            puts("usage: HEAD [-N lines | -C count | -H | -?] filename.ext");
+            return 1;
+        case 2:
+            if(stricmp(args[1],"-H") == 0) {
+                puts("HEAD.COM v.1.0 by Wolf Bergenheim. Displays The top of a file.");
+                puts("usage: HEAD [-N lines | -C count | -H | -?] filename.ext");
+                return 0;
             }
-            return 0;
-        }
+            if(stricmp(args[1],"-?") == 0) {
+                puts("HEAD.COM v.1.0 by Wolf Bergenheim. Displays The top of a file.");
+                puts("usage: HEAD [-N lines | -C count | -H | -?] filename.ext");
+                return 0;
+            }
+            
+            fp = fopen(args[1],"r");
+            if (fp == NULL) {
+                fprintf(stderr,"HEAD.COM: Unable to open file: %s\n",args[1]);
+                return 2;
+            }
+
+            break;
+        case 3:
+
+            puts("Invalid number of arguments");
+            puts("HEAD.COM v.1.0 by Wolf Bergenheim. Displays The top of a file.");
+            puts("usage: HEAD [-N lines | -C count | -H | -?] filename.ext");
+            return 1;
+        case 4:
+            if(stricmp(args[1],"-N") == 0) {
+                fp = fopen(args[3],"r");
+                if (fp == NULL) {
+                    fprintf(stderr,"HEAD.COM: Unable to open file: %s\n",args[1]);
+                    return 2;
+                }
+                lines = atoi(args[2]);
+            }
+            else if(stricmp(args[1],"-C") == 0) {
+                fp = fopen(args[3],"rb");
+                if (fp == NULL) {
+                    fprintf(stderr,"HEAD.COM: Unable to open file: %s\n",args[1]);
+                    return 2;
+                }
+                count  = atoi(args[2]);
+                for(i=0;(i<count) && ((r = fgetc(fp)) != -1);i++) {
+                    putchar((BYTE)r);
+                }
+                return 0;
+            }
+            else {
+                printf("Unknown switch \"%s\"\n",args[2]);
+                puts("HEAD.COM v.1.0 by Wolf Bergenheim. Displays The top of a file.");
+                puts("usage: HEAD [-N lines | -C count | -H | -?] filename.ext");
+                return 1;
+            }
+            break;
+
+        default:
+            puts("HEAD.COM v.1.0 by Wolf Bergenheim. Displays The top of a file.");
+            puts("usage: HEAD [-N lines | -C count | -H | -?] filename.ext");
+            return 1;
     }
-    else
-        fp = fopen(args[1],"rvq");
+
 
     for(i=0;(i<lines) && (fgets(p,149,fp) != NULL);i++) {
-        puts(p);
+        printf("%s",p);
     }
 
     return 0;
