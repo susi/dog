@@ -28,6 +28,7 @@ History
              getudata respectively. - WB
 2002-03-08 - added mkudata().
 2002-03-10 - added do_al(). It works like do_se().
+2002-03-10 - finaly! aliasreplace() is done! and it works! We now have working aliases.
 
 **************************************************************************/
 
@@ -35,9 +36,9 @@ void do_al( BYTE n)
 {
   BYTE b,*p;
   WORD w;
-  BYTE far *aliasp
+  BYTE far *aliasp;
 	
-	
+	aliasp = MK_FP(aliasseg,0);
   if(n == 1) {
     printf("alias @ %Fp %u(%xh) bytes\n",aliasp,aliassz,aliassz);
     for(w=0;w<aliassz;w++) {
@@ -61,7 +62,7 @@ void do_al( BYTE n)
       strcat(p," ");
     }
     if (strlen(p) == 0) p = NULL;
-    setevar(arg[1],p);
+    setalias(arg[1],p);
     free(p);
   }
   
@@ -177,8 +178,9 @@ BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg)
 {
   BYTE t[512],far *rest,*p,*b,i,far *eoe, far *evalue,found=0;
   WORD w,ss,writesize,nlen,envleft,blocksz;
-  BYTE  far *block = MK_FP(blockseg,0);
+  BYTE  far *block;
   
+  block = MK_FP(blockseg,0);
   nlen = strlen(varname);
   writesize = strlen(varname)+strlen(value)+2; /* = strings + 0 + '='*/
   b=malloc(writesize);
@@ -214,9 +216,15 @@ BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg)
   /* check if var exists, if it does write new value in place of old
    if not then write new var to end of env */
   
+#ifdef b_debug
+    printf("rest=%Fp\n",rest);
+#endif
   
   while(*rest!='\0') {
     if(*(rest+nlen) == '=') { /*possible match */
+#ifdef b_debug
+    printf("rest+nlen=%Fp\n",(rest+nlen));
+#endif
       *(rest+nlen) = '\0';
       sprintf(t,"%Fs",rest);
       *(rest+nlen) = '=';
@@ -239,6 +247,10 @@ BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg)
   } /* rest points to '\0' if end of env */
   if(found==0) evalue = rest;
   
+#ifdef b_debug
+    printf("evalue=%Fp\n",evalue);
+#endif
+
   sprintf(t,"%Fs",evalue);
   /* calculate the number of bytes left in the env. */
   envleft = blocksz - FP_OFF(eoe) + (found * strlen(t));
@@ -282,101 +294,135 @@ BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg)
 
 /****************************************************************************/
 
-BYTE mkudata(WORD oldseg, WORD *nseg, WORD bsz, WORD nbsz);
+WORD mkudata(WORD oldseg, WORD *nseg, WORD bsz, WORD nbsz)
 {
-	WORD w, newseg;
-	BYTE far *p,*s,*d;
-
-	newseg = *nseg:
-	
-	if((nbsz < bsz) || (bsz == 0)) { /* rebuild */
-		
-		asm mov AH,4ah      ;/*resize mem block BX=newsz ES=seg */
-		asm mov BX,nbsz
-		asm mov DX,oldseg
-		asm mov ES,DX
-		asm int 21h
-		asm jc e_b_not_ok
-		asm jmp e_b_ok
-		
-		e_b_not_ok:
-		
-		asm sub ax,07h /*errors 7,8,9 possible*/
-		asm jz  e_block_dest
-		asm dec ax
-		asm jz  e_no_mem
-		asm jmp e_inv_mem
-		
-		e_no_mem:
-		fprintf(stderr,"Insufficient memory to allocate!\nReallocating\n");
-		/* bx contains max available sz */
-		asm mov nbsz,bx
-		
-		/* probably never happens... remove? */
-		e_block_dest:
- 		 fprintf(stderr,"Memory controll block destroyed.\nReallocating\n");
-		e_inv_mem:
-		 fprintf(stderr,"Invalid Address to Memory block\nReallocating\n");
-
-		asm mov ah,49h
-		asm mov dx,oldseg
-		asm mov es,dx
-		asm INT 21h
-		
-		asm mov bx,nbsz 
-		asm mov ah.48h
-		asm int 21h
-		asm jnc e_b_bok
-		asm jmp e_b_not_ok
-		
-		e_b_bok:
-		asm mov newseg,ax
-		e_b_ok:
-
-		p = MK_FP(bseg,0); /* point to beg of env*/
+	WORD w;
+	BYTE far *p,far *s,far *d;
+  
+  while ( (w = allocmem(nbsz,nseg)) != 0xFFFF) {
+    nbsz = w;
+    fprintf(stderr,"Insufficient memory to allocate!\nReallocating\n");
+  }
+  p = MK_FP(*nseg,0); /* point to beg of block*/
 #ifdef b_debug
-		printf("ep=%Fp\n",ep);
+  printf("p=%Fp\n",p);
 #endif
-		*(p) = 0;
-		*(++p) = 0;
-		
-		*nseg = newseg;
-		return nbsz;
+  *(p) = 0;
+  *(++p) = 0;
+
+  if(nbsz >= bsz) { /* copy stuff from oldseg to newseg */
+    bsz <<= 4; /* bytes */
+    w = *nseg;
+    s = MK_FP(oldseg,0);
+    d = MK_FP(w,0);
+        
+#ifdef b_debug
+    printf("oldseg=%x bsz=%x\n",oldseg,bsz);
+    printf("newseg=%x nbsz=%x\n",*nseg,nbsz);
+#endif
+    for(w=0;w<bsz;w++) {
+      d[w] = s[w];
+#ifdef b_debug_2
+      printf("s(%Fp)->%Fc d(%Fp)->%Fc\n",s+w,*(s+w),d+w,*(d+w));
+#endif
+    }
+  }
+  freemem(oldseg);
+  return nbsz;
+}
+
+/********************************************************************
+  
+  
+	if (oldseg == 0) {
+    mud_retry1:
+    w = allocmem(nbsz,nseg);
+    if (w != 0xFFFF) {
+      nbsz = w;
+      fprintf(stderr,"Insufficient memory to allocate!\nReallocating\n");
+      goto mud_retry1;
+    }
+    p = MK_FP(*nseg,0); /* point to beg of block* /
+#ifdef b_debug
+    printf("p=%Fp\n",p);
+#endif
+    *(p) = 0;
+    *(++p) = 0;
 	}
-	else {
-		asm mov bx,nbsz
-		e_b3_not_ok:
-		asm mov ah,48h
-		asm int 21h
-		asm jc e_b2_ok
-		asm mov cx,bsz
-		asm cmp cx,bx 
-		asm jlt  e_b2_not_ok
-		asm jmp e_b3_not_ok 
-		e_b2_ok:
-		asm mov newseg,ax
-
-		s = MK_FP(bseg,0);
-		d = MK_FP(nbseg,0);
-
-		nbsz <<= 4; /* bytes */
-
+  else if(nbsz < bsz) {
+    mud_retry2:
+    w = setblock(oldseg,nbsz);
+    if (w != 0xFFFF) {
+      nbsz = w;
+      fprintf(stderr,"Insufficient memory to allocate!\nReallocating\n");
+      goto mud_retry2;
+    }
+    p = MK_FP(*nseg,0); /* point to beg of block* /
 #ifdef b_debug
-		printf("newseg=%x nbsz=%x\n",newseg,nbsz);
+    printf("p=%Fp\n",p);
 #endif
-		for(w=0;w<nbsz;w++) {
-			*(d++) = *(s++);
+    *(p) = 0;
+    *(++p) = 0;
+  }
+  else {
+    mud_retry3:
+    w = allocmem(nbsz,nseg);
+    if ( w == 0xFFFF ) {
+      bsz <<= 4; /* bytes * /
+      s = MK_FP(oldseg,0);
+      d = MK_FP((*nseg),0);
+        
 #ifdef b_debug
-			printf("s(%Fp)->%Fc d(%Fp)->%Fc\n",s,*s,d,*d);
+      printf("oldseg=%x bsz=%x\n",oldseg,bsz);
+      printf("newseg=%x nbsz=%x\n",*nseg,nbsz);
 #endif
-		}
-		asm MOV ah,49h      ;/*free old b*/
-		asm MOV dx,oldseg
-		asm MOV es,dx
-		asm INT 21h
-
-		*nseg = newseg;
-		return (nbsz >> 4);
-		
+        for(w=0;w<bsz;w++) {
+          *(d++) = *(s++);
+#ifdef b_debug_2
+          printf("s(%Fp)->%Fc d(%Fp)->%Fc\n",s,*s,d,*d);
+#endif
+        }
+      
+      freemem(oldseg);
+    }
+    else {
+      nbsz = w;
+      fprintf(stderr,"Insufficient memory to allocate!\nReallocating\n");
+      if (nbsz < bsz) {
+        freemem(oldseg);
+        goto mud_retry1;
+      }
+      else {
+        goto mud_retry3;
+      }
+    }
 	}
+#ifdef b_debug
+  printf("oldseg=%x bsz=%x\n",oldseg,bsz);
+  printf("newseg=%x nbsz=%x\n",*nseg,nbsz);
+#endif
+  return nbsz;
+}
+
+/ ****************************************************************************/
+
+BYTE aliasreplace(BYTE *com)
+{
+  BYTE acandid[200], i, *p, *c;
+  BYTE aliasvalue[200];
+  
+  c = com;
+  
+  for(i=0;(i<200) && (isfchar(com[i]));i++) {
+      acandid[i] = *(c++);
+  }
+  acandid[i] = '\0';
+  
+  p = getalias(acandid,aliasvalue);
+  if (p != NULL) {
+    strcat(aliasvalue,c);
+    strcpy(com,aliasvalue);
+    return 0;
+  }
+  return 0xFF;
 }

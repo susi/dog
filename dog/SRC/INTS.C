@@ -94,13 +94,82 @@ void DOGError(void)
 void DOGFunc(void)
 {
 	asm D0GFunc:       ;
-	asm cmp al,01h     ;
+	asm cmp ah,01h     ;
 	asm jz D0G_1       ; /* Function 0x01 */
+  asm cmp ah,02h
+  asm jz D0G_2       ; /* Function 0x02 */
 	asm jmp D0G_naf    ; /* not our function ignore.. */
+
 	D0G_1:         ;
 	asm MOV ax,DOG_VER ; /* return the version of DOG loaded */
-	D0G_naf:       ;
+  asm jmp D0G_ret
+  
+  D0G_2:         ;
+  asm push ds
+  asm push cs
+  asm pop ds
+  asm cmp al,01h
+  asm jz D0G_2_1       ; /* Function 0x0201 */
+  asm cmp al,02h
+  asm jz D0G_2_2       ; /* Function 0x0202 */
+  asm cmp al,03h
+  asm jz D0G_2_3       ; /* Function 0x0203 */
+  asm cmp al,04h
+  asm jz D0G_2_4       ; /* Function 0x0204 */
+  asm cmp al,05h
+  asm jz D0G_2_5       ; /* Function 0x0205 */
+  asm cmp al,06h
+  asm jz D0G_2_6       ; /* Function 0x0206 */
+  asm cmp al,07h
+  asm jz D0G_2_7       ; /* Function 0x0207 */
+  asm jmp D0G_2ret
 
+  D0G_2_1:         ;
+  asm push ds
+  asm pop es
+  asm mov bx,offset envseg /* return a pointer to envseg in ES:BX*/
+	asm MOV dx,envseg ; /* DX contains the value of envseg */
+  asm jmp D0G_2ret
+	D0G_2_2:         ;
+  asm push ds
+  asm pop es
+  asm mov bx,offset aliasseg ; /* return a pointer to aliasseg in ES:BX*/
+	asm MOV dx,aliasseg ; /* DX contains the value of aliasseg  */
+  asm jmp D0G_2ret
+	D0G_2_3:         ;
+  asm push ds
+  asm pop es
+  asm mov bx,offset commands ; /* return a pointer to commands in ES:BX*/
+  asm mov cx, _NCOMS /* number of strings */
+  asm jmp D0G_2ret
+	D0G_2_4:         ;
+  asm push ds
+  asm pop es
+  asm mov bx,offset ext_commands ; /* return a pointer to ext_commands in ES:BX*/
+  asm mov cx, _NECOMS /* number of strings */
+  asm jmp D0G_2ret
+	D0G_2_5:         ;
+  asm push ds
+  asm pop es
+  asm mov bx,offset command_des ; /* return a pointer to command_des in ES:BX*/
+  asm mov cx, _NCOMS /* number of strings */
+  asm jmp D0G_2ret
+	D0G_2_6:         ;
+  asm push ds
+  asm pop es
+  asm mov bx,offset ext_command_des ; /* return a pointer to ext_command_des in ES:BX*/
+  asm mov cx, _NECOMS /* number of strings */
+  asm jmp D0G_2ret
+	D0G_2_7:         ;
+  asm push ds
+  asm pop es
+  asm mov bx,offset bf ; /* return a pointer to bf (the first Dogfile param block) in ES:BX*/
+  asm jmp D0G_2ret
+
+  D0G_2ret:
+  asm pop ds
+	D0G_naf:       ;
+  D0G_ret:
 	asm iret           ;
  
 }

@@ -139,6 +139,8 @@ History
 2002-02-21 - Added support for dod.dog if shell is permanent -WB
 2002-03-01 - Internal and external commands are now sepatate. External commands are treated no differently than any other commands.
              $e in prompt will expand to the errorlevel. - WB
+2002-03-11 - use of aliasreplace() to replace set aliases. I put a maximum
+             of 20 iterations, so we won't get unlimited loops.
 */
 
 #include "dog.h"
@@ -165,6 +167,7 @@ BYTE initialize(int nargs, char *args[])
   printf("PSP = %x PPID = %x\n",_psp,peek(_psp,PPID_OFS));
   
     /* save STDIN STDOUT */
+
   IN = dup(fileno(stdin));
   OUT = dup(fileno(stdout));
   
@@ -183,6 +186,10 @@ BYTE initialize(int nargs, char *args[])
   envseg = peek(_psp,ENVSEG_OFS);
   _env = MK_FP(envseg,0);    
   envsz = peek(envseg-1,3) << 4; /*get size of block allocated from MCB*/
+
+  printf("aliassz = %x aliasseg = %x\n",aliassz, aliasseg);
+  aliassz = mkudata(0, &aliasseg, 0, 128);
+  printf("aliassz = %x aliasseg = %x\n",aliassz, aliasseg);
   
 #ifdef env_debug
   printf("nargs=%u\n",nargs);
@@ -235,21 +242,24 @@ BYTE initialize(int nargs, char *args[])
 				flags |= FLAG_P;
 				sw_P = 1;
 				rebuild = 1;
-				envsz = 0;
+				nenvsz = 0;
 				/* Accept all strings beginning with -P */
 				while((!isdigit(*p))&&(*p!='\0')&&(*p!='-')) p++;
-				while(isdigit(*p)) envsz=envsz*10+(*p++)-'0';
+				while(isdigit(*p)) nenvsz=nenvsz*10+(*p++)-'0';
 				
-				envsz /= 16; /*paragraphs*/
-				if(envsz < 10) envsz=10;
-				if(envsz > 800) envsz=800;
+        nenvsz /= 16; /*paragraphs*/
+				if(nenvsz < 0x10) nenvsz=0x10;
+				if(nenvsz > 0x800) nenvsz=0x800;
 
-				nenvseg = envseg;
+				envsz = mkudata(envseg, &nenvseg, envsz, nenvsz);
+        
+				envseg=nenvseg;
+        poke(_psp,ENVSEG_OFS,nenvseg);
 				
-				nenvsz = mkudata(envseg, &nenvseg, envsz, nenvsz);
-				
-        poke(_psp,ENVSEG_OFS,envseg);
-				
+#ifdef b_debug
+        printf("envseg=0x%x envsz=0x%x\n",envseg,envsz);
+#endif
+
 				get_int();
 				set_int();
 				
@@ -276,8 +286,6 @@ BYTE initialize(int nargs, char *args[])
         asm MOV i22_s,ds
         asm INT 21h
         
-        
-        
 					/* put int handlers in to PSP */
         
         poke(_psp,0x0a,i22_o);
@@ -299,7 +307,7 @@ BYTE initialize(int nargs, char *args[])
   }
   _env = MK_FP(envseg,0);
 	envsz = peek(envseg-1,3) << 4; /*get size of block allocated from MCB*/
-  
+
   if (rebuild==1) {
     if((p=malloc(envsz))!=NULL) {
       q=p;
@@ -434,7 +442,7 @@ BYTE parsecom(BYTE * line,BYTE ll)
 BYTE getcom(BYTE *com)
 {
   
-  BYTE ln,r;
+  BYTE ln,r,i;
   
   ln = getln(com, 200);
   
@@ -448,6 +456,9 @@ BYTE getcom(BYTE *com)
 #ifdef debug
   fprintf(stderr,"getcom:1: com: !%s! ln:%u\n",com,ln);
 #endif
+  
+  for(i=0;(i<MAX_ALIAS_LOOPS) && (aliasreplace(com) != 0xFF);i++);
+  
   r = parsecom(com,ln);
 #ifdef debug
   fprintf(stderr,"getcom:2: com: !%s! ln:%u\n",com,ln);
@@ -1131,7 +1142,7 @@ void do_command( BYTE na)
     switch(i) {
 
 		 case C_AL :
-			do_al();
+			do_al(na);
 			break;
 
      case C_CC :
@@ -1224,13 +1235,12 @@ void do_command( BYTE na)
  **************************************
 *************************************/
 #ifndef port
-#include "al.c"
+#include "alse.c"
 #include "cc.c"
 #include "cmrd.c"
 #include "ct.c"
 #include "eh.c"
 #include "hh.c"
-#include "se.c"
 #include "xx.c"
 #endif
 /*************************************

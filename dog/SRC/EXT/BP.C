@@ -63,7 +63,7 @@ printf("do_bp:arg[%d]=(%s)\n",b,arg[b]);
 		case 0:
 		case 1:
 		  putchar('\x07');
-		  return 1;
+		  return 0;
 		case 2:
 			if (arg[1][0] == '-') {
 				 switch (arg[1][1]) {

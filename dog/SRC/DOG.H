@@ -156,7 +156,7 @@ C:\DOG>_
 */
 
 
-#define _NCOMS 10
+#define _NCOMS 9
 #define _NECOMS 11
 #define _NARGS 20
 
@@ -164,17 +164,16 @@ C:\DOG>_
 
 #define PPID_OFS 0x0016
 #define ENVSEG_OFS 0x002C
-#define DOG_VER 083ah
+#define DOG_VER 082bh
 #define DOG_MA 0
 #define DOG_MI 8
-#define DOG_RE 0x3a
+#define DOG_RE 0x2b
 
 /* Define Global Variables */
 BYTE DOG_ma = DOG_MA, DOG_mi = DOG_MI, DOG_re = DOG_RE;
 BYTE Xit = 0, Xitable = 1, eh = 0, D=0, P[MAXDIR]; 
 BYTE comline[200]= {0}, *com = comline, *arg[_NARGS], varg[_NARGS][200], *prompt;
 BYTE commands[_NCOMS][3] = {
-	"AL",
 	"CC",
 	"CD",
 	"CT",
@@ -199,7 +198,6 @@ BYTE ext_commands[_NECOMS][3] = {
 	"VR"};
 
 BYTE command_des[_NCOMS][21] = {
-	"ALias               ",
 	"Change Codepage     ",
 	"Change Directory    ",
 	"Change Terminal     ",
@@ -220,7 +218,7 @@ BYTE ext_command_des[_NECOMS][21] = {
 	"ReMove files        ",
 	"SiZe of files in dir",
 	"TyPe                ",
-	"VeriFy              ",
+	"VerFy               ",
 	"VeRsion             "};
 
 /* BYTE *command_help[_NCOMS]; */
@@ -240,16 +238,15 @@ BYTE flags;
 #define FLAG_C 0x4
 #define FLAG_A 0x8
 
-#define C_AL 0
-#define	C_CC 1
-#define	C_CD 2
-#define	C_CT 3 
-#define C_EH 4 
-#define C_HH 5 
-#define C_MD 6
-#define C_RD 7
-#define C_SE 8
-#define C_XX 9
+#define	C_CC 0
+#define	C_CD 1
+#define	C_CT 2 
+#define C_EH 3 
+#define C_HH 4 
+#define C_MD 5
+#define C_RD 6
+#define C_SE 7
+#define C_XX 8
 
 
 
@@ -323,14 +320,11 @@ BYTE *getalias(BYTE *varname, BYTE *value);
 void setalias(BYTE *varname, BYTE *value);
 BYTE *getudata(BYTE *varname, BYTE *value, WORD blockseg);
 BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg);
-BYTE mkudata(WORD oldseg, WORD *nseg, WORD bsz, WORD nbsz);
-BYTE aliasreplace(void);
 
 void clearbat(void); /* clear the b file linked list*/
 void prevbat(void); /* return to the previous nest-level in bat*/
 
 /* internal commands */
-void do_al(BYTE n);
 void do_se(BYTE n);
 void do_ct(BYTE n);
 void do_cd(BYTE n);

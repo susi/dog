@@ -72,7 +72,7 @@ int main(void)
 	asm pop ax
 	asm cmp ax,0000h
 	asm jz no_DOG
-	asm MOV ax,01h
+	asm MOV ah,01h
 	asm INT 0d0h
 	asm MOV bh,ah
 	asm SHR bh,1

@@ -281,7 +281,7 @@ void do_batcommand(BYTE n)
 			do_go(n);
 			return;
 		 case B_C_IF :
-			printf("do_batc:3:command=(%s)\n",batch[i]);
+			do_if(n);
 			return;
 		 case B_C_IN :
 			printf("do_batc:3:command=(%s)\n",batch[i]);
@@ -402,3 +402,44 @@ void do_sh(BYTE n)
 	return;
 }
 
+/****************************************************************************/
+
+#if 0
+/* if foo == bar action*/
+void do_if(BYTE n)
+{
+  BYTE i, *p,tr;
+
+  if(n < 5) {
+    printf("syntax error in command if:\n syntax is if foo ! OR = bar somecommand and arguments\n");
+    return;
+  }
+  
+  tr = 0;
+  if(stricmp(arg[1],"errolevel") == 0) {
+    sprintf(p,"%d",errorlevel);
+    p = arg[1];
+  }
+  switch (arg[2][0]) {
+   case '!' :
+    if(stricmp(arg[1],arg[3]) != 0) tr = 1;
+    break;
+   case '=' :
+    if(stricmp(arg[1],arg[3]) == 0) tr = 1;
+    break;
+   default:
+    printf("syntax error in command if:\n syntax is if foo ! OR = bar somecommand and arguments\n");
+    return;
+  }
+  
+  if (tr == 1) {
+    for (i=4;i<n;i++) {
+      arg[i-4] = arg[i];
+    }
+    do_batcommand(n-4);
+  }
+  
+  return; 
+}
+
+#endif
