@@ -162,12 +162,13 @@ C:\DOG>_
 
 #define PPID_OFS 0x0016
 #define ENVSEG_OFS 0x002C
-#define DOG_VER 0073h
+#define DOG_VER 080bh
 #define DOG_MA 0
-#define DOG_MI 73
+#define DOG_MI 8
+#define DOG_RE 0x0b
 
 /* Define Global Variables */
-BYTE DOG_ma = DOG_MA, DOG_mi = DOG_MI;
+BYTE DOG_ma = DOG_MA, DOG_mi = DOG_MI, DOG_re = DOG_RE;
 BYTE Xit = 0, Xitable = 1, eh = 0, D=0, P[MAXDIR]; 
 BYTE comline[200]= {0}, *com = comline, *arg[_NARGS], history[50][200], *prompt;
 BYTE commands[_NCOMS][3] = {
@@ -300,25 +301,14 @@ void clearbat(void); /* clear the b file linked list*/
 void prevbat(void); /* return to the previous nest-level in bat*/
 
 /* internal commands */
-void do_bp(BYTE n);
-void do_br(BYTE n);
-void do_pp(BYTE n);
 void do_se(BYTE n);
-void do_cl(void);
 void do_ct(BYTE n);
 void do_cd(BYTE n);
-void do_vr(void);
-void do_rm(BYTE n);
 void do_hh(BYTE n);
-void do_sz(BYTE n);
 void do_eh(BYTE n);
 void do_cd(BYTE n);
-void do_vf(BYTE n);
 void do_mrd(BYTE n);
-void do_ls(BYTE n);
 void do_xx(void);
-void do_tp(BYTE n);
-void do_mv(BYTE n);
 
 /* DOG-file commands */
 void do_ca(BYTE n);

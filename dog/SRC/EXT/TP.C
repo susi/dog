@@ -26,16 +26,19 @@ History
 
 **************************************************************************/
 
-#ifdef port
-#include "dog.h"
-#endif
+#include "ext.h"
 
-void do_tp( BYTE n)
+ /* 1 kB buffer */
+#define BUFF_SIZE 1024
+
+int main(BYTE n, BYTE *arg[])
 {
     FILE *fp;
     struct ffblk *fb;
-    BYTE i,j,r,buff[256],dir[200],savedir[200],dir_flag;
+    BYTE i,j,r,*buff,dir[200],savedir[200],dir_flag;
 
+	 buff = malloc(BUFF_SIZE);
+	 
     if(n == 1) {
         fprintf(stderr,"Missing filename.\n");
         return;
@@ -74,13 +77,7 @@ printf("dir=%s\n",dir);
                     fprintf(stderr,"\n****Error opening file %s\n",dir);
                 }
                 else {
-                    while(fgets(buff,255,fp)) {
-                        if(cBreak) {
-                            cBreak = 0;
-                            printf("\n");
-                            fclose(fp);
-                            return;
-                        }
+                    while(fgets(buff,BUFF_SIZE,fp)) {
 /*                        printf("%s",buff);*/
                         write(1, buff, strlen(buff)+1);
                     }
@@ -120,13 +117,7 @@ printf("dir=%s\n",dir);
                     fprintf(stderr,"\n****Error opening file %s\n",dir);
                 }
                 else {
-                    while(fgets(buff,sizeof(buff),fp) != 0) {
-                        if(cBreak) {
-                            cBreak = 0;
-                            printf("\n");
-                            fclose(fp);
-                            return;
-                        }
+                    while(fgets(buff,BUFF_SIZE,fp) != 0) {
 /*                        printf("%s\n",buff);*/
                         write(1, buff, strlen(buff)+1);
                     }
@@ -159,6 +150,7 @@ printf("dir=%s\n",dir);
 
     }
     free(fb);
-    return;
+	 free(buff);
+	 return 0;
 }
 

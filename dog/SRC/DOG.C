@@ -132,7 +132,8 @@ History
            -E command-line switch - WB
 01.08.00 - rewrote (allmost completely) do_exe to handle the PATH variable. -WB
 15.08.00 - Moved BP (Beep) to a normal command out of bat.c - WB
-
+2001-07-17 - Changed the version to be of format X.Y.Z
+  
 */
 
 #include "dog.h"
@@ -869,7 +870,7 @@ int main(int nargs, char *argv[])
 
 
     if (eh == 0) {
-        printf("DOG Ä Dog Operating Ground Version %u.%02u\n",DOG_ma,DOG_mi);
+        printf("DOG - Dog Operating Ground Version %u.%u.%02x\n",DOG_ma,DOG_mi,DOG_re);
         printf("      Copyright (C) Wolf Bergenheim 1997-2000\n\n");
         printf("Type HH for Help\n\n");
     }
@@ -1034,12 +1035,16 @@ fprintf(stderr,"\n");
         switch(i) {
     
         case C_BP :
-            do_bp(na);
-            break;
+					 /* This is for compatibility only. */
+					 do_exe(na);
+					 D = getcur(P) +'A';
+					 return;
         
         case C_BR :
-            do_br(na);
-            break;
+					 /* This is for compatibility only. */
+					 do_exe(na);
+					 D = getcur(P) +'A';
+					 return;
         
         case C_CC :
             
@@ -1050,12 +1055,16 @@ fprintf(stderr,"\n");
             break;
         
         case C_CL :
-            do_cl();
-            break;
+					 /* This is for compatibility only. */
+					 do_exe(na);
+					 D = getcur(P) +'A';
+					 return;
         
         case C_CP :
-        
-            break;
+					 /* This is for compatibility only. */
+					 do_exe(na);
+					 D = getcur(P) +'A';
+					 return;
         
         case C_CT :
             do_ct(na);
@@ -1070,43 +1079,58 @@ fprintf(stderr,"\n");
             break;
         
         case C_LS :
-            break;
+					 /* This is for compatibility only. */
+					 do_exe(na);
+					 D = getcur(P) +'A';
+					 return;
         
         case C_MD :
             do_mrd(na);
             break;
         
         case C_MV :
-            do_mv(na);
-            break;
+					 /* This is for compatibility only. */
+					 do_exe(na);
+					 D = getcur(P) +'A';
+					 return;
         
         case C_RD :
             do_mrd(na);
             break;
         
         case C_RM :
-            do_rm(na);
-            break;
+					 /* This is for compatibility only. */
+					 do_exe(na);
+					 D = getcur(P) +'A';
+					 return;
         
         case C_SE :
             do_se(na);
             break;
         
         case C_SZ :
-            do_sz(na);
-            break;
+					 /* This is for compatibility only. */
+					 do_exe(na);
+					 D = getcur(P) +'A';
+					 return;
 
         case C_TP :
-            do_tp(na);
-            break;
+					 /* This is for compatibility only. */
+					 do_exe(na);
+					 D = getcur(P) +'A';
+					 return;
         
         case C_VF :
-            do_vf(na);
-            break;
+					 /* This is for compatibility only. */
+					 do_exe(na);
+					 D = getcur(P) +'A';
+					 return;
         
         case C_VR :
-            do_vr();
-            break;
+					 /* This is for compatibility only. */
+					 do_exe(na);
+					 D = getcur(P) +'A';
+					 return;
         
         case C_XX :
             if(Xitable==1)
@@ -1166,22 +1190,12 @@ fprintf(stderr,"\n");
 **************************************
 *************************************/
 #ifndef port
-#include "bp.c"
-#include "br.c"
 #include "cc.c"
 #include "cmrd.c"
-#include "cl.c"
-#include "cp.c"
 #include "ct.c"
 #include "eh.c"
 #include "hh.c"
-#include "mv.c"
-#include "rm.c"
 #include "se.c"
-#include "sz.c"
-#include "tp.c"
-#include "vf.c"
-#include "vr.c"
 #include "xx.c"
 #endif
 /*************************************
@@ -1462,6 +1476,24 @@ printf("do_exe:found %s in %s\n",fb->ff_name,cpath);
 
     free(fb);
     return;
+
+}
+
+/***************************************************************************/
+
+BYTE *trueName(BYTE *name,BYTE *tn)
+{
+  	asm push ds
+	 	asm pop es
+		asm mov si,name
+		asm mov di,tn
+		asm mov ah,60h
+		asm int 21h
+		asm jnc tn_ok
+    
+    return NULL;
+    tn_ok:
+    return tn;
 
 }
 

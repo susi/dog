@@ -32,6 +32,7 @@ Wolf Bergenheim (WB)
 #include <alloc.h>
 #include <io.h>
 #include <process.h>
+#include <errno.h>
 
 #define de		bug
 

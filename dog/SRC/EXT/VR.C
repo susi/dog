@@ -31,11 +31,12 @@ History
 
 **************************************************************************/
 
-#ifdef port
-#include "dog.h"
-#endif
+#include "ext.h"
+#define DOG_ma 0
+#define DOG_mi 8
+#define DOG_re 0x0b
 
-void do_vr(void)
+int main(void)
 {
     WORD w,DR_vr;
     BYTE b,DOS_ma=3,DOS_mi=30,DOS_OEM=0xFD;
@@ -55,13 +56,13 @@ void do_vr(void)
     asm JE vr_NODR
 		asm MOV DR_vr,ax
     
-    printf("DR-DOS Product 0x%x\n\tProviding DOS %u.%u interface\nDog version %u.%u\n",DR_vr,DOS_ma,DOS_mi,DOG_ma,DOG_mi);
+    printf("DR-DOS Product 0x%x\n\tProviding DOS %u.%u interface\nDog version %u.%u.%02x\n",DR_vr,DOS_ma,DOS_mi,DOG_ma,DOG_mi,DOG_re);
     return;
 
     vr_NODR:
     switch(DOS_ma) {  /*versions 1,2 & 4 NOT supported */
         case 3 :
-            printf("DOS version %u.%u\nDOG version %u.%u",DOS_ma,DOS_mi,DOG_ma,DOG_mi);
+            printf("DOS version %u.%u\nDog version %u.%u.%02x",DOS_ma,DOS_mi,DOG_ma,DOG_mi,DOG_re);
             break;
         case 5 :
         case 6 :
@@ -72,55 +73,58 @@ void do_vr(void)
              asm JE vr_NT
              asm JMP vr_DOS
         vr_NT:
-            printf("DOS Command Prompt under Windows NT\nDog version %u.%u\n",DOG_ma,DOG_mi);
+            printf("DOS Command Prompt under Windows NT\nDog version %u.%u.%02x\n",DOG_ma,DOG_mi,DOG_re);
             break;
         vr_DOS:
             switch(DOS_OEM) {
                 case  0x00:
                     if((DOS_mi ==0) && (DOS_ma==6)) DOS_mi = 1;
-                    printf("PC-DOS version %u.%u\nDog version %u.%u\n",DOS_ma,DOS_mi,DOG_ma,DOG_mi);
+                    printf("PC-DOS version %u.%u\nDog version %u.%u.%02x\n",DOS_ma,DOS_mi,DOG_ma,DOG_mi,DOG_re);
                     break;
                 case  0xEE:
-                    printf("DR DOS version 5.0 OR 6.0 (pretends to be MS-DOS %u.%u)\nDog version %u.%u\n",DOS_ma,DOS_mi,DOG_ma,DOG_mi);
+                    printf("DR DOS version 5.0 OR 6.0 (pretends to be MS-DOS %u.%u)\nDog version %u.%u.%02x\n",DOS_ma,DOS_mi,DOG_ma,DOG_mi,DOG_re);
                     break;
                 case  0xEF:
-                    printf("Novell DOS 7\nDog version %u.%u\n",DOG_ma,DOG_mi);
+                    printf("Novell DOS 7\nDog version %u.%u.%02x\n",DOG_ma,DOG_mi,DOG_re);
                     break;
                 case  0xFD:
-                    printf("FreeDOS version %u.%u\nDog version %u.%u\n",DOS_ma,DOS_mi,DOG_ma,DOG_mi);
+                    printf("FreeDOS version %u.%u\nDog version %u.%u.%02x\n",DOS_ma,DOS_mi,DOG_ma,DOG_mi,DOG_re);
                     if(b == 0xff)
                         printf("FreeDOS Kernel (build 1993 or prior)\n");
                     else
                         printf("FreeDOS Kernel version %u.%u.%u\n",b,w >> 8,w & 0xff);
                     break;
                 case  0xFF:
-                    printf("M$-DOS version %u.%u\nDog version %u.%u\n",DOS_ma,DOS_mi,DOG_ma,DOG_mi);
+                    printf("M$-DOS version %u.%u\nDog version %u.%u.%02x\n",DOS_ma,DOS_mi,DOG_ma,DOG_mi,DOG_re);
                     break;
                 default :
-                    printf("DOS version %u.%u\nDog version %u.%u\n",DOS_ma,DOS_mi,DOG_ma,DOG_mi);
+                    printf("DOS version %u.%u\nDog version %u.%u.%02x\n",DOS_ma,DOS_mi,DOG_ma,DOG_mi,DOG_re);
             }
             break;
 /*
         case 7 :
             if (DOS_mi==10)
-                printf("Microsoft Windows 95 OSR2\nDog version %u.%u\n",DOG_ma,DOG_mi);
+                printf("Microsoft Windows 95 OSR2\nDog version %u.%u.%02x\n",DOG_ma,DOG_mi,DOG_re);
             else
-                printf("Microsoft Windows 95\nDog version %u.%u\n",DOG_ma,DOG_mi);
+                printf("Microsoft Windows 95\nDog version %u.%u.%02x\n",DOG_ma,DOG_mi,DOG_re);
             break;
 */
         case 10 :
-            printf("OS/2 version 1.%u\nDog version %u.%u\n",DOS_mi/10,DOG_ma,DOG_mi);
+            printf("OS/2 version 1.%u\nDog version %u.%u.%02x\n",DOS_mi/10,DOG_ma,DOG_mi,DOG_re);
             break;
         case 20 :
             if (DOS_mi < 30)
-                printf("OS/2 version %u.%u\nDog version %u.%u\n",DOS_ma/10,DOS_mi/10,DOG_ma,DOG_mi);
+                printf("OS/2 version %u.%u\nDog version %u.%u.%02x\n",DOS_ma/10,DOS_mi/10,DOG_ma,DOG_mi,DOG_re);
             else if(DOS_mi==30)
-                printf("OS/2 Warp 3.0 virtual DOS machine\nDog version %u.%u\n",DOG_ma,DOG_mi);
+                printf("OS/2 Warp 3.0 virtual DOS machine\nDog version %u.%u.%02x\n",DOG_ma,DOG_mi,DOG_re);
             else if(DOS_mi==40)
-                printf("OS/2 Warp 4.0 virtual DOS machine\nDog version %u.%u\n",DOG_ma,DOG_mi);
+                printf("OS/2 Warp 4.0 virtual DOS machine\nDog version %u.%u.%02x\n",DOG_ma,DOG_mi,DOG_re);
             break;
         default :
-            printf("Unknown DOS version %u.%u\nDog version %u.%u\n",DOS_ma,DOS_mi,DOG_ma,DOG_mi);
+            printf("Unknown DOS version %u.%u\nDog version %u.%u.%02x\n",DOS_ma,DOS_mi,DOG_ma,DOG_mi,DOG_re);
     }
+
+	 return 0;
+
 }
 

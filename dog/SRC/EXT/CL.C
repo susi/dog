@@ -1,6 +1,6 @@
 /*
 
-CP.C - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
+CL.C - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
 
 Copyright (C) 1999,2000 Wolf Bergenheim
 
@@ -21,47 +21,48 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 Developers:
 Wolf Bergenheim (WB)
 
-TODO: Make the whole thing!
-
 History
 18.03.00 - Extracted from DOG.C - WB
 
 ****************************************************************************/
 
+
+#include "ext.h"
+
+void do_cl(void);
+
 #pragma argsused
-void do_cp( BYTE n)
+int main(BYTE n, BYTE *arg[])
 {
-    printf("Sorry NOT implemented yet. Use xcopy.\n");
-/*
-    FILE *src,*trg;
-    BYTE i,*buff;
-    struct ffblk ffb;
-
-    if(findfirst(arg[2],ffb,0+1+2+4+8)) {
-        fprintf(stderr,"Replace %s (Yes/No)? ");
-        i = getchar();
-        if((i == 'n') || (i == 'N'))
-            return;
-    }
-    i = findfirst(arg[1],ffb,0);
-        if (i == 18)
-            fprintf(stderr,"File %s NOT found",arg[1]);
-
-    src = fopen(arg[1],"br");
-    trg = fopen(arg[2],"bw");
-    if(src ==  NULL) {
-        fprintf(stderr,"File %s NOT found",arg[1]);
-        return;
-    }
-    if(trg ==  NULL) {
-        fprintf(stderr,"Error while creating file %s",arg[2]);
-        return;
-    }
-
-
-
-
-*/
+	/* 
+	 switch because this WILL be extended to clear 
+	 the screen in to differnt video modes.
+	*/
+	switch (n) {
+	 case 1:
+		do_cl();
+		break;
+	 default:
+		do_cl();
+		break;
+	}
+	
+	return 0;
 }
+		
 
+void do_cl(void)
+{
+	
+	  asm MOV ax,0600h
+		asm MOV bh,07h
+		asm MOV cx,0000h        /* (0,0) to*/
+		asm MOV dx,5079h        /* (50,79) */
+		asm INT 10h             /*Clear screen*/
+		asm MOV ah,02h
+		asm MOV bh,00h
+		asm MOV dx,0000h        /* (0,0)*/
+		asm INT 10h             /*Move cursor to upper left corner*/
+    
+}
 

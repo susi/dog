@@ -1,6 +1,6 @@
 /*
 
-VF.C - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
+BR.C - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
 
 Copyright (C) 1999,2000 Wolf Bergenheim
 
@@ -24,55 +24,71 @@ Wolf Bergenheim (WB)
 History
 18.03.00 - Extracted from DOG.C - WB
 
-***************************************************************************/
+****************************************************************************/
 
-#ifdef port
-#include "dog.h"
-#endif
+#include "ext.h"
 
-void do_vf(BYTE n)
+BYTE cbreak(BYTE s);
+
+int main(BYTE n, BYTE *arg[])
 {
 
-    if (n==1) {
-        printf("Verify is ");
+    BYTE f;
 
-			asm MOV ah,54h  /*  Get verify flag */
-      asm INT 21h
-			asm MOV dl,01h
-      asm CMP al,dl
-      asm JE  on
+    if(n==1) {
 
-        puts("OFF");
-        return;
-        on:
-        puts("ON");
-        return;
+        f = cbreak(0xff);
+        printf("BReak is ");
+        switch(f) {
+            case 0 :
+                    puts("OFF");
+                    break;
+            case 1 :
+                    puts("ON");
+                    break;
+       }
     }
-    if (n==2) {
-        if (stricmp(arg[1],"ON")==0) {
-					
-					asm MOV ah,2eh  /*Set Verify flag*/
-					asm MOV al,01h  /* to on*/
-					asm INT 21
+    else if(n==2) {
 
+        if (stricmp(arg[1],"ON")==0) {
+            f=cbreak(1);
         }
         else if (stricmp(arg[1],"OFF")==0) {
-					
-					asm MOV ah,2eh  /* Set Verify flag */
-					asm MOV al,00h  /* to off */
-					asm INT 21
-
+            f=cbreak(0);
         }
         else {
             puts("You MUST specify either ON or OFF.");
-            return;
+            return 0xFF;
         }
-
     }
-    if ((n!=1) && (n!=2)) {
+    else {
         puts("Invalid number of arguments.");
-        return;
+			 return 0xFF;
     }
+    return 0;
+}
+
+/**************************************************************************/
+
+BYTE cbreak(BYTE s)
+{
+    
+    asm MOV AH,33h
+    asm MOV AL,s
+    asm CMP AL,0FFh
+    asm JE  cbreak_query
+    asm MOV DL,AL
+    asm MOV AL,01h
+    asm INT 21h
+
+    return 0;
+    cbreak_query:
+
+    asm MOV AL,00h
+    asm INT 21h
+    asm MOV s,DL
+
+    return s;
 }
 
 

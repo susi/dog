@@ -30,13 +30,12 @@ History
 
 **************************************************************************/
 
-#ifdef port
-#include "dog.h"
-#endif
+#include "ext.h"
 
 WORD newname(BYTE *oldname, BYTE *newname);
+BYTE *trueName(BYTE *name,BYTE *tn);
 
-void do_mv(BYTE n)
+int main(BYTE n, BYTE *arg[])
 {
     BYTE *p, b, ndir[129], odir[129], nn[129]={0},on[129]={0},tn[12]={0};
 #ifdef MV_WILD
@@ -47,7 +46,7 @@ void do_mv(BYTE n)
 
     if(n != 3) {
         puts("Invalid number of arguments.");
-        return;
+        return 0xff;
     }
 
     b = findfirst(arg[1],fb,0);
@@ -132,7 +131,7 @@ printf("%s:odir = /%s/ ndir = /%s/\n",__FILE__,odir,ndir);
 
         b = findnext(fb);
     }
-    return;
+    return 0;
 
 }
 

@@ -28,10 +28,6 @@ History
 
 */
 
-#ifdef port
-#include "dog.h"
-#endif
-
 void do_cd( BYTE n)
 {
     BYTE i,j,k,dir[80],*p,*q;

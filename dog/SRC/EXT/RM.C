@@ -22,16 +22,13 @@ Developers:
 Wolf Bergenheim (WB)
 
 History
-18.03.00 - Extracte Dbbbbbbbbeeee ,mk”lo.-p„*
- from DOG.C - WB
+18.03.00 - Extracted from DOG.C - WB
 
 **************************************************************************/
 
-#ifdef port
-#include "dog.h"
-#endif
+#include "ext.h"
 
-void do_rm(BYTE n)
+void main(BYTE n,BYTE *arg[])
 {
     BYTE r,f,i,*p,fn[129]={0},dir[80];
     struct ffblk *fb;
@@ -60,11 +57,6 @@ void do_rm(BYTE n)
 
             if(f==0) {
 
-                if(cBreak) {
-                    cBreak = 0;
-                    return;
-                }
-
                 p = arg[i];
                 for(p+=strlen(arg[i])+1;*p!='\\';p--);
                 if(p>arg[i]) {
@@ -86,10 +78,6 @@ void do_rm(BYTE n)
             }
             r=findnext(fb);
             while(r==0) {
-                if(cBreak) {
-                    cBreak = 0;
-                    return;
-                }
 
                 for(p+=strlen(arg[i])+1;*p!='\\';p--);
                 if(p>arg[i]) {
@@ -113,7 +101,7 @@ void do_rm(BYTE n)
     }
         
     else puts("Invalid number of arguments.");  
-    return;
+    return 0;
 }
 
 
