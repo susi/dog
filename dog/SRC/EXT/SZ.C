@@ -25,6 +25,7 @@ History
 18.03.00 - Extracted from DOG.C - WB
 02.01.02 - Tried to fix disk size and disk free calculations - failed ->
             this feature is now disabled
+2002-11-21 - Improved help text, prints to std err - WB
 
 **************************************************************************/
 
@@ -88,10 +89,17 @@ fprintf(stderr,"init:1: sz_f.patt[0]=%s k=%u\n",sz_f.patt[0],k);
 				 if (arg[i][0] == '-') {
 						switch(arg[i][1]) {
 						 case 'h':
-							 printf("The switches are:\n\t-k: Show result in kilobytes\n");
-							 printf("\t-m: show result in megabytes\n");
+							fputs("Usage: SZ [OPTION] FILEPATTERN...\n\nCounts size of files in directory\n\n", stderr);
+							fputs("The OPTIONS are:\n",stderr);
+							fputs("\t-k:  Show result in kilobytes\n",stderr);
+							fputs("\t-m:  show result in megabytes\n",stderr);
+							fputs("\t-h:  display this help and exit\n",stderr);
+							fputs("\t-?:  display usage and exit\n",stderr);
+							fputs("\t-r:  NOT IMPLEMENTED YET. recurse sub-directories.\n",stderr);
+							fputs("\nFILEPATTERN is file pattern like *.COM, *.?\n", stderr);
+							fputs("\nSZ is part of DOG (http://dog.sf.net/)\n", stderr);
 							 free(sz_f.patt);
-							 return 1;
+							 return 0;
 						 case 'k':
 							 sz_f.flags = FLAG_K;
 							 break;
@@ -99,9 +107,9 @@ fprintf(stderr,"init:1: sz_f.patt[0]=%s k=%u\n",sz_f.patt[0],k);
 							 sz_f.flags = FLAG_M;
 							 break;
 						 case '?':
-							 printf("sz [-h|-k|-m|-?|(-r)] [d:\\dir\\filename.ext]\n");
+							 printf("Usage: SZ [-h|-k|-m|-?|(-r)] FILEPATTERN...\n");
 							 free(sz_f.patt);
-							 return 1;
+							 return 0;
 						 default:
 							 printf("Incorrect switch %s try -h\n",arg[i]);
 							 free(sz_f.patt);

@@ -43,14 +43,14 @@ int detect_switcher(void);
 #define DOSEMU_MAGIC_LOCATION 0xF000FFE0
 
 struct dosemu_detect {
-		union {
-				char magic_[8];
-				unsigned long magic[2];
-		}u;
-        union {
-        unsigned char ver[4];
-		    unsigned long version;
-        }v;
+	union {
+		char magic_[8];
+		unsigned long magic[2];
+	}u;
+	union {
+		unsigned char ver[4];
+		unsigned long version;
+	}v;
 };
 
 
@@ -61,14 +61,14 @@ int main(void)
 	BYTE DOG_ma=0,DOG_mi=0,DOG_re=0x0b,dogvr[161];
 	struct dosemu_detect far* given = (void far*) DOSEMU_MAGIC_LOCATION;
 	struct dosemu_detect expect = {DOSEMU_MAGIC};
-
-		/* test for dosemu */
-
+	
+	/* test for dosemu */
+	
 	if ((expect.u.magic[0] == given->u.magic[0]) && (expect.u.magic[0] == given->u.magic[0]))
 		printf("Running under Dosemu, version %d.%d.%d.%d\n",given->v.ver[3],given->v.ver[2],given->v.ver[1],given->v.ver[0]);
-
+	
 	/* check for DOG int d0 */
-
+	
 	asm MOV ax,35d0h
 	asm int 21h
 	asm push es
@@ -102,13 +102,15 @@ int main(void)
 	asm MOV ax, 4452h
   asm STC
   asm INT 21h
-  asm JC vr_NODR
+  asm JNC vr_mabyDR
+  asm JMP vr_NODR
+		vr_mabyDR:
   asm cmp ax, 4452h
   asm JNE vr_ISDR
   asm JMP vr_NODR
 	vr_ISDR:
 	asm MOV DR_vr,ax
-
+		
 	switch(DR_vr & 0x00ff) {
 	 case 0x41:
 	  printf("DOS Plus 1.2\n\tProviding DOS %u.%u interface\n%s",DOS_ma,DOS_mi,dogvr);
@@ -300,7 +302,7 @@ int is_win(BYTE *pmaj, BYTE *pmin, WORD *pmode)
     *pmode = ENHANCED_MODE;
     return 1;
   }
-    
+	
   /* call 2F/4680 to see if Windows 3.0 Standard or Real mode; but, 
    this could be a "3.0 derivative" such as DOSSHELL task switcher! */
   asm mov ax, 4680h
@@ -312,7 +314,7 @@ int is_win(BYTE *pmaj, BYTE *pmin, WORD *pmode)
       return 0;
     *pmaj = 3;
     *pmin = 0;
-        
+		
         /* either have Windows Standard mode or Real mode; to 
            distinguish, have to do fake Windows broadcasts with
            2F/1605.  Yuk!  We'll avoid that here by assuming

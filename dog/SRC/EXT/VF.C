@@ -26,6 +26,7 @@ History
 02.01.02 - Fixed bug: In call to set state of verify flag A call ti int 21 and
             NOT int 21h was made (oops :) Other bugfixes too: main returns int
             added return to the end of the prog to make the compiler happy - WB
+2002-11-21 - Added help text, prints to std err - WB
 
 ***************************************************************************/
 
@@ -67,14 +68,21 @@ int main(BYTE n, BYTE *arg[])
 
         }
         else {
-            puts("You MUST specify either ON or OFF.");
-            return 1;
+					fputs("Usage: VF [ ON | OFF ]\n\nGet [ Set | Clear ] the system verify flag\n\n", stderr);
+					fputs("Second argument is either ON or OFF\n", stderr);
+					fputs("\tON\tSet the system verify flag.\n\tOFF\tClear the system verify flag\n", stderr);
+					fputs("\nVF is part of DOG (http://dog.sf.net/)\n", stderr);
+					return 1;
         }
 
     }
     else {
-        puts("Invalid number of arguments.");
-        return 0xFF;
+			fputs("Invalid number of arguments.\n", stderr);
+			fputs("Usage: VF [ ON | OFF ]\n\nGet [ Set | Clear ] the system verify flag\n\n", stderr);
+			fputs("Second argument is either ON or OFF\n", stderr);
+			fputs("\tON\tSet the system verify flag.\n\tOFF\tClear the system verify flag\n", stderr);
+			fputs("\nVF is part of DOG (http://dog.sf.net/)\n", stderr);
+			return 0xFF;
     }
     return 0;
 }

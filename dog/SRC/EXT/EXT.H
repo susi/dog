@@ -70,3 +70,6 @@ Wolf Bergenheim (WB)
 #define _BS 0x8;
 #define _TAB 0x9;
 #define _SPC 0x32;
+
+#define FLAG_UNSET 0
+#define FLAG_SET 1
