@@ -136,16 +136,7 @@ History
 2001-07-18 - Added variable subtitution to the commandline. $name is replaced with the value of the env.var name. 
              ${0-9} is the parameter number ${0-9} of the PREVIOUS command. -WB
 2001-07-23 - Changed the Variable char to % and the prompt char to $ for compatibility. -WB
-2002-02-21 - Added support for dog.dog if shell is permanent - WB
-2002-02-25 -   Fixed controlC to return with retf instead of iret.
-             Made int 24 function return with al=3 (FAIL) - WB
-             NOTE: FreeDOS behaves diffrently from MSDOS in findfirst. 
-						 If searching for dog.dog.COM FD will return file found: dog.dog
-						 if such a file exists, while MSDOS will not. This behavour
-						 destroys the do_exe() if both file.dog and file.com exist. It
-						 results in file.dog being loaded as if it is a .com program
-						 ==> CRASH.
-2002-02-26 - commands beginning with # are ignored - WB						 
+2002-02-21 - Added support for dod.dog if shell is permanent -WB
 */
 
 #include "dog.h"
@@ -514,24 +505,25 @@ BYTE parsecom(BYTE * line,BYTE ll)
     
     if(i<ll) {
       if(line[i] == '%') {
-        if( line[i+1] == '%' )
-        arg[j++] = &line[++i];
+        if( line[i+1] == '%' ) {
+					arg[j++] = &line[++i];
+				}
         else if(isdigit(line[++i])) {
-					arg[j] = varg[line[i++] -'0'];
-          j++;
+					arg[j++] = varg[line[i++] -'0'];
 #ifdef parse_debug
           printf("parsecom:1:arg[%u]=(%s)\n",j-1,arg[j-1]);
 #endif
         }
         else {
-	  for(k=0;isalnum(line[i]) && (i<ll);k++,i++) {
-	    ename[k] = line[i];
+					for(k=0;(line[i] != '%') && (i<ll);k++,i++) {
+						ename[k] = line[i];
 #ifdef parse_debug
-	    printf("parsecom:2.0:ename[%u]=(%c);line[%u]=(%c)\n",k,ename[k],i,line[i]);
+						printf("parsecom:2.0:ename[%u]=(%c);line[%u]=(%c)\n",k,ename[k],i,line[i]);
 #endif
-	  }
+					}
           ename[k]= '\0';
-          getevar(ename,varg[j]); /* replace $varname with value*/
+					i++;
+          getevar(ename,varg[j]); /* replace %varname% with value*/
           arg[j] = varg[j];
           j++;
 #ifdef parse_debug
@@ -544,8 +536,9 @@ BYTE parsecom(BYTE * line,BYTE ll)
       }
     }
     
-    while(!isspace(line[i]) && (i<ll))
-    i++;
+    while(!isspace(line[i]) && (i<ll)) {
+			i++;
+		}
   }
 #ifdef parse_debug
   printf("parsecom:3: j=%d line: !%s! arg(varg):",j,line);
@@ -834,16 +827,20 @@ void printprompt(void)
   WORD yr;
   BYTE dow,mo,day,i,k,h,mi,s,ms,j;
   BYTE ename[80],eval[80];
-  
+
   prompt = malloc(200);
+  memset(prompt,'\0',200);
+	memset(eval,'\0',80);
+	
+  if((prompt = getevar("PROMPT",prompt)) != NULL) {
+		k = strlen(prompt);
+	}
+  else {
+		k = 0;
+	}
   
-  if((prompt = getevar("PROMPT",prompt)) != NULL)
-  k = strlen(prompt);
-  else 
-  k = 0;
-  
-#ifdef debug
-  printf("prompt= (%s)\n",prompt);
+#ifdef prompt_debug
+  printf("printprompt:0:prompt=(%s) strlen=(%d)\n",prompt,k);
 #endif
 
   /*  0x01 = path
@@ -852,6 +849,9 @@ void printprompt(void)
    */
   
   for(i=0;i<k;i++) {
+#ifdef prompt_debug
+  printf("printprompt:1:prompt[%d]=%c\n",i,prompt[i]);
+#endif
     if(prompt[i]=='$') {
       switch(prompt[++i]) {
        case '$' :
@@ -948,25 +948,41 @@ void printprompt(void)
         ;
       }
     }
-    else if(prompt[i] == '%') {
-      if(prompt[++i]  == '%')
-      putchar('%');
-      else if(isdigit(prompt[++i])) {
-        printf("%s",varg[prompt[i++] -'0']);
+    else if(prompt[i++] == '%') {
+      if(prompt[i]  == '%') {
+				putchar('%');
+			}
+      else if(isdigit(prompt[i])) {
+        printf("%s",varg[prompt[i] -'0']);
       }
       else {
-        for(j=0;isalnum(prompt[i]) && (i<k);j++,i++) {
+        for(j=0;(prompt[i] != '%') && (i<k);j++,i++) {
           ename[j] = prompt[i];
-        }
+#ifdef prompt_debug
+					printf("printprompt:2:prompt[%d]=%c\n",i,prompt[i]);
+#endif
+				}
+#ifdef prompt_debug
+					printf("printprompt:3:prompt[%d]=%c\n",i,prompt[i]);
+#endif
         ename[j]= '\0';
-        getevar(ename,eval); /* replace $varname with value*/
-        printf("%s",eval);
+        getevar(ename,eval); /* replace %varname% with value*/
+/*				eval[strlen(eval)-2;*/
+#ifdef prompt_debug
+					printf("printprompt:4:eval=(%s\b)\n",eval);
+#endif
+        printf("%s\b",eval);
       }
-      i--;
+			i++;
     }
     else
     putchar(prompt[i]);
   }
+
+#ifdef prompt_debug
+  printf("printprompt:5:prompt=(%s) length=%d\n",prompt,k);
+#endif
+
   free(prompt);
   return;
 }
@@ -995,7 +1011,7 @@ int main(int nargs, char *argv[])
   }
   
   if((flags & FLAG_P) == FLAG_P) {
-    arg[0] = "dog"; /* for now... so it works in FreeDOS*/
+    arg[0] = "dog";
     do_command(1);
   }
   
@@ -1213,7 +1229,7 @@ void do_command( BYTE na)
   BYTE dbi;
 #endif
   if (na==0) return;
-  if ((arg[0][0] == ':') || (arg[0][0] =='#')) return;
+  if (arg[0][0] == ':') return;
   if((strlen(arg[0])==2) || (arg[0][2]=='.') || (arg[0][2]=='\\')) {
     
     for(i=0;i<_NCOMS;i++) {
@@ -1347,10 +1363,8 @@ void do_command( BYTE na)
         do_cd(2);
         return;
       }
-			/* don't execute commands starting with wildcards : TODO containing wildcards */
-      else if((arg[0][0] =='*') || (arg[0][0]=='?')) {
-				return;
-			}
+      else if((arg[0][0] =='*') || (arg[0][0]=='?'))
+      return;
       else {
         do_exe(na);
         D = getcur(P) +'A';
@@ -1415,6 +1429,8 @@ void do_exe(BYTE n)
   BYTE d,i,ic,ie,id,*p,*q,*r,*cpath,envi[255],file[128],exec_f;
   BYTE s[200], com[80],exe[80],dog[80],path[60],trunam[128],prog[120];
   struct ffblk *fb;
+
+	exec_f = NON;
   
   for (i=0;i<200;i++) {
     s[i] = '\0';
@@ -1486,106 +1502,106 @@ void do_exe(BYTE n)
     }
     
   }
-  
-  if(prog[1] == ':') {
-    strcpy(file,prog);
-    goto do_exe_enp;
-  }
-  if(prog[0] == '\\') {
-    strcpy(file,prog);
-    goto do_exe_enp;
-  }
-  
-  getevar("PATH",envi);
-  p = malloc(255);
-  strcpy(p,".;");
-  strcat(p,envi);
-  strcpy(envi,p);
+  if (exec_f == NON) {
+		if(prog[1] == ':') {
+			strcpy(file,prog);
+			goto do_exe_enp;
+		}
+		if(prog[0] == '\\') {
+			strcpy(file,prog);
+			goto do_exe_enp;
+		}
+		
+		getevar("PATH",envi);
+		p = malloc(255);
+		strcpy(p,".;");
+		strcat(p,envi);
+		strcpy(envi,p);
     free(p);
 #ifdef exe_debug
-  printf("do_exe:8:PATH=%s\n",envi);
+		printf("do_exe:8:PATH=%s\n",envi);
 #endif     
-  for(cpath=strtok(envi,";");;cpath=strtok(NULL,";")) {
-    if(cpath == NULL) break;
+		for(cpath=strtok(envi,";");;cpath=strtok(NULL,";")) {
+			if(cpath == NULL) break;
 #ifdef exe_debug
-    printf("do_exe:9:dir=%s\n",cpath);
+			printf("do_exe:9:dir=%s\n",cpath);
 #endif
-    strcpy(file,cpath);
-    if(file[strlen(file)-1] != '\\') {
-			strcat(file,"\\");
-		}
-    strcat(file,arg[0]);
-    do_exe_enp:
-    strcpy(com,file);
-    strcpy(exe,file);
-    strcpy(dog,file);
-    strcat(com,".COM");
-    strcat(exe,".EXE");
-    strcat(dog,".DOG");
+			strcpy(file,cpath);
+			if(file[strlen(file)-1] != '\\') {
+				strcat(file,"\\");
+			}
+			strcat(file,arg[0]);
+			do_exe_enp:
+			strcpy(com,file);
+			strcpy(exe,file);
+			strcpy(dog,file);
+			strcat(com,".COM");
+			strcat(exe,".EXE");
+			strcat(dog,".DOG");
 #ifdef exe_debug
-    printf("do_exe:10:file=%s\n",file);
-    printf("do_exe:11:com=%s\n",com);
-    printf("do_exe:12:exe=%s\n",exe);
-    printf("do_exe:13:dog=%s\n",dog);
-#endif
-    if(findfirst(com,fb,0x27) == 0) {
-#ifdef exe_debug
+			printf("do_exe:10:file=%s\n",file);
 			printf("do_exe:11:com=%s\n",com);
-      printf("\ndo_exe:14:file=%s\n",fb->ff_name);
+			printf("do_exe:12:exe=%s\n",exe);
+			printf("do_exe:13:dog=%s\n",dog);
 #endif
-      exec_f = COM;
-      break;
-    }
-    else if (findfirst(exe,fb,0x27) == 0) {
+			if(findfirst(com,fb,0x27) == 0) {
 #ifdef exe_debug
-      printf("\ndo_exe:15:file=%s\n",fb->ff_name);
+				printf("do_exe:11:com=%s\n",com);
+				printf("\ndo_exe:14:file=%s\n",fb->ff_name);
 #endif
-      exec_f = EXE;
-      break;
-    }
-    else if (findfirst(dog,fb,0x27) == 0) {
+				exec_f = COM;
+				break;
+			}
+			else if (findfirst(exe,fb,0x27) == 0) {
 #ifdef exe_debug
-      printf("\ndo_exe:16:file=%s\n",fb->ff_name);
+				printf("\ndo_exe:15:file=%s\n",fb->ff_name);
 #endif
-      exec_f = DOG;
-      break;
-    }
-    else if(findfirst(file,fb,0x27) == 0) {
+				exec_f = EXE;
+				break;
+			}
+			else if (findfirst(dog,fb,0x27) == 0) {
 #ifdef exe_debug
-      printf("\ndo_exe:17:file=%s\n",fb->ff_name);
+				printf("\ndo_exe:16:file=%s\n",fb->ff_name);
 #endif
-      if(strstr(fb->ff_name,".COM") == NULL) {
-        if (strstr(fb->ff_name,".EXE") == NULL) {
-          if (strstr(fb->ff_name,".DOG") == NULL) {
-            exec_f = NON;
-          }
-          else {
+				exec_f = DOG;
+				break;
+			}
+			else if(findfirst(file,fb,0x27) == 0) {
+#ifdef exe_debug
+				printf("\ndo_exe:17:file=%s\n",fb->ff_name);
+#endif
+				if(strstr(fb->ff_name,".COM") == NULL) {
+					if (strstr(fb->ff_name,".EXE") == NULL) {
+						if (strstr(fb->ff_name,".DOG") == NULL) {
+							exec_f = NON;
+						}
+						else {
             strcpy(dog,file);
-            exec_f = DOG;
-          }
-        }
-        else {
-          strcpy(exe,file);
-          exec_f = EXE;
-        }
-      }
-      else {
-        strcpy(com,file);
-        exec_f = COM;
-      }
-      break;
-    }
-    
-    else {
-      exec_f = NON;
-    }
-    
+							exec_f = DOG;
+						}
+					}
+					else {
+						strcpy(exe,file);
+						exec_f = EXE;
+					}
+				}
+				else {
+					strcpy(com,file);
+					exec_f = COM;
+				}
+				break;
+			}
+			
+			else {
+				exec_f = NON;
+			}
+			
 #ifdef exe_debug
-    printf("do_exe:18:exec_f = %u\n",exec_f);
+			printf("do_exe:18:exec_f = %u\n",exec_f);
 #endif
-    
+			
+		}
   }
-  
   exec_now:
   
 #ifdef exe_debug

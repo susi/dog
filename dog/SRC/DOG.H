@@ -30,17 +30,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <errno.h>
 #include <fcntl.h>
 
-#define de		bug
+#define de bug
 #define list
-#define do_de   bug
+#define do_de bug
 #define ls_de	bug
-#define exe_de	bug
-#define bat_de	bug
-#define cd_de	bug
-#define eh_de	bug
-#define ca_de	bug
+#define exe_de bug
+#define bat_de bug
+#define cd_de bug
+#define eh_de bug
+#define ca_de bug
 #define parse_de bug
-
+#define prompt_de bug
 
 #define BYTE unsigned char
 #define WORD unsigned int
@@ -216,7 +216,7 @@ BYTE command_des[_NCOMS][21] = {
 	"VeRsion             ",
 	"eXit                "};
 
-BYTE *command_help[_NCOMS];
+/* BYTE *command_help[_NCOMS]; */
 
 /*
 Structure of the flags variable. Tells which flags were given to DOG
