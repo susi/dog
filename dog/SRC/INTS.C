@@ -82,7 +82,7 @@ CBreak:
         dw 0200h
 CritErr:
  		iret
-DOGVerFunc:
+DOG2eFunc:
 		mov ax,DOG_VER
 		iret
 	}

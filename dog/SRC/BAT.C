@@ -21,11 +21,18 @@ History
 06.05.99 - BAT.C is a now also ported.
 
 */
-#define _BAT_COMS 9
+#define _BAT_COMS 8
 
+#define B_C_CA 0
+#define B_C_DO 1
+#define B_C_44 2
+#define B_C_GO 3
+#define B_C_IF 4
+#define B_C_IN 5
+#define B_C_SH 6
+#define B_C_TI 7
 
 BYTE batch[_BAT_COMS][3] = {
-    "BP",  /*Beep */
     "CA",  /*call */
     "DO",  /*DO   */
     "44",  /*FOR  */
@@ -34,7 +41,9 @@ BYTE batch[_BAT_COMS][3] = {
     "IN",  /*input*/
     "SH",  /*shift*/
     "TI"   /*Timer*/
-    };
+};
+
+
 
 /***************************************************************************/
 
@@ -346,38 +355,6 @@ printf("bc:batch[%d]=(%s)\r",i,batch[i]);
 
 /**************************************************************************/
 
-void do_bp(BYTE n)
-{
-	BYTE t,f;
-#ifdef bat_debug
-	BYTE b;
-printf("n = %u\n",n);
-for(b=0;b<n;b++)
-printf("do_bp:arg[%d]=(%s)\n",b,arg[b]);
-#endif
-
-    if(n < 2) {
-        putchar('\x07');
-        return;
-    }
-    else if (n == 3){
-		f = atoi(arg[1]);
-		t = atoi(arg[2]);
-		if(t == 0)
-			return;
-		if(f == 0) {
-			delay(t);
-			return;
-		}
-        sound(f);
-        delay(t);
-		nosound();
-    }
-    else
-      puts("Invalid number of arguments.");
-
-    return;
-}
 
 void do_go(BYTE n)
 {

@@ -131,6 +131,7 @@ History
 13.04.00 - rewrote initialize(). now both XX and SE work. As does the 
            -E command-line switch - WB
 01.08.00 - rewrote (allmost completely) do_exe to handle the PATH variable. -WB
+15.08.00 - Moved BP (Beep) to a normal command out of bat.c - WB
 
 */
 
@@ -153,6 +154,9 @@ BYTE initialize(int nargs, char *args[])
     BYTE far *ep;
     WORD w,nenvsz,nenvseg,eoesz,o;
 
+    for(i=0;i<_NCOMS;i++) { /* TEPORARY ONLY!!! */
+        command_help[i] = 0;
+    }    
 
     Xitable = 1;
 
@@ -369,7 +373,7 @@ printf("s(%Fp)->%Fc d(%Fp)->%Fc\n",s,*s,d,*d);
                     get_int();
                     set_int();
 
-                    /* make int 2e point to DOGVerFunc */
+                    /* make int 2e point to DOG2eFunc */
                     asm {
                         /* save */
                         mov ax,352eh
@@ -378,7 +382,7 @@ printf("s(%Fp)->%Fc d(%Fp)->%Fc\n",s,*s,d,*d);
                         int 21h
                         /* set */
                         mov ax,252eh
-                        mov dx,offset DOGVerFunc
+                        mov dx,offset DOG2eFunc
                         push cs
                         pop es
                         int 21h
@@ -423,7 +427,7 @@ printf("s(%Fp)->%Fc d(%Fp)->%Fc\n",s,*s,d,*d);
             p += i; /*point to after terminating 0 */
             strcpy(p,"PATH=C:\\DOS;C:\\DOG;C:\\;..");
             i += strlen(p)+1;
-            p += 31;
+            p += 26;
             strcpy(p,"PROMPT=");
             strcat(p,_PROMPT);
             i += strlen(p)+1;
@@ -1174,6 +1178,10 @@ fprintf(stderr,"\n");
 #endif
         switch(i) {
     
+        case C_BP :
+            do_bp(na);
+            break;
+        
         case C_BR :
             do_br(na);
             break;
@@ -1304,6 +1312,7 @@ fprintf(stderr,"\n");
 **************************************
 *************************************/
 
+#include "bp.c"
 #include "br.c"
 #include "cc.c"
 #include "cmrd.c"

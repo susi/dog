@@ -149,7 +149,7 @@ C:\DOG>_
 */
 
 
-#define _NCOMS 19
+#define _NCOMS 20
 #define _NARGS 20
 
 /* PSP */
@@ -165,6 +165,7 @@ BYTE DOG_ma = DOG_MA, DOG_mi = DOG_MI;
 BYTE Xit = 0, Xitable = 1, eh = 0, D=0, P[MAXDIR]; 
 BYTE comline[200]= {0}, *com = comline, *arg[_NARGS], history[50][200], *prompt;
 BYTE commands[_NCOMS][3] = {
+    "BP",
 	"BR",
 	"CC",
 	"CD",
@@ -186,6 +187,7 @@ BYTE commands[_NCOMS][3] = {
 	"XX"};
 
 BYTE command_des[_NCOMS][21] = {
+    "BeeP                ",
 	"BReak               ",
 	"Change Codepage     ",
 	"Change Directory    ",
@@ -206,27 +208,28 @@ BYTE command_des[_NCOMS][21] = {
 	"VeRsion             ",
 	"eXit                "};
 
-#define	C_BR 0
-#define	C_CC 1
-#define	C_CD 2
-#define	C_CL 3
-#define	C_CP 4
-#define	C_CT 5
-#define C_DT 
-#define C_EH 6
-#define C_HH 7
-#define C_LS 8
-#define C_MD 9
-#define C_NN 10
-#define C_RD 11
-#define C_RM 12
-#define C_SE 13
-#define C_SZ 14
-#define C_TM 
-#define C_TP 15
-#define C_VF 16
-#define C_VR 17
-#define C_XX 18
+BYTE *command_help[_NCOMS];
+
+#define C_BP 0
+#define	C_BR 1
+#define	C_CC 2
+#define	C_CD 3
+#define	C_CL 4
+#define	C_CP 5
+#define	C_CT 6 
+#define C_EH 7 
+#define C_HH 8 
+#define C_LS 9 
+#define C_MD 10
+#define C_NN 11
+#define C_RD 12
+#define C_RM 13
+#define C_SE 14
+#define C_SZ 15
+#define C_TP 16
+#define C_VF 17
+#define C_VR 18
+#define C_XX 19
 
 
 
@@ -291,6 +294,7 @@ void clearbat(void); /* clear the b file linked list*/
 void prevbat(void); /* return to the previous nest-level in bat*/
 
 /* internal commands */
+void do_bp(BYTE n);
 void do_br(BYTE n);
 void do_pp(BYTE n);
 void do_se(BYTE n);
@@ -311,7 +315,6 @@ void do_tp(BYTE n);
 void do_nn(BYTE n);
 
 /* DOG-file commands */
-void do_bp(BYTE n);
 void do_ca(BYTE n);
 void do_go(BYTE n);
 void do_sh(BYTE n);

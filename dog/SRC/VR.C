@@ -25,7 +25,9 @@ TODO: Fix recoginion of DR-DOS
 
 History
 18.03.00 - Extracted from DOG.C - WB
-06.04.99 - Added DR-DOS detection.
+06.04.00 - Added DR-DOS detection. - WB
+02.08.00 - Modified DR-DOS detection to detect DR-DOS regardles of version
+           returned in int 21h/30h - WB
 
 **************************************************************************/
 
@@ -42,7 +44,18 @@ void do_vr(void)
         MOV DOS_OEM,bh
         MOV b,bl
         MOV w,cx
+        mov ax, 4452h
+        stc
+        int 21h
+        jc vr_NODR
+        cmp ax, 4452h
+        je vr_NODR
+        mov DR_vr,ax
     }
+    printf("DR-DOS Product 0x%x\n\tProviding DOS %u.%u interface\nDog version %u.%u\n",DR_vr,DOS_ma,DOS_mi,DOG_ma,DOG_mi);
+    return;
+
+    vr_NODR:
     switch(DOS_ma) {  /*versions 1,2 & 4 NOT supported */
         case 3 :
             printf("DOS version %u.%u\nDOG version %u.%u",DOS_ma,DOS_mi,DOG_ma,DOG_mi);
@@ -64,18 +77,6 @@ void do_vr(void)
             switch(DOS_OEM) {
                 case  0x00:
                     if((DOS_mi ==0) && (DOS_ma==6)) DOS_mi = 1;
-                    asm {
-                        mov ax, 4452h
-                        stc
-                        int 21h
-                        jc vr_PC
-                        cmp ax, 4452h
-                        je vr_PC
-                        mov ax,DR_vr
-                    }
-                    printf("DR-DOS Product 0x%x\nDog version %u.%u\n",DR_vr,DOG_ma,DOG_mi);
-                    break;
-                    vr_PC:
                     printf("PC-DOS version %u.%u\nDog version %u.%u\n",DOS_ma,DOS_mi,DOG_ma,DOG_mi);
                     break;
                 case  0xEE:
@@ -95,7 +96,7 @@ void do_vr(void)
                     printf("M$-DOS version %u.%u\nDog version %u.%u\n",DOS_ma,DOS_mi,DOG_ma,DOG_mi);
                     break;
                 default :
-                    printf("MS-DOS version %u.%u\nDog version %u.%u\n",DOS_ma,DOS_mi,DOG_ma,DOG_mi);
+                    printf("DOS version %u.%u\nDog version %u.%u\n",DOS_ma,DOS_mi,DOG_ma,DOG_mi);
             }
             break;
 /*
