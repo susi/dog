@@ -28,51 +28,96 @@ History
 
 #include "ext.h"
 
+#define FLAG_UNSET 0
+#define FLAG_SET 1
+
+BYTE flag_i = FLAG_UNSET;
+BYTE flag_v = FLAG_UNSET;
+BYTE flag_r = FLAG_UNSET;
+BYTE flag_h = FLAG_UNSET;
+
 void rm_file(BYTE *patt)
 {
-	BYTE r,f,i;
-	BYTE *p;
-	BYTE fn[129]={0};
-	struct ffblk fb;
+  BYTE r,f,i;
+  BYTE *p;
+  BYTE fn[129]={0};
+  struct ffblk fb;
+  
+  f=findfirst(patt,&fb,0);
+  
+  if(f==0) {
 	
-	f=findfirst(patt,&fb,0);
+	p = patt;
+	for(p+=strlen(patt)+1;*p!='\\';p--);
+	if(p>patt) {
+	  *(++p)=0;
+	  strcpy(fn,patt);
+	  strcat(fn,fb.ff_name);
+	}
+	else
+	  strcpy(fn,fb.ff_name);
 	
-	if(f==0) {
-		
-		p = patt;
-		for(p+=strlen(patt)+1;*p!='\\';p--);
-		if(p>patt) {
-			*(++p)=0;
-			strcpy(fn,patt);
-			strcat(fn,fb.ff_name);
-		}
-		else
-			strcpy(fn,fb.ff_name);
-				
+	if(flag_i == FLAG_SET) {
+	  printf("remove %s (Y/N)? ",fn);
+	  /* Get character */
+	  asm mov ah,1
+	  asm int 21h
+	  asm mov r,al
+	  putchar('\n');
+	  putchar('\r');
+
+	  if((r == 'y') || (r == 'Y')) {
 		if(unlink(fn)==0) {
+		  if(flag_v == FLAG_SET) {
 			puts(fn);
+		  }
 		}
+	  }
 	}
-	else if((f==255) && (errno==2)) {
-		printf("%s NOT found.\n",patt);
+	else {
+	  if(unlink(fn)==0) {
+		if(flag_v == FLAG_SET) {
+		  puts(fn);
+		}
+	  }
+	  else {
+		printf("error while removing %s\n,fn");
+	  }
+	}
+  }
+  else if((f==255) && (errno==2)) {
+	printf("%s NOT found.\n",patt);
+  }  
+  while(findnext(&fb)==0) {	
+	for(p+=strlen(patt)+1;*p!='\\';p--);
+	if(p>patt) {
+	  *(++p)=0;
+	  strcpy(fn,patt);
+	  strcat(fn,fb.ff_name);
+	}
+	else
+	  strcpy(fn,fb.ff_name);
+	
+	if(flag_i == FLAG_SET) {
+	  printf("remove %s (Y/N)? ",fn);
+	  /* Get character */
+	  asm mov ah,1
+	  asm int 21h
+	  asm mov r,al
+	  putchar('\n');
+	  putchar('\r');
+
+	  if((r != 'y') && (r != 'Y'))
+		break;
 	}
 	
-	while(findnext(&fb)==0) {
-		
-		for(p+=strlen(patt)+1;*p!='\\';p--);
-		if(p>patt) {
-			*(++p)=0;
-			strcpy(fn,patt);
-			strcat(fn,fb.ff_name);
-		}
-		else
-			strcpy(fn,fb.ff_name);
-		
-		if(unlink(fn)==0) {
-			puts(fn);
-		}
+	if(unlink(fn)==0) {
+	  if(flag_v == FLAG_SET) {
+		puts(fn);
+	  }
 	}
-	return;
+  }
+  return;
 }
 
 void rm_list(BYTE *list)
@@ -80,7 +125,9 @@ void rm_list(BYTE *list)
   BYTE fn[129]={0};
   FILE *f;
 
+#ifdef DEBUG  
   fprintf(stderr,"list=(%s)\n",list);
+#endif
   
   f = fopen(list,"r");
   if(f != NULL) {
@@ -95,7 +142,7 @@ void rm_list(BYTE *list)
   }
   
   return;
-	
+  
 }
 	
 int main(BYTE n,BYTE *arg[])
@@ -103,23 +150,55 @@ int main(BYTE n,BYTE *arg[])
   BYTE r,f,i,*p,fn[129]={0},dir[80];
   
   if(n > 1) {		
+	/* check flags */
 	for(i=1;i<n;i++) {
+#ifdef DEBUG
+	  printf("flags: arg = %s\n",arg[i]);
+#endif
+	  if (arg[i][0] == '-') {
+		switch(arg[i][1]) {
+		 case 'i':
+		  flag_i = FLAG_SET;
+		  break;
+		 case 'v':
+		  flag_v = FLAG_SET;
+		  break;
+		 case 'h':
+		  printf("Usage: RM [OPTION]... FILE...\n\nRemove the FILE(s).\n\n");
+		  printf("The OPTIONS are:\n\t-i: interactive mode: prompt (Y/N) for each file\n");
+		  printf("\t-v: verbose: print filename of each removed file\n");
+		  printf("\t-h: display this help and exit\n");
+		  printf("\nFILE is either a filename OR a filename preceeded by '@',\n"
+				 " in which case the file is opened and read, treating every\n"
+				 " line as a filename to remove.\n");
+		  printf("\nRM is part of DOG (http://dog.sf.net/)\n");
+		  return 0;
+		}
+	  }
+	}
+	for(i=1;i<n;i++) {
+#ifdef DEBUG
+printf("main for-loop: arg = %s\n",arg[i]);
+#endif
 	  if (arg[i][0] == '@') {
 		rm_list(&arg[i][1]);
 	  }
+	  else if (arg[i][0] == '-') {
+		;
+	  }
 	  else {
 		if((p=strstr(arg[i],"*.*"))!=NULL) {
-		printf("Removing %s - Are you sure(Y/N)? ",arg[i]);
-		/* Get character */
-		
-		asm mov ah,1
-	    asm int 21h
-		asm mov r,al
-		putchar('\n');
-		putchar('\r');
-            
-		/* get to next arg if not 'Y' or 'y' */
-		if((r != 'y') && (r != 'Y'))
+		  printf("Removing %s - Are you sure(Y/N)? ",arg[i]);
+		  /* Get character */
+		  
+		  asm mov ah,1
+		  asm int 21h
+		  asm mov r,al
+		  putchar('\n');
+		  putchar('\r');
+		  
+		  /* get to next arg if not 'Y' or 'y' */
+		  if((r != 'y') && (r != 'Y'))
 		  break;
 		}
 		rm_file(arg[i]);
@@ -127,7 +206,7 @@ int main(BYTE n,BYTE *arg[])
     }
   }
   else
-		puts("Invalid number of arguments.");  
+	puts("Invalid number of arguments.");  
   
   return 0;
 }
