@@ -130,12 +130,19 @@ History
            changed its variable names to be more consistent with dt.c - EW
 13.04.00 - rewrote initialize(). now both XX and SE work. As does the 
            -E command-line switch - WB
+01.08.00 - rewrote (allmost completely) do_exe to handle the PATH variable.
 
 */
 
 #include "dog.h"
 #include "bat.c"
 #include "ints.c"
+
+/*
+#include "dog.h"
+#include "bat.c"
+#include "ints.c"
+*/
 
 BYTE initialize(int nargs, char *args[])
 {
@@ -1292,7 +1299,7 @@ fprintf(stderr,"\n");
 /*************************************
 **************************************
 **                                  **
-**        void do_exe(BYTE n)       **
+**        INTERNAL COMMANDS         **
 **                                  **
 **************************************
 *************************************/
@@ -1327,8 +1334,8 @@ fprintf(stderr,"\n");
 void do_exe(BYTE n)
 {
 
-    BYTE d,i,*p,*q,*r;
-    BYTE s[200],  com[80],exe[80],dog[80],path[60],trunam[128];
+    BYTE d,i,ic,ie,id,*p,*q,*r,*cpath,envi[255],file[128],exec_f;
+    BYTE s[200], com[80],exe[80],dog[80],path[60],trunam[128];
     struct ffblk *fb;
 
     for (i=0;i<200;i++) {
@@ -1348,120 +1355,133 @@ void do_exe(BYTE n)
         strcat(s," ");
     }
 
-    strcpy(com, arg[0]); /* append .com .exe .dog to filename and then search */
-    strcpy(exe, arg[0]);
-    strcpy(dog, arg[0]);
-    strcat(com,".COM");
-    strcat(exe,".EXE");
-    strcat(dog,".DOG");
+    /*First try to exec arg[0]*/
 
-    i = findfirst(com,fb,0);
-    if(i==3){
-        puts("Invalid path.");
-        free(fb);
-        return;
-    }
-    else if (i==FNF) {
-        i = findfirst(exe,fb,0);
-        if(i==FNF) {
-            i = findfirst(dog,fb,0);
-/*
-            if((i!=0) && (i!=18)) {
-                fprintf(stderr,"ERROR - %u.\n",i);
-                    return;
-            }
-            else
-*/
-            if(i==0) {
-                bf->na = n;
-                bf->line = 0;
-                for(i=0;i<_NARGS;i++) {
-                    bf->args[i] = malloc(strlen(arg[i]+1));
-                    memset(bf->args[i],0,strlen(arg[i]+1));
-                    strcpy(bf->args[i],arg[i]);
+    i = findfirst(arg[0],fb,0x3f); /*ANY attrib = 00111111 */
+    if (i == 0) {
+        if((fb->ff_attrib & FA_DIREC) == FA_DIREC) {
+            arg[1] = arg[0];
+            arg[0] = commands[C_CD];
+            do_cd(2);
+            free(fb);
+            return;
+        }
+
+        p = strstr(arg[0],".COM");
+        q = strstr(arg[0],".EXE");
+        r = strstr(arg[0],".DOG");
+            
+        if(p == NULL) {
+            if (q == NULL) {
+                if (r == NULL) {
+                    exec_f = NON;
                 }
-                d = getcur(path) + 'A';
-                sprintf(bf->name,"%c:\\%s\\%s",d,path,dog);
-                bf->in = 1;
-                do_bat();
-                free(fb);
-                return;
+                else {
+                    exec_f = DOG;
+                }
             }
             else {
-
-                /* try to find arg[0] file */
-            /*    strupr(arg[0]);                */
-
-
-                i = findfirst(arg[0],fb,0x3f); /*ANY attrib = 00111111 */
-                if(i == 0) {
-
-                    if(cBreak) {
-                        cBreak = 0;
-                        return;
-                    }
-
-                    if((fb->ff_attrib & FA_DIREC) == FA_DIREC) {
-                        arg[1] = arg[0];
-                        arg[0] = commands[C_CD];
-                        do_cd(2);
-                        free(fb);
-                        return;
-                    }
-
-                    p = strstr(arg[0],".COM");
-                    q = strstr(arg[0],".EXE");
-                    r = strstr(arg[0],".DOG");
-
-
-                    if(p == NULL) {
-                        if(q == NULL) {
-                            if(r == NULL) {
-                                fprintf(stderr,"File is NOT executable!\n");
-                                return;
-                            }
-                            else {
-                                bf->na = n;
-                                bf->line = 0;
-                                for(i=0;i<_NARGS;i++) {
-                                    bf->args[i] = malloc(strlen(arg[i]+1));
-                                    memset(bf->args[i],0,strlen(arg[i]+1));
-                                    strcpy(bf->args[i],arg[i]);
-                                }
-                                d = getcur(path) + 'A';
-                                sprintf(bf->name,"%c:\\%s\\%s",d,path,arg[0]);
-                                bf->in = 1;
-                                do_bat();
-                                free(fb);
-                                return;
-                            }
-                        }
-                        else
-                            errorlevel = my_exe(trueName(arg[0],trunam),s);
-                    }
-                    else
-                        errorlevel = my_exe(trueName(arg[0],trunam),s);
-                }
-                else if(i==FNF) {
-                    if(strcmp(arg[0],"..") == 0) {
-                        arg[1] = arg[0];
-                        arg[0] = commands[C_CD];
-                        do_mrd(2);
-                    }
-                    else
-                        fprintf(stderr,"Bad command or Filename.\n");
-
-                    free(fb);
-                    return;
-                }
+                exec_f = EXE;
             }
         }
         else {
-            errorlevel=my_exe(trueName(exe,trunam),s);
+            exec_f = COM;
         }
+
+        if (exec_f != NON) goto exec_now;
     }
-    else
-        errorlevel=my_exe(trueName(com,trunam),s);
+
+    getevar("PATH",envi);
+    p = malloc(255);
+    strcpy(p,".;");
+    strcat(p,envi);
+    strcpy(envi,p);
+    free(p);
+#ifdef exe_debug
+    printf("do_exe:PATH=%s\n",envi);
+#endif     
+    for(cpath=strtok(envi,";");;cpath=strtok(NULL,";")) {
+        if(cpath == NULL) break;
+#ifdef exe_debug
+        printf("do_exe:dir=%s\n",cpath);
+#endif
+        strcpy(file,cpath);
+        if(file[strlen(file)-1] != '\\')
+            strcat(file,"\\");
+        strcat(file,arg[0]);
+        strcpy(com,file);
+        strcpy(exe,file);
+        strcpy(dog,file);
+        strcat(com,".COM");
+        strcat(exe,".EXE");
+        strcat(dog,".DOG");
+#ifdef exe_debug
+        printf("do_exe:file=%s\n",file);
+        printf("do_exe:com=%s\n",com);
+        printf("do_exe:exe=%s\n",exe);
+        printf("do_exe:dog=%s\n",dog);
+#endif
+        ic = findfirst(com,fb,0);
+        ie = findfirst(exe,fb,0);
+        id = findfirst(dog,fb,0);
+#ifdef exe_debug
+printf("ic = %u ie = %u id = %u\n",ic,ie,id);
+#endif
+        if(ic == 0) {
+            exec_f = COM;
+            break;
+        }
+        else if (ie == 0) {
+            exec_f = EXE;
+            break;
+        }
+        else if (ie == 0) {
+            exec_f = DOG;
+            break;
+        }
+        else {
+            exec_f = NON;
+        }
+
+    }
+
+    exec_now:
+        
+    switch(exec_f) {
+        case NON:
+            printf("%s: Bad command or Filename\n",arg[0]);
+            free(fb);
+            return;
+        case COM:
+#ifdef exe_debug
+printf("do_exe:found %s in %s\n",fb->ff_name,cpath);
+#endif
+            errorlevel=my_exe(trueName(com,trunam),s);
+            break;
+        case EXE:
+#ifdef exe_debug
+printf("do_exe:found %s in %s\n",fb->ff_name,cpath);
+#endif
+        errorlevel=my_exe(trueName(exe,trunam),s);
+            break;
+        case DOG:
+#ifdef exe_debug
+printf("do_exe:found %s in %s\n",fb->ff_name,cpath);
+#endif
+            bf->na = n;
+            bf->line = 0;
+            for(i=0;i<_NARGS;i++) {
+                bf->args[i] = malloc(strlen(arg[i]+1));
+                memset(bf->args[i],0,strlen(arg[i]+1));
+                strcpy(bf->args[i],arg[i]);
+            }
+            d = getcur(path) + 'A';
+            sprintf(bf->name,"%c:\\%s\\%s",d,path,dog);
+            bf->in = 1;
+            do_bat();
+            free(fb);
+            return;
+    }
 
     switch(errorlevel >> 8) {
         case 0:

@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <dos.h>
@@ -42,6 +43,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define BYTE unsigned char
 #define WORD unsigned int
 #define DWORD unsigned long
+
+/*used by do_exe*/
+#define NON 0
+#define COM 1
+#define EXE 2
+#define DOG 4
 
 /* we want to use the ones in dos.h. not in dir.h */
 #define findfirst(A,B,C) _dos_findfirst(A,C,B)
@@ -149,9 +156,9 @@ C:\DOG>_
 
 #define PPID_OFS 0x0016
 #define ENVSEG_OFS 0x002C
-#define DOG_VER 0070h
+#define DOG_VER 0071h
 #define DOG_MA 0
-#define DOG_MI 70
+#define DOG_MI 71
 
 /* Define Global Variables */
 BYTE DOG_ma = DOG_MA, DOG_mi = DOG_MI;

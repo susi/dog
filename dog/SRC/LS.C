@@ -23,6 +23,8 @@ Wolf Bergenheim (WB)
 
 History
 18.03.00 - Extracted from DOG.C - WB
+01.08.00 - Fixed a bug: when you type ls file that doesn't exist ls
+           would loop in DR-DOS because it returns a 1, not 18 as MS-DOS
 
 ****************************************************************************/
 
@@ -123,6 +125,9 @@ fprintf(stderr,"do_ls:3: patt[%u]=%s offset=%x patt[%d][last] =  %c\n",j,patt[0]
 
             if((dironly == 1) && ((fb->ff_attrib & FA_DIREC) != FA_DIREC))
                 r = 1;
+#ifdef ls_debug
+fprintf(stderr,"do_ls:*: r=%u\n",r);
+#endif
 
             if (r == 0) {
                 if(cBreak) {
@@ -185,7 +190,7 @@ fprintf(stderr,"y=%d y=%d\n",y,1998);
             k = 0;
             r = findnext (fb);
 
-            while(r != 18) {
+            while(r == 0) {
 
             if(cBreak) {
                 cBreak = 0;
