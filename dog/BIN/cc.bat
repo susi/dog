@@ -28,7 +28,7 @@ set CC=C:\BORLANDC\BIN\BCC
 set SET=1
 :start
 if (%1)==() goto use
-%CC% -B -d -mt -Od -tDc -Z %1 %2 %3 %4 %5 %6 %7 %8 %9
+%CC% -B -d -mt -O1 -O- -tDc -Z %1 %2 %3 %4 %5 %6 %7 %8 %9
 goto end
 :use
 echo Usage: %0 PROGRAM.C
