@@ -1070,7 +1070,6 @@ fprintf(stderr,"\n");
             break;
         
         case C_LS :
-            do_ls(na);
             break;
         
         case C_MD :
@@ -1176,7 +1175,6 @@ fprintf(stderr,"\n");
 #include "ct.c"
 #include "eh.c"
 #include "hh.c"
-#include "ls.c"
 #include "mv.c"
 #include "rm.c"
 #include "se.c"
