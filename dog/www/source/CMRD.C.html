@@ -1,0 +1,202 @@
+
+<html>
+<head>
+<title>../../SRC/CMRD.C</title>
+<meta name="generator" content="c2html 0.9.2">
+<meta name="date" content="2000-03-21T19:33:03+00:00">
+</head>
+
+<body bgcolor="#FFFFFF">
+<?php
+    $title="DOG - Developer - Source";
+  include("../include/head.php");
+?>
+  
+<!-- Left side -->
+  
+<?php include("../include/dleft.htmlf"); ?>
+  
+<!-- Right side -->
+<TD>
+<pre width="80"><font color="#B22222">/*
+
+CMRD.C - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
+
+Copyright (C) 1999,2000 Wolf Bergenheim
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+NOTE! Includes functions do_cd() and do_mrd()
+
+Developers:
+Wolf Bergenheim (WB)
+
+History
+18.03.00 - Extracted from DOG.C - WB
+
+*/</font>
+
+<strong><font color="#4169E1"><a name="do_cd"></a>void do_cd( BYTE n)</font></strong>
+{
+    BYTE i,j,k,dir[80],*p,*q;
+
+    j=strlen(arg[0]);
+
+
+    <font color="#B22222">/* checking if user typed cd..(something)  OR cd\path*/</font>
+
+    <font color="#4169E1">if</font>(j&gt;2) {
+        arg[1] = &amp;arg[0][2];
+        arg[0][1] = '\0';
+
+        n++;
+    }
+        <font color="#B22222">/* for every dot(.) after .. change to \.. */</font>
+
+
+    p = arg[1];
+    q = dir;
+
+    <font color="#4169E1">for</font>(i=0;i&lt;80;i++) {
+        dir[i]=0;
+    }
+
+    <font color="#4169E1">while</font>(*p!=0) {
+        <font color="#4169E1">if</font>(*p=='.'){
+            <font color="#4169E1">for</font>(i=0;*p=='.';i++) {
+                *(q++) = *(p++);
+            }
+            q--;
+            <font color="#4169E1">if</font>(i&gt;2){
+                i-=2;
+                <font color="#4169E1">for</font>(j=0;j&lt;i;j++) {
+                    *(q--) = '\0';
+                }
+                <font color="#4169E1">for</font>(j=0;j&lt;i;j++) {
+                    strcat(dir,<font color="#666666">"\\.."</font>);
+                    q+=3;
+                }
+            }
+            q++;
+        }
+        <font color="#4169E1">else</font> {
+            *(q++)=*(p++);
+        }
+    }
+    *q='\0';
+    strcpy(arg[1],dir);
+
+    <font color="#B22222">/* NO arguments provided.. so print current dir */</font>
+
+    <font color="#4169E1">if</font>(n==1) {
+        D = getcur(P) + 'A';
+        <font color="#4169E1">if</font> (D &gt;= 'A')
+            printf(<font color="#666666">"%c:\\%s\n"</font>,D,P);
+        <font color="#4169E1">return</font>;
+    }
+    <font color="#4169E1">else</font> {
+        do_mrd(n);
+        <font color="#4169E1">return</font>;
+    }
+
+}
+
+<font color="#B22222">/**************************************************************************/</font>
+
+<strong><font color="#4169E1"><a name="do_mrd"></a>void do_mrd(BYTE n)</font></strong>
+{
+    BYTE f;
+
+    <font color="#4169E1">if</font> (n == 1) {
+        puts(<font color="#666666">"Required argument missing"</font>);
+        <font color="#4169E1">return</font>;
+    }
+    <font color="#4169E1">if</font> (n &gt; 2) {
+        puts(<font color="#666666">"Invalid number of arguments."</font>);
+        <font color="#4169E1">return</font>;
+    }
+
+    f = arg[0][0];        <font color="#B22222">/* check the first letter to determine what func*/</font>
+    asm {
+        mov AL,f
+        cmp AL,43h        <font color="#B22222">/* C */</font>
+        je    do_mrd_cd
+        cmp AL,4dh        <font color="#B22222">/* M */</font>
+        je    do_mrd_md
+        cmp AL,52h        <font color="#B22222">/* R */</font>
+        je    do_mrd_rd
+        cmp AL,63h        <font color="#B22222">/* c */</font>
+        je    do_mrd_cd
+        cmp AL,6dh        <font color="#B22222">/* m */</font>
+        je    do_mrd_md
+        cmp AL,72h        <font color="#B22222">/* r */</font>
+        je    do_mrd_rd
+    }
+<strong><font color="#FF0000">    do_mrd_md:</font></strong>            <font color="#B22222">/* mkdir */</font>
+    asm {
+        mov AH,39h
+        jmp do_mrd_doit
+    }
+<strong><font color="#FF0000">    do_mrd_rd:</font></strong>            <font color="#B22222">/* rmdir */</font>
+    asm {
+        mov AH,3ah
+        jmp do_mrd_doit
+    }
+<strong><font color="#FF0000">    do_mrd_cd:</font></strong>            <font color="#B22222">/* chdir */</font>
+    asm {
+        mov AH,3bh
+    }
+<strong><font color="#FF0000">    do_mrd_doit:</font></strong>
+    asm {
+        mov DX,arg[2]    <font color="#B22222">/*=arg[1] = first arg after command */</font>
+        int 21h
+        jnc    do_mrd_OK
+        cmp AL,03h
+        je    do_mrd_pnf
+        cmp AL,05h
+        je    do_mrd_ad
+        cmp AL,06h
+        je    do_mrd_ih
+        jmp do_mrd_rcd
+    }
+<strong><font color="#FF0000">    do_mrd_pnf:</font></strong>
+    puts(<font color="#666666">"Invalid path."</font>);
+    <font color="#4169E1">return</font>;
+<strong><font color="#FF0000">    do_mrd_ad:</font></strong>
+    puts(<font color="#666666">"Access denied."</font>);
+    <font color="#4169E1">return</font>;
+<strong><font color="#FF0000">    do_mrd_ih:</font></strong>
+    puts(<font color="#666666">"Invalid handle."</font>);
+    <font color="#4169E1">return</font>;
+<strong><font color="#FF0000">    do_mrd_rcd:</font></strong>
+    puts(<font color="#666666">"Attempted to remove current directory."</font>);
+<strong><font color="#FF0000">    do_mrd_OK:</font></strong>
+    <font color="#4169E1">return</font>;
+
+}
+
+
+</pre>
+
+
+<!-- END of Table-->
+</TD></tr></table>
+
+
+</body>
+</html>
+</body>
+
+</html>

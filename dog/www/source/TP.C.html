@@ -1,0 +1,148 @@
+
+<html>
+<head>
+<title>../../SRC/TP.C</title>
+<meta name="generator" content="c2html 0.9.2">
+<meta name="date" content="2000-08-19T02:36:53+00:00">
+</head>
+
+<body bgcolor="#FFFFFF">
+<?php
+    $title="DOG - Developer - Source";
+  include("../include/head.php");
+?>
+  
+<!-- Left side -->
+  
+<?php include("../include/dleft.htmlf"); ?>
+  
+<!-- Right side -->
+<TD>
+<pre width="80"><font color="#B22222">/*
+
+TP.C - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
+
+Copyright (C) 1999,2000 Wolf Bergenheim
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+Developers:
+Wolf Bergenheim (WB)
+
+History
+18.03.00 - Extracted from DOG.C - WB
+
+**************************************************************************/</font>
+
+<strong><font color="#4169E1"><a name="do_tp"></a>void do_tp( BYTE n)</font></strong>
+{
+    FILE *fp;
+    <font color="#4169E1">struct ffblk</font> *fb;
+    BYTE i,r,buff[256];
+
+    <font color="#4169E1">if</font>(n == 1) {
+        fprintf(stderr,<font color="#666666">"Missing filename.\n"</font>);
+        <font color="#4169E1">return</font>;
+    }
+    <font color="#4169E1">else</font> <font color="#4169E1">if</font>(n &gt;1) {
+        fb = malloc(<font color="#4169E1">sizeof</font>(<font color="#4169E1">struct ffblk</font>));
+        <font color="#4169E1">for</font>(i=1;i&lt;n;i++) {
+            r = findfirst(arg[i],fb,FA_NORMAL);
+            <font color="#4169E1">if</font>(r==0) {
+                printf(<font color="#666666">"\n---------------%s---------------\n\n"</font>,fb-&gt;ff_name);
+                fp = fopen(fb-&gt;ff_name,<font color="#666666">"r"</font>);
+                <font color="#4169E1">if</font> (fp == NULL) {
+                    fprintf(stderr,<font color="#666666">"\n****Error opening file\n"</font>);
+                }
+                <font color="#4169E1">else</font> {
+                    <font color="#4169E1">while</font>(fgets(buff,255,fp)) {
+                        <font color="#4169E1">if</font>(cBreak) {
+                            cBreak = 0;
+                            printf(<font color="#666666">"\n"</font>);
+                            fclose(fp);
+                            <font color="#4169E1">return</font>;
+                        }
+<font color="#B22222">/*                        printf("%s",buff);*/</font>
+                        write(1, buff, strlen(buff)+1);
+                    }
+                    fclose(fp);
+                }
+            }
+            <font color="#4169E1">else</font> <font color="#4169E1">if</font>(r == 3) {
+                fprintf(stderr,<font color="#666666">"\n****File not found: %s (Invalid path)\n"</font>,arg[i]);
+                <font color="#4169E1">continue</font>;
+            }
+            <font color="#4169E1">else</font> <font color="#4169E1">if</font>(r == 4) {
+                fprintf(stderr,<font color="#666666">"\n****File not found: %s (Too many open files)\n"</font>,arg[i]);
+                <font color="#4169E1">continue</font>;
+            }
+            <font color="#4169E1">else</font> <font color="#4169E1">if</font>(r == 18) {
+                fprintf(stderr,<font color="#666666">"\n****File not found: %s\n"</font>,arg[i]);
+                <font color="#4169E1">continue</font>;
+            }
+            <font color="#4169E1">else</font> {
+                fprintf(stderr,<font color="#666666">"\n****File not found: %s (Unknown error(%d))\n"</font>,arg[i],i);
+                <font color="#4169E1">continue</font>;
+            }
+            r = findnext(fb);
+            <font color="#4169E1">while</font>(r==0) {
+                printf(<font color="#666666">"\n---------------%s---------------\n\n"</font>,fb-&gt;ff_name);
+                fp = fopen(fb-&gt;ff_name,<font color="#666666">"r"</font>);
+                <font color="#4169E1">if</font> (fp == NULL) {
+                    fprintf(stderr,<font color="#666666">"\n****Error opening file\n"</font>);
+                }
+                <font color="#4169E1">else</font> {
+                    <font color="#4169E1">while</font>(fgets(buff,<font color="#4169E1">sizeof</font>(buff),fp) != 0) {
+                        <font color="#4169E1">if</font>(cBreak) {
+                            cBreak = 0;
+                            printf(<font color="#666666">"\n"</font>);
+                            fclose(fp);
+                            <font color="#4169E1">return</font>;
+                        }
+                        printf(<font color="#666666">"%s\n"</font>,buff);
+                    }
+                    fclose(fp);
+                }
+                r = findnext(fb);
+            }
+            <font color="#4169E1">if</font>(r == 3) {
+                fprintf(stderr,<font color="#666666">"\n****File not found: %s (Invalid path)\n"</font>,fb-&gt;ff_name);
+            }
+            <font color="#4169E1">else</font> <font color="#4169E1">if</font>(r == 4) {
+                fprintf(stderr,<font color="#666666">"\n****File not found: %s (Too many open files)\n"</font>,arg[i]);
+            }
+            <font color="#4169E1">else</font> <font color="#4169E1">if</font>(r == 18) {
+            }
+            <font color="#4169E1">else</font> {
+                fprintf(stderr,<font color="#666666">"\n****File not found: %s (Unknown error(%d))\n"</font>,arg[i],i);
+            }
+        }     <font color="#B22222">/* end of for loop */</font>
+
+    }     <font color="#B22222">/* end of the major else statement */</font>
+    free(fb);
+    <font color="#4169E1">return</font>;
+}     <font color="#B22222">/* end of main */</font>
+</pre>
+
+
+<!-- END of Table-->
+</TD></tr></table>
+
+
+</body>
+</html>
+</body>
+
+</html>

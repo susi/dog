@@ -1,0 +1,158 @@
+
+<html>
+<head>
+<title>../../SRC/VR.C</title>
+<meta name="generator" content="c2html 0.9.2">
+<meta name="date" content="2000-08-18T10:09:57+00:00">
+</head>
+
+<body bgcolor="#FFFFFF">
+<?php
+    $title="DOG - Developer - Source";
+  include("../include/head.php");
+?>
+  
+<!-- Left side -->
+  
+<?php include("../include/dleft.htmlf"); ?>
+  
+<!-- Right side -->
+<TD>
+<pre width="80"><font color="#B22222">/*
+
+VR.C - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
+
+Copyright (C) 1999,2000 Wolf Bergenheim
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+Developers:
+Wolf Bergenheim (WB)
+
+TODO: Fix recoginion of DR-DOS
+
+History
+18.03.00 - Extracted from DOG.C - WB
+06.04.00 - Added DR-DOS detection. - WB
+02.08.00 - Modified DR-DOS detection to detect DR-DOS regardles of version
+           returned in int 21h/30h - WB
+
+**************************************************************************/</font>
+
+<strong><font color="#4169E1"><a name="do_vr"></a>void do_vr(void)</font></strong>
+{
+    WORD w,DR_vr;
+    BYTE b,DOS_ma=3,DOS_mi=30,DOS_OEM=0xFD;
+
+    asm {
+        MOV ax,3000h
+        INT 21h
+        MOV DOS_ma ,al
+        MOV DOS_mi ,ah
+        MOV DOS_OEM,bh
+        MOV b,bl
+        MOV w,cx
+        mov ax, 4452h
+        stc
+        int 21h
+        jc vr_NODR
+        cmp ax, 4452h
+        je vr_NODR
+        mov DR_vr,ax
+    }
+    printf(<font color="#666666">"DR-DOS Product 0x%x\n\tProviding DOS %u.%u interface\nDog version %u.%u\n"</font>,DR_vr,DOS_ma,DOS_mi,DOG_ma,DOG_mi);
+    <font color="#4169E1">return</font>;
+
+<strong><font color="#FF0000">    vr_NODR:</font></strong>
+    <font color="#4169E1">switch</font>(DOS_ma) {  <font color="#B22222">/*versions 1,2 &amp; 4 NOT supported */</font>
+        <font color="#4169E1">case</font> 3 :
+            printf(<font color="#666666">"DOS version %u.%u\nDOG version %u.%u"</font>,DOS_ma,DOS_mi,DOG_ma,DOG_mi);
+            <font color="#4169E1">break</font>;
+        <font color="#4169E1">case</font> 5 :
+        <font color="#4169E1">case</font> 6 :
+        <font color="#4169E1">case</font> 7 :
+            asm{
+                mov ax,3306h
+                int 21h
+                cmp bh,50
+                je vr_NT
+                jmp vr_DOS
+            }
+<strong><font color="#FF0000">        vr_NT:</font></strong>
+            printf(<font color="#666666">"DOS Command Prompt under Windows NT\nDog version %u.%u\n"</font>,DOG_ma,DOG_mi);
+            <font color="#4169E1">break</font>;
+<strong><font color="#FF0000">        vr_DOS:</font></strong>
+            <font color="#4169E1">switch</font>(DOS_OEM) {
+                <font color="#4169E1">case</font>  0x00:
+                    <font color="#4169E1">if</font>((DOS_mi ==0) &amp;&amp; (DOS_ma==6)) DOS_mi = 1;
+                    printf(<font color="#666666">"PC-DOS version %u.%u\nDog version %u.%u\n"</font>,DOS_ma,DOS_mi,DOG_ma,DOG_mi);
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font>  0xEE:
+                    printf(<font color="#666666">"DR DOS version 5.0 OR 6.0 (pretends to be MS-DOS %u.%u)\nDog version %u.%u\n"</font>,DOS_ma,DOS_mi,DOG_ma,DOG_mi);
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font>  0xEF:
+                    printf(<font color="#666666">"Novell DOS 7\nDog version %u.%u\n"</font>,DOG_ma,DOG_mi);
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font>  0xFD:
+                    printf(<font color="#666666">"FreeDOS version %u.%u\nDog version %u.%u\n"</font>,DOS_ma,DOS_mi,DOG_ma,DOG_mi);
+                    <font color="#4169E1">if</font>(b == 0xff)
+                        printf(<font color="#666666">"FreeDOS Kernel (build 1993 or prior)\n"</font>);
+                    <font color="#4169E1">else</font>
+                        printf(<font color="#666666">"FreeDOS Kernel version %u.%u.%u\n"</font>,b,w &gt;&gt; 8,w &amp; 0xff);
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font>  0xFF:
+                    printf(<font color="#666666">"M$-DOS version %u.%u\nDog version %u.%u\n"</font>,DOS_ma,DOS_mi,DOG_ma,DOG_mi);
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">default</font> :
+                    printf(<font color="#666666">"DOS version %u.%u\nDog version %u.%u\n"</font>,DOS_ma,DOS_mi,DOG_ma,DOG_mi);
+            }
+            <font color="#4169E1">break</font>;
+<font color="#B22222">/*
+        case 7 :
+            if (DOS_mi==10)
+                printf("Microsoft Windows 95 OSR2\nDog version %u.%u\n",DOG_ma,DOG_mi);
+            else
+                printf("Microsoft Windows 95\nDog version %u.%u\n",DOG_ma,DOG_mi);
+            break;
+*/</font>
+        <font color="#4169E1">case</font> 10 :
+            printf(<font color="#666666">"OS/2 version 1.%u\nDog version %u.%u\n"</font>,DOS_mi/10,DOG_ma,DOG_mi);
+            <font color="#4169E1">break</font>;
+        <font color="#4169E1">case</font> 20 :
+            <font color="#4169E1">if</font> (DOS_mi &lt; 30)
+                printf(<font color="#666666">"OS/2 version %u.%u\nDog version %u.%u\n"</font>,DOS_ma/10,DOS_mi/10,DOG_ma,DOG_mi);
+            <font color="#4169E1">else</font> <font color="#4169E1">if</font>(DOS_mi==30)
+                printf(<font color="#666666">"OS/2 Warp 3.0 virtual DOS machine\nDog version %u.%u\n"</font>,DOG_ma,DOG_mi);
+            <font color="#4169E1">else</font> <font color="#4169E1">if</font>(DOS_mi==40)
+                printf(<font color="#666666">"OS/2 Warp 4.0 virtual DOS machine\nDog version %u.%u\n"</font>,DOG_ma,DOG_mi);
+            <font color="#4169E1">break</font>;
+        <font color="#4169E1">default</font> :
+            printf(<font color="#666666">"Unknown DOS version %u.%u\nDog version %u.%u\n"</font>,DOS_ma,DOS_mi,DOG_ma,DOG_mi);
+    }
+}
+
+
+</pre>
+
+
+<!-- END of Table-->
+</TD></tr></table>
+
+
+</body>
+</html>
+</body>
+
+</html>

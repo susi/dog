@@ -1,0 +1,360 @@
+
+<html>
+<head>
+<title>../../SRC/DOG.H</title>
+<meta name="generator" content="c2html 0.9.2">
+<meta name="date" content="2000-10-20T10:17:31+00:00">
+</head>
+
+<body bgcolor="#FFFFFF">
+<?php
+    $title="DOG - Developer - Source";
+  include("../include/head.php");
+?>
+  
+<!-- Left side -->
+  
+<?php include("../include/dleft.htmlf"); ?>
+  
+<!-- Right side -->
+<TD>
+<pre width="80"><font color="#B22222">/* 
+DOG.H   -  Alternate command processor for (currently) MS-DOS ver 3.30
+
+Copyright (C) 1999  Wolf Bergenheim
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+*/</font>
+
+<font color="#A020F0">#include &lt;stdlib.h&gt;</font>
+<font color="#A020F0">#include &lt;stdio.h&gt;</font>
+<font color="#A020F0">#include &lt;dos.h&gt;</font>
+<font color="#A020F0">#include &lt;dir.h&gt;</font>
+<font color="#A020F0">#include &lt;string.h&gt;</font>
+<font color="#A020F0">#include &lt;ctype.h&gt;</font>
+<font color="#A020F0">#include &lt;alloc.h&gt;</font>
+<font color="#A020F0">#include &lt;io.h&gt;</font>
+<font color="#A020F0">#include &lt;process.h&gt;</font>
+
+<strong><font color="#228B22">#define de		bug</font></strong>
+<strong><font color="#228B22">#define list</font></strong>
+<strong><font color="#228B22">#define do_de   bug</font></strong>
+<strong><font color="#228B22">#define ls_de	bug</font></strong>
+<strong><font color="#228B22">#define exe_de	bug</font></strong>
+<strong><font color="#228B22">#define bat_de	bug</font></strong>
+<strong><font color="#228B22">#define cd_de	bug</font></strong>
+<strong><font color="#228B22">#define eh_de	bug</font></strong>
+<strong><font color="#228B22">#define ca_de	bug</font></strong>
+<strong><font color="#228B22">#define parse_de bug</font></strong>
+
+
+<strong><font color="#228B22">#define BYTE unsigned char</font></strong>
+<strong><font color="#228B22">#define WORD unsigned int</font></strong>
+<strong><font color="#228B22">#define DWORD unsigned long</font></strong>
+
+<font color="#B22222">/*used by do_exe*/</font>
+<strong><font color="#228B22">#define NON 0</font></strong>
+<strong><font color="#228B22">#define COM 1</font></strong>
+<strong><font color="#228B22">#define EXE 2</font></strong>
+<strong><font color="#228B22">#define DOG 4</font></strong>
+
+<font color="#B22222">/* we want to use the ones in dos.h. not in dir.h */</font>
+<strong><font color="#228B22">#define findfirst(A,B,C) _dos_findfirst(A,C,B)</font></strong>
+<strong><font color="#228B22">#define findnext _dos_findnext</font></strong>
+<strong><font color="#228B22">#define ffblk find_t</font></strong>
+<strong><font color="#228B22">#define ff_attrib attrib</font></strong>
+<strong><font color="#228B22">#define ff_ftime  wr_time</font></strong>
+<strong><font color="#228B22">#define ff_fdate  wr_date</font></strong>
+<strong><font color="#228B22">#define ff_fsize  size </font></strong>
+<strong><font color="#228B22">#define ff_name	  name</font></strong>
+
+<font color="#A020F0">#ifdef MK_FP</font>
+<strong><font color="#228B22">#undef MK_FP</font></strong>
+<font color="#A020F0">#endif</font>
+<strong><font color="#228B22">#define MK_FP(seg,ofs) ((void far*)(((unsigned long)(seg) &lt;&lt; 16) | (ofs)))</font></strong>
+
+<strong><font color="#228B22">#define EVER ;;</font></strong>
+
+
+<strong><font color="#228B22">#define FNF 18</font></strong>
+
+<strong><font color="#228B22">#define _BS 0x8;</font></strong>
+<strong><font color="#228B22">#define _TAB 0x9;</font></strong>
+<strong><font color="#228B22">#define _SPC 0x32;</font></strong>
+<strong><font color="#228B22">#define _PROMPT </font><font color="#666666">"%l=%p=%g%_"</font><font color="#228B22"></font></strong>
+<strong><font color="#228B22">#define _DOG_PROMPT </font><font color="#666666">"%n%_%_%b\\_%n%_%_%b%_.\\---.%n%_/%_%_%_,__/%n/%_%_%_/%p%_%_"</font><font color="#228B22"></font></strong>
+<strong><font color="#228B22">#define _DOG_PROMPT2 </font><font color="#666666">"%_%_%_%__%n%_%_%_/%_\\__%n%_%_(_'%_%_@\\___%n%_%_/%_%_%_%_%_%_%_%_%_O%n%_/%_%_%_(_____/%n/_____/%_%_%_U%n%p%t%t"</font><font color="#228B22"></font></strong>
+<strong><font color="#228B22">#define _COW_PROMPT </font><font color="#666666">"%t%_%_(__)%n%t%_%_~..~%n%_%_/-------(..)%n%_/%_|%_%_%_%_%_||%n*%_%_||----||%n%_%_%_^^%_%_%_%_^^%n%p%g"</font><font color="#228B22"></font></strong>
+<strong><font color="#228B22">#define _COW_PROMPT2 </font><font color="#666666">"%t%_%_(__)%n%t%_%_(oo)%n%_%_/-------(..)%n%_/%_|%_%_%_%_%_||%n*%_%_||W---||%n%_%_%_^^%_%_%_%_^^%n%p%g"</font><font color="#228B22"></font></strong>
+
+<font color="#B22222">/*
+  
+  |\_
+  | .\---.
+ /   ,__/
+/   /C:\DOG  _
+
+    _
+   / \__     
+  (_'  @\___       
+  /         O      
+ /   (_____/       
+/_____/   U 
+c:\DOG		 _
+
+
+          (__)
+          ~..~
+  /-------(..)
+ / |     ||
+*  ||----||
+   ^^    ^^
+C:\DOG&gt;_
+
+          (__)
+          (oo)
+  /-------(..)
+ / |     ||
+*  ||----||
+   ^^    ^^
+C:\DOG&gt;_
+
+          (__)
+          (””)
+  /-------(..)
+ / |     ||
+*  ||----||
+   ^^    ^^
+
+          (__)
+          (&Iuml;&Iuml;)
+  /-------(..)
+ / |     ||
+*  ||----||
+   ^^    ^^
+
+          (__)
+          (oo)
+  /-------(..)
+ / |     ||
+*  ||----||
+   ^^    ^^
+
+          (__)
+          ( oo
+  /-------/\_|
+ / |     ||
+*  ||----||
+   ^^    ^^
+
+          (__)
+          ~..~
+  /-------(..)
+ / |     ||
+*  ||----||
+   ^^    ^^
+
+*/</font>
+
+
+<strong><font color="#228B22">#define _NCOMS 20</font></strong>
+<strong><font color="#228B22">#define _NARGS 20</font></strong>
+
+<font color="#B22222">/* PSP */</font>
+
+<strong><font color="#228B22">#define PPID_OFS 0x0016</font></strong>
+<strong><font color="#228B22">#define ENVSEG_OFS 0x002C</font></strong>
+<strong><font color="#228B22">#define DOG_VER 0072h</font></strong>
+<strong><font color="#228B22">#define DOG_MA 0</font></strong>
+<strong><font color="#228B22">#define DOG_MI 72</font></strong>
+
+<font color="#B22222">/* Define Global Variables */</font>
+BYTE DOG_ma = DOG_MA, DOG_mi = DOG_MI;
+BYTE Xit = 0, Xitable = 1, eh = 0, D=0, P[MAXDIR]; 
+BYTE comline[200]= {0}, *com = comline, *arg[_NARGS], history[50][200], *prompt;
+BYTE commands[_NCOMS][3] = {
+    <font color="#666666">"BP"</font>,
+	<font color="#666666">"BR"</font>,
+	<font color="#666666">"CC"</font>,
+	<font color="#666666">"CD"</font>,
+	<font color="#666666">"CL"</font>,
+	<font color="#666666">"CP"</font>,
+	<font color="#666666">"CT"</font>,
+	<font color="#666666">"EH"</font>,
+	<font color="#666666">"HH"</font>,
+	<font color="#666666">"LS"</font>,
+	<font color="#666666">"MD"</font>,
+	<font color="#666666">"MV"</font>,
+	<font color="#666666">"RD"</font>,
+	<font color="#666666">"RM"</font>,
+	<font color="#666666">"SE"</font>,
+	<font color="#666666">"SZ"</font>,
+	<font color="#666666">"TP"</font>,
+	<font color="#666666">"VF"</font>,
+	<font color="#666666">"VR"</font>,
+	<font color="#666666">"XX"</font>};
+
+BYTE command_des[_NCOMS][21] = {
+    <font color="#666666">"BeeP                "</font>,
+	<font color="#666666">"BReak               "</font>,
+	<font color="#666666">"Change Codepage     "</font>,
+	<font color="#666666">"Change Directory    "</font>,
+	<font color="#666666">"CLear screen        "</font>,
+	<font color="#666666">"CoPy                "</font>,
+	<font color="#666666">"Change Terminal     "</font>,
+	<font color="#666666">"EcHo                "</font>,
+	<font color="#666666">"Help                "</font>,
+	<font color="#666666">"LiSt files          "</font>,
+	<font color="#666666">"Make Directory      "</font>,
+	<font color="#666666">"MoVe file (rename)  "</font>,
+	<font color="#666666">"Remove Directory    "</font>,
+	<font color="#666666">"ReMove files        "</font>,
+	<font color="#666666">"Set to Environment  "</font>,
+	<font color="#666666">"SiZe of files in dir"</font>,
+	<font color="#666666">"TyPe                "</font>,
+	<font color="#666666">"VerFy               "</font>,
+	<font color="#666666">"VeRsion             "</font>,
+	<font color="#666666">"eXit                "</font>};
+
+BYTE *command_help[_NCOMS];
+
+<strong><font color="#228B22">#define C_BP 0</font></strong>
+<strong><font color="#228B22">#define	C_BR 1</font></strong>
+<strong><font color="#228B22">#define	C_CC 2</font></strong>
+<strong><font color="#228B22">#define	C_CD 3</font></strong>
+<strong><font color="#228B22">#define	C_CL 4</font></strong>
+<strong><font color="#228B22">#define	C_CP 5</font></strong>
+<strong><font color="#228B22">#define	C_CT 6 </font></strong>
+<strong><font color="#228B22">#define C_EH 7 </font></strong>
+<strong><font color="#228B22">#define C_HH 8 </font></strong>
+<strong><font color="#228B22">#define C_LS 9 </font></strong>
+<strong><font color="#228B22">#define C_MD 10</font></strong>
+<strong><font color="#228B22">#define C_MV 11</font></strong>
+<strong><font color="#228B22">#define C_RD 12</font></strong>
+<strong><font color="#228B22">#define C_RM 13</font></strong>
+<strong><font color="#228B22">#define C_SE 14</font></strong>
+<strong><font color="#228B22">#define C_SZ 15</font></strong>
+<strong><font color="#228B22">#define C_TP 16</font></strong>
+<strong><font color="#228B22">#define C_VF 17</font></strong>
+<strong><font color="#228B22">#define C_VR 18</font></strong>
+<strong><font color="#228B22">#define C_XX 19</font></strong>
+
+
+
+BYTE cBreak = 0;
+WORD drvs,errorlevel=0,PSP;
+WORD envseg,envsz;
+BYTE far * _env;
+WORD i22_s, i22_o;
+WORD i23_s, i23_o; <font color="#B22222">/* variables to store old ctrl-c handler*/</font>
+WORD i2e_s, i2e_o;
+WORD i24_s, i24_o;
+BYTE IN,OUT,sin,sout;
+BYTE REDIRECTED_OUT, REDIRECTED_IN;
+
+<font color="#4169E1"><a name="bfile"></a>struct bfile </font>{
+    BYTE name[MAXDIR];
+    BYTE *args[20];
+ 	BYTE com[200];
+    BYTE na;
+    BYTE in;       <font color="#B22222">/* used to determine if we are in a dog-file*/</font>
+    WORD line;
+    WORD nest;
+    <font color="#4169E1">struct bfile</font> *prev;
+}*bf;
+
+<font color="#4169E1"><a name="red"></a>struct red </font>{
+    BYTE name[MAXDIR];
+    FILE *fp;
+    BYTE redirect;
+    BYTE opt[3];
+}fout, fin;
+
+<font color="#4169E1"><a name="ExecBlock"></a>struct ExecBlock </font>{
+	WORD env;
+	BYTE far *line;
+	<font color="#4169E1">struct fcb</font> far *fcb1, far *fcb2;
+};
+
+
+<font color="#B22222">/*
+struct pipe{
+    BYTE line[200];
+    BYTE pipe;
+}pip;
+*/</font>
+
+<font color="#B22222">/* Function prototypes */</font>
+
+<font color="#B22222">/* startup and utility */</font>
+<strong><font color="#4169E1">void printprompt(void)</font></strong>;
+<strong><font color="#4169E1">BYTE initialize(int nargs, char* argv[])</font></strong>;
+<strong><font color="#4169E1">BYTE parsecom(BYTE * line, BYTE ll)</font></strong>; 
+<strong><font color="#4169E1">BYTE getcom(BYTE *com)</font></strong>;
+<strong><font color="#4169E1">BYTE redir(BYTE *c)</font></strong>;
+<strong><font color="#4169E1">BYTE getcur(BYTE *p)</font></strong>; 
+<strong><font color="#4169E1">WORD my_exe(BYTE *prog, BYTE *args)</font></strong>;
+<strong><font color="#4169E1">BYTE *trueName(BYTE *name, BYTE *tn)</font></strong>;
+<strong><font color="#4169E1">BYTE *getevar(BYTE *varname, BYTE *value)</font></strong>;
+<strong><font color="#4169E1">void setevar(BYTE *varname, BYTE *value)</font></strong>;
+
+<strong><font color="#4169E1">void clearbat(void)</font></strong>; <font color="#B22222">/* clear the b file linked list*/</font>
+<strong><font color="#4169E1">void prevbat(void)</font></strong>; <font color="#B22222">/* return to the previous nest-level in bat*/</font>
+
+<font color="#B22222">/* internal commands */</font>
+<strong><font color="#4169E1">void do_bp(BYTE n)</font></strong>;
+<strong><font color="#4169E1">void do_br(BYTE n)</font></strong>;
+<strong><font color="#4169E1">void do_pp(BYTE n)</font></strong>;
+<strong><font color="#4169E1">void do_se(BYTE n)</font></strong>;
+<strong><font color="#4169E1">void do_cl(void)</font></strong>;
+<strong><font color="#4169E1">void do_ct(BYTE n)</font></strong>;
+<strong><font color="#4169E1">void do_cd(BYTE n)</font></strong>;
+<strong><font color="#4169E1">void do_vr(void)</font></strong>;
+<strong><font color="#4169E1">void do_rm(BYTE n)</font></strong>;
+<strong><font color="#4169E1">void do_hh(BYTE n)</font></strong>;
+<strong><font color="#4169E1">void do_sz(BYTE n)</font></strong>;
+<strong><font color="#4169E1">void do_eh(BYTE n)</font></strong>;
+<strong><font color="#4169E1">void do_cd(BYTE n)</font></strong>;
+<strong><font color="#4169E1">void do_vf(BYTE n)</font></strong>;
+<strong><font color="#4169E1">void do_mrd(BYTE n)</font></strong>;
+<strong><font color="#4169E1">void do_ls(BYTE n)</font></strong>;
+<strong><font color="#4169E1">void do_xx(void)</font></strong>;
+<strong><font color="#4169E1">void do_tp(BYTE n)</font></strong>;
+<strong><font color="#4169E1">void do_mv(BYTE n)</font></strong>;
+
+<font color="#B22222">/* DOG-file commands */</font>
+<strong><font color="#4169E1">void do_ca(BYTE n)</font></strong>;
+<strong><font color="#4169E1">void do_go(BYTE n)</font></strong>;
+<strong><font color="#4169E1">void do_sh(BYTE n)</font></strong>;
+
+
+<font color="#B22222">/* command processing */</font>
+<strong><font color="#4169E1">void do_exe(BYTE n)</font></strong>;
+<strong><font color="#4169E1">void do_chdr(BYTE dr)</font></strong>;
+<strong><font color="#4169E1">void do_bat(void)</font></strong>;
+<strong><font color="#4169E1">void do_command(BYTE na)</font></strong>;
+<strong><font color="#4169E1">void do_batcommand(BYTE na)</font></strong>;
+</pre>
+
+
+<!-- END of Table-->
+</TD></tr></table>
+
+
+</body>
+</html>
+</body>
+
+</html>

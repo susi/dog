@@ -1,0 +1,303 @@
+
+<html>
+<head>
+<title>../../SRC/LS.C</title>
+<meta name="generator" content="c2html 0.9.2">
+<meta name="date" content="2000-08-01T05:58:52+00:00">
+</head>
+
+<body bgcolor="#FFFFFF">
+<?php
+    $title="DOG - Developer - Source";
+  include("../include/head.php");
+?>
+  
+<!-- Left side -->
+  
+<?php include("../include/dleft.htmlf"); ?>
+  
+<!-- Right side -->
+<TD>
+<pre width="80"><font color="#B22222">/*
+
+LS.C - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
+
+Copyright (C) 1999,2000 Wolf Bergenheim
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+Developers:
+Wolf Bergenheim (WB)
+
+History
+18.03.00 - Extracted from DOG.C - WB
+01.08.00 - Fixed a bug: when you type ls file that doesn't exist ls
+           would loop in DR-DOS because it returns a 1, not 18 as MS-DOS
+
+****************************************************************************/</font>
+
+<strong><font color="#4169E1"><a name="do_ls"></a>void do_ls( BYTE n)</font></strong>
+{
+
+    int  attrs;
+    BYTE *patt[20],dironly;
+    BYTE any[4];
+    BYTE t,r,i,l,j,k,*p;
+    BYTE doit;
+    WORD h, min, sec, y, m, d;
+    <font color="#4169E1">struct ffblk</font> *fb;
+
+    dironly = 0;
+    doit = 1;
+    strcpy(any,<font color="#666666">"*.*"</font>);
+    p = any;
+    patt[0] = p;
+    r = 0;
+    fb = malloc(<font color="#4169E1">sizeof</font>(<font color="#4169E1">struct ffblk</font>));
+
+<font color="#A020F0">#ifdef ls_debug</font>
+fprintf(stderr,<font color="#666666">"do_ls:0: patt[0]=%s; n=%d; any=%s; doit=%u;\n"</font>,patt[0],n,any,doit);
+<font color="#A020F0">#endif</font>
+
+    attrs = 0|FA_DIREC;
+    l = 1;
+    k = 0;
+
+    <font color="#4169E1">if</font> (n&gt;0) {
+        <font color="#4169E1">for</font>(i=1;i&lt;n;i++) {
+
+<font color="#A020F0">#ifdef ls_debug</font>
+fprintf(stderr,<font color="#666666">"do_ls:1: patt[0]=%s\n"</font>,patt[0]);
+<font color="#A020F0">#endif</font>
+            <font color="#4169E1">if</font> (arg[i][0] == '-') {
+                <font color="#4169E1">switch</font>(arg[i][1]) {
+                    <font color="#4169E1">case</font> 'a':
+                        attrs = FA_ARCH|FA_SYSTEM|FA_RDONLY|FA_HIDDEN|FA_DIREC|FA_LABEL;
+                        <font color="#4169E1">break</font>;
+                    <font color="#4169E1">case</font> 'd':
+                        dironly = 1;
+                        <font color="#4169E1">break</font>;
+                    <font color="#4169E1">case</font> 'f':
+                        attrs = FA_NORMAL;
+                        <font color="#4169E1">break</font>;
+                    <font color="#4169E1">case</font> 'h':
+                        printf(<font color="#666666">"The switches are:\n\t-a: List ALL files and directories\n"</font>);
+                        printf(<font color="#666666">"\t-d: list DIRECTORIES only\n\t-f: list normal FILES only\n\t-l: show volume label\n"</font>);
+                        free(fb);
+                        <font color="#4169E1">return</font>;
+                    <font color="#4169E1">case</font> 'l':
+                        attrs = FA_LABEL;
+                        <font color="#4169E1">break</font>;
+                    <font color="#4169E1">case</font> '?':
+                        printf(<font color="#666666">"ls [-a|-d|-f|-h|-l|-?] [d:\\dir\\filename.ext]\n"</font>);
+                        free(fb);
+                        <font color="#4169E1">return</font>;
+<strong><font color="#FF0000">                    default:</font></strong>
+                        printf(<font color="#666666">"Incorrect switch %s\n"</font>,arg[i]);
+                        free(fb);
+                        <font color="#4169E1">return</font>;
+                }
+            }
+            <font color="#4169E1">else</font> <font color="#4169E1">if</font>(strnicmp(arg[i],<font color="#666666">"/"</font>,1)==0) {
+                puts(<font color="#666666">"In DOG we use '-' as switch NOT '/'."</font>);
+                free(fb);
+                <font color="#4169E1">return</font>;
+            }
+            <font color="#4169E1">else</font> {
+                patt[k++] = arg[i];
+<font color="#A020F0">#ifdef ls_debug</font>
+printf(<font color="#666666">"do_ls:2: patt[0]=%s hxpatt=%x\n"</font>,patt[0],patt[0]);
+<font color="#A020F0">#endif</font>
+            }
+        }
+    }
+
+    <font color="#4169E1">if</font> (k &gt; 0)
+        (l = k);
+    <font color="#4169E1">else</font>
+        (l = 1);
+
+    <font color="#4169E1">for</font>(j=0;j &lt; l;j++) {
+        <font color="#4169E1">if</font>(doit&gt;0) {
+
+            <font color="#4169E1">if</font>(l == 0)
+              patt[0] = any;
+
+<font color="#A020F0">#ifdef ls_debug</font>
+fprintf(stderr,<font color="#666666">"do_ls:3: patt[%u]=%s offset=%x patt[%d][last] =  %c\n"</font>,j,patt[0],patt[0],j,patt[j][strlen(patt[j])-1]);
+<font color="#A020F0">#endif</font>
+            <font color="#4169E1">if</font>((patt[j][strlen(patt[j])-1] == '\\') || (patt[j][strlen(patt[j])-1] == ':'))
+                strcat(patt[j],any);
+
+            r = findfirst(patt[j], fb,attrs);
+
+            <font color="#4169E1">if</font>((dironly == 1) &amp;&amp; ((fb-&gt;ff_attrib &amp; FA_DIREC) != FA_DIREC))
+                r = 1;
+<font color="#A020F0">#ifdef ls_debug</font>
+fprintf(stderr,<font color="#666666">"do_ls:*: r=%u\n"</font>,r);
+<font color="#A020F0">#endif</font>
+
+            <font color="#4169E1">if</font> (r == 0) {
+                <font color="#4169E1">if</font>(cBreak) {
+                    cBreak = 0;
+                    free(fb);
+                    <font color="#4169E1">return</font>;
+                }
+
+                printf(<font color="#666666">"    size   ASRHD   dd.mm.yyyy   hh:mm.ss   name\n\n"</font>);
+
+                printf(<font color="#666666">"%8ld   "</font>,fb-&gt;ff_fsize);
+
+                <font color="#4169E1">if</font> (((fb-&gt;ff_attrib &amp; FA_ARCH) == FA_ARCH) &amp;&amp; (fb-&gt;ff_attrib &amp; FA_LABEL != FA_LABEL)) {
+                    printf(<font color="#666666">"A"</font>);
+                }
+
+                <font color="#4169E1">else</font> <font color="#4169E1">if</font>((fb-&gt;ff_attrib &amp; FA_LABEL) == FA_LABEL) printf(<font color="#666666">"L"</font>);
+                <font color="#4169E1">else</font> printf(<font color="#666666">"-"</font>);
+
+                <font color="#4169E1">if</font> ((fb-&gt;ff_attrib &amp; FA_SYSTEM) == FA_SYSTEM) printf(<font color="#666666">"S"</font>);
+                <font color="#4169E1">else</font> <font color="#4169E1">if</font>((fb-&gt;ff_attrib &amp; FA_LABEL) == FA_LABEL) printf(<font color="#666666">"A"</font>);
+                <font color="#4169E1">else</font> printf(<font color="#666666">"-"</font>);
+
+                <font color="#4169E1">if</font> ((fb-&gt;ff_attrib &amp; FA_RDONLY) == FA_RDONLY) printf(<font color="#666666">"R"</font>);
+                <font color="#4169E1">else</font> <font color="#4169E1">if</font>((fb-&gt;ff_attrib &amp; FA_LABEL) == FA_LABEL) printf(<font color="#666666">"B"</font>);
+                <font color="#4169E1">else</font> printf(<font color="#666666">"-"</font>);
+
+                <font color="#4169E1">if</font> ((fb-&gt;ff_attrib &amp; FA_HIDDEN) == FA_HIDDEN) printf(<font color="#666666">"H"</font>);
+                <font color="#4169E1">else</font> <font color="#4169E1">if</font>((fb-&gt;ff_attrib &amp; FA_LABEL) == FA_LABEL) printf(<font color="#666666">"E"</font>);
+                <font color="#4169E1">else</font> printf(<font color="#666666">"-"</font>);
+
+                <font color="#4169E1">if</font> ((fb-&gt;ff_attrib &amp; FA_DIREC) == FA_DIREC) printf(<font color="#666666">"D"</font>);
+                <font color="#4169E1">else</font> <font color="#4169E1">if</font>((fb-&gt;ff_attrib &amp; FA_LABEL) == FA_LABEL) printf(<font color="#666666">"L"</font>);
+                <font color="#4169E1">else</font> printf(<font color="#666666">"-"</font>);
+
+                y = ((fb-&gt;ff_fdate &amp; 0x0fe00)&gt;&gt;9);
+                y += 1980;
+                m = (fb-&gt;ff_fdate &amp;  0x01e0)&gt;&gt;5;
+                d = (fb-&gt;ff_fdate &amp;  0x001f);
+
+                printf(<font color="#666666">"   %02d.%02d.%04d   "</font>,d,m,y);
+
+                h = (fb-&gt;ff_ftime &amp; 0x0F800)&gt;&gt;11;
+                min = (fb-&gt;ff_ftime &amp; 0x03E0)&gt;&gt;5;
+                sec = (fb-&gt;ff_ftime &amp; 0x001f)&lt;&lt;1; <font color="#B22222">/* *2 */</font>
+
+                printf(<font color="#666666">"%02d:%02d.%02d   "</font>,h,min,sec);
+
+
+                printf(<font color="#666666">"%s\n"</font>,fb-&gt;ff_name);
+
+
+            }
+
+<font color="#A020F0">#ifdef ls_debug</font>
+fprintf(stderr,<font color="#666666">"do_ls: r=%d\ndate:%d time:%d\n"</font>,r,fb-&gt;ff_fdate,fb-&gt;ff_ftime);
+fprintf(stderr,<font color="#666666">"y=%d y=%d\n"</font>,y,1998);
+
+<font color="#A020F0">#endif</font>
+            k = 0;
+            r = findnext (fb);
+
+            <font color="#4169E1">while</font>(r == 0) {
+
+            <font color="#4169E1">if</font>(cBreak) {
+                cBreak = 0;
+                free(fb);
+                <font color="#4169E1">return</font>;
+            }
+
+<font color="#A020F0">#ifdef ls_debug</font>
+fprintf(stderr,<font color="#666666">"do_ls: r=%d\n"</font>,r);
+<font color="#A020F0">#endif</font>
+
+                <font color="#4169E1">if</font>((dironly == 1) &amp;&amp; (k == 1))
+                    r = findnext(fb);
+
+                <font color="#4169E1">if</font>((dironly == 1) &amp;&amp; ((fb-&gt;ff_attrib &amp; FA_DIREC) != FA_DIREC)){
+                    k = 1;
+                    <font color="#4169E1">continue</font>;
+                }
+
+                printf(<font color="#666666">"%8ld   "</font>,fb-&gt;ff_fsize);
+
+                <font color="#4169E1">if</font> (((fb-&gt;ff_attrib &amp; FA_ARCH) == FA_ARCH) &amp;&amp; (fb-&gt;ff_attrib &amp; FA_LABEL != FA_LABEL)) {
+                    printf(<font color="#666666">"A"</font>);
+                }
+
+                <font color="#4169E1">else</font> <font color="#4169E1">if</font>((fb-&gt;ff_attrib &amp; FA_LABEL) == FA_LABEL) printf(<font color="#666666">"L"</font>);
+                <font color="#4169E1">else</font> printf(<font color="#666666">"-"</font>);
+
+                <font color="#4169E1">if</font> ((fb-&gt;ff_attrib &amp; FA_SYSTEM) == FA_SYSTEM) printf(<font color="#666666">"S"</font>);
+                <font color="#4169E1">else</font> <font color="#4169E1">if</font>((fb-&gt;ff_attrib &amp; FA_LABEL) == FA_LABEL) printf(<font color="#666666">"A"</font>);
+                <font color="#4169E1">else</font> printf(<font color="#666666">"-"</font>);
+
+                <font color="#4169E1">if</font> ((fb-&gt;ff_attrib &amp; FA_RDONLY) == FA_RDONLY) printf(<font color="#666666">"R"</font>);
+                <font color="#4169E1">else</font> <font color="#4169E1">if</font>((fb-&gt;ff_attrib &amp; FA_LABEL) == FA_LABEL) printf(<font color="#666666">"B"</font>);
+                <font color="#4169E1">else</font> printf(<font color="#666666">"-"</font>);
+
+                <font color="#4169E1">if</font> ((fb-&gt;ff_attrib &amp; FA_HIDDEN) == FA_HIDDEN) printf(<font color="#666666">"H"</font>);
+                <font color="#4169E1">else</font> <font color="#4169E1">if</font>((fb-&gt;ff_attrib &amp; FA_LABEL) == FA_LABEL) printf(<font color="#666666">"E"</font>);
+                <font color="#4169E1">else</font> printf(<font color="#666666">"-"</font>);
+
+                <font color="#4169E1">if</font> ((fb-&gt;ff_attrib &amp; FA_DIREC) == FA_DIREC) printf(<font color="#666666">"D"</font>);
+                <font color="#4169E1">else</font> <font color="#4169E1">if</font>((fb-&gt;ff_attrib &amp; FA_LABEL) == FA_LABEL) printf(<font color="#666666">"L"</font>);
+                <font color="#4169E1">else</font> printf(<font color="#666666">"-"</font>);
+
+
+                y = ((fb-&gt;ff_fdate &amp; 0x0fe00)&gt;&gt;9)+1980;
+
+                d = (fb-&gt;ff_fdate &amp;  0x001f);
+
+                printf(<font color="#666666">"   %02d.%02d.%04d   "</font>,d,m,y);
+
+                h = (fb-&gt;ff_ftime &amp; 0x0F800)&gt;&gt;11;
+                min = (fb-&gt;ff_ftime &amp; 0x03E0)&gt;&gt;5;
+                sec = (fb-&gt;ff_ftime &amp; 0x001f)&lt;&lt;1; <font color="#B22222">/* *2 */</font>
+
+                printf(<font color="#666666">"%02d:%02d.%02d   "</font>,h,min,sec);
+
+
+                printf(<font color="#666666">"%s\n"</font>,fb-&gt;ff_name);
+
+
+
+            r = findnext(fb);
+            k = 0;
+
+        }
+
+
+<font color="#A020F0">#ifdef ls_debug</font>
+fprintf(stderr,<font color="#666666">"do_ls: r=%d\n"</font>,r);
+<font color="#A020F0">#endif</font>
+        }
+    }
+    free(fb);
+    <font color="#4169E1">return</font>;
+}
+
+
+</pre>
+
+
+<!-- END of Table-->
+</TD></tr></table>
+
+
+</body>
+</html>
+</body>
+
+</html>

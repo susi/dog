@@ -1,0 +1,102 @@
+
+<html>
+<head>
+<title>../../SRC/CT.C</title>
+<meta name="generator" content="c2html 0.9.2">
+<meta name="date" content="2000-03-26T11:43:15+00:00">
+</head>
+
+<body bgcolor="#FFFFFF">
+<?php
+    $title="DOG - Developer - Source";
+  include("../include/head.php");
+?>
+  
+<!-- Left side -->
+  
+<?php include("../include/dleft.htmlf"); ?>
+  
+<!-- Right side -->
+<TD>
+<pre width="80"><font color="#B22222">/*
+
+CT.C - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
+
+Copyright (C) 1999,2000 Wolf Bergenheim
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+Developers:
+Wolf Bergenheim (WB)
+David McIlwraith (DMcI)
+
+History
+25.03.00 - started... based on the code written by David MacIlwraith
+
+*/</font>
+
+<strong><font color="#4169E1"><a name="do_ct"></a>void do_ct(BYTE n)</font></strong>
+{
+    asm{
+        mov ax,3d02h            ;<font color="#B22222">/* open file using handle */</font>
+        mov dx,offset arg[1]    ;<font color="#B22222">/* filename */</font>
+        int 21h                 ;<font color="#B22222">/* open file... er device */</font>
+        jc do_ct_err
+        mov bx,ax               ;<font color="#B22222">/* save handle */</font>
+        mov ax,4400h            ;<font color="#B22222">/* IOCTL - Get dev info */</font>
+        int 21h
+        jc do_ct_err
+        test dl,80h             ;<font color="#B22222">/* is it a device */</font>
+        jz do_ct_err
+        mov ax,4406h
+        int 21h                 ;<font color="#B22222">/* IOCT - Get input status */</font>
+        jc do_ct_err
+        or al,al                ;<font color="#B22222">/* is it ready? */</font>
+        jz do_ct_dnr
+        mov ax,4407h
+        int 21h                 ;<font color="#B22222">/* IOCT - Get output status */</font>
+        jc do_ct_err
+        or al,al                ;<font color="#B22222">/* is it ready? */</font>
+        jz do_ct_dnr
+        mov cx,0003h            ;<font color="#B22222">/* STDERR */</font>
+        mov ah,46h              ;<font color="#B22222">/* DUP2: make handle in CX same as */</font>
+    }
+<strong><font color="#FF0000">    do_ct_dup2:</font></strong>                 ;<font color="#B22222">/* handle in BX = handle of input dev */</font>
+    asm{
+        int 21h
+        jc do_ct_err
+        loop do_ct_dup2         ;<font color="#B22222">/*decreases cx and jmp to label while cx&gt;0 */</font>
+    }
+    <font color="#4169E1">return</font>;
+
+<strong><font color="#FF0000">    do_ct_err:</font></strong>
+        fprintf(stderr,<font color="#666666">"Invalid device.\n"</font>);
+        <font color="#4169E1">return</font>;       
+<strong><font color="#FF0000">    do_ct_dnr:</font></strong>
+        fprintf(stderr,<font color="#666666">"Device %s not ready error.\n"</font>,arg[1]);
+        <font color="#4169E1">return</font>;
+}    
+</pre>
+
+
+<!-- END of Table-->
+</TD></tr></table>
+
+
+</body>
+</html>
+</body>
+
+</html>

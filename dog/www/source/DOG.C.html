@@ -1,0 +1,1738 @@
+
+<html>
+<head>
+<title>../../SRC/DOG.C</title>
+<meta name="generator" content="c2html 0.9.2">
+<meta name="date" content="2000-10-20T10:17:30+00:00">
+</head>
+
+<body bgcolor="#FFFFFF">
+<?php
+    $title="DOG - Developer - Source";
+  include("../include/head.php");
+?>
+  
+<!-- Left side -->
+  
+<?php include("../include/dleft.htmlf"); ?>
+  
+<!-- Right side -->
+<TD>
+<pre width="80"><font color="#B22222">/*
+DOG.C  -  Alternate command processor for (currently) MS-DOS ver 3.30
+
+Copyright (C) 1999,2000 Wolf Bergenheim
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+Contact author: internet: dog@users.sourceforge.net
+                         http://www.hut.fi/~hbergenh/DOG/
+			 
+Developers:
+Wolf Bergenheim (WB)
+Eugene Wong (EW)
+
+History
+
+19.06.98 - Started
+22.06.98 - Started: void initialize()
+25.06.98 - made the CL command
+26.06.98 - made the VR command
+28.06.98 - made TM and DT commands.
+29.06.98 - started on int getcom(BYTE *com,BYTE *arg[20])
+22.07.98 - started on void do_cd(blah)
+21.08.98 - started on void do_ls(blah)
+20.10.98 - started on void do_br(blah)
+20.10.98 - improved void_do_ls(blah) to take read arguments in any order
+20.10.98 - Started on void do_exe(blah)
+23.10.98 - do_exe ready, also do_md. do_rd, do_br, do_vf &amp; eh
+29.10.98 - most internal commands complete. Starting to exp on other stuff
+30.10.98 - Woha. The immensity of the project hit me just now. Putting dog
+           on ICE.
+01.02.99 - Lifted DOG out of ICE. rewrote large parts of do_exe(blah).
+02.02.99 - IMBOLC - rewrote parts of do_bat(), but encoutered a strange
+                    thing... DOG executes every externel program twice
+                    could be because of the do_exe(blah). have to snoop :)
+03.02.99 - fixed some bugs in do_exe(blah) and do_dog().
+04.02.99 - Modified the do_vr() to recognize different vedors of DOS.
+08.02.99 - Fixed a bug. Now You can execute any .COM .EXE .DOG file by giving
+           the full path.
+09.02.99 - Made the void do_tp(BYTE n) function. All internal
+           commands (ecept cp) are operational.
+25.02.99 - Improved do_pp to understand special characters. ls can now take
+           multiple file-patterns and list them all!
+03.03.99 - Improved on do_cd to accept cd.... etc and interpet it correctly
+04.03.99 - To Do: CTTY,CHCP?,DOSKEY,set Label          in bat exist,not,pause
+           piping redirection
+05.03.99 - Bugfix. Found some minor bugs. Found and old redudndant function.
+           Removed it.
+08.03.99 - Still can't get tm -s to work...
+09.03.99 - Copied the idea of parse_time form FreeCom, improved it and NOW
+           the -s switch in do_tm(blah) WORKS!!! :)
+           rewrote the initialize function. now you can use many paramters.
+           -P and -C are the onlyones so far.. -C MUST BE LAST!
+12.03.99 - Bug in -E switch. environment scrapped. change to resize.
+15.03.99 - Fixed some bugs. Inserted Ctrl-Brkeak ^C handling / recognizing.
+           used ctrl-c handler fon FreeCom.
+29.03.99 - ctrlc.c doesn't work... (wonder what's wrong?). the DOG-file
+           commands bp (beep) and go (go to label) work just great!
+           proceeding with other DOG-file commands...
+07.04.99 - added meta-strings for tab ret nl bs % in do_eh()
+           strange????
+           The small ctrl-c handler (in this file) works but ctrlc.c doesn't.
+16.04.99 - Added %c for clock and %d for date to the prompt meta-characters.
+           Fixed a bug in ls.
+19.04.99 - bug in do_bp added one to n.
+           rewrote the batch system. each DOGfile state isa saved in a linked
+           list this makes it possible to call a DOGfile and then retun to
+           the old.
+           Ctrl-C in a nested bfile will terminate ALL levels of nest.
+21.04.99 - Added wild-cards to tp();
+22.04.99 - Stared on redir.
+23.04.99 - stdout redir ready. fixed do_tp.
+27.04.99 - stdin redirecting ready.
+28.04.99 - in:do_ls() if pattern ends in ':' or '\' then append *.* to it.
+           started on piping (still commented out)
+29.04.99 - Found a bug in parse_time() pointer error. fixed it.
+30.04.99 - changed all occurances of getchar to getkey. i thing there is
+           something wrong with the getchar in the lib..
+03.05.99 - Added \b recognition to getln.
+04.05.99 - F U C K I N G   M I C R O - C   C O M P I L E R ! ! ! !
+           gona change to borland c++ 3.1 :(
+05.05.99 - Porting to Borland C++ 3.1
+06.05.99 - Done porting DOG.C &amp; DOG.H;
+           compile with options -1- -AT -B -d -mt -O1 -tDc
+           dumped file CTRLC.C
+19.05.99 - rewrote do_md &amp; rd in to one function; The changing of the dir is
+           handled by do_mrd (the combined do_md &amp; do_rd. saved 100 bytes :)
+21.05.99 - rewrote logical error in do_exe: searched for arg[0] before arg[0].COM
+           fixed it. made my_exe to handle execution of external prog.
+25.05.99 - Dirs are now executable you just need to type a dir and then you change
+           there. Suggestion by Jonas Berlin.
+05.08.99 - Did some Bugfixes. Wugene Wong rewrote the parse_time() function.
+           It should be faster now.
+09.08.99 - Fixed do_cd() to accept ...etc as directory.
+10.08.99 - Modified do_dt() to accept switch -s to set date. Added function
+           parse_date.
+12.08.99 - Modified do_command to treat commands starting with "..." as a directory,
+           thus starting the cd command.
+           Fixed both parse_time() and parse_date() to default to invalid 
+           values -&gt; multiple calls -&gt; fail.
+           Fixed do_sz() to display disksize correctly.
+21.08.99 - Major revition of DOG. 1:sorted dog commands alphabeticly.
+24.08.99 - Rewrote do_rm(). Now removing files in other dirs is possible.
+           Added file ints.c with int 23,24,2e handles.
+01.09.99 - Changed %ld to %lu in do_sz()
+04.09.99 - Rewrote initialize. Now the environment gets set up correctly
+           The Permanent shel option(-p) is set to point the int 2eh at
+           DOGVerFunc. It also creates a new environment. With the -e option
+           an environment is resized. If the env block needs to belocated
+           it will be recreated with the default env vars.
+05.09.99 - Wrote setevar() and getevar(); Wrote do_se();
+09.11.99 - Removed do_dt() and do_tm() as per the request of Eugene Wong.
+           Time and date functions are now hanled by CLK.
+08.12.99 - CLK renamed to DT for Day and Time.
+18.03.00 - Split DOG.C int individual files. - WB           
+25.03.00 - added code for do_ct() - WB
+02.04.00 - fixed printprompt so that month will be displayed properly and
+           changed its variable names to be more consistent with dt.c - EW
+13.04.00 - rewrote initialize(). now both XX and SE work. As does the 
+           -E command-line switch - WB
+01.08.00 - rewrote (allmost completely) do_exe to handle the PATH variable. -WB
+15.08.00 - Moved BP (Beep) to a normal command out of bat.c - WB
+
+*/</font>
+
+<font color="#A020F0">#include </font><font color="#666666">"dog.h"</font><font color="#A020F0"></font>
+<font color="#A020F0">#include </font><font color="#666666">"bat.c"</font><font color="#A020F0"></font>
+<font color="#A020F0">#include </font><font color="#666666">"ints.c"</font><font color="#A020F0"></font>
+
+<font color="#B22222">/*
+#include "dog.h"
+#include "bat.c"
+#include "ints.c"
+*/</font>
+
+<strong><font color="#4169E1"><a name="initialize"></a>BYTE initialize(int nargs, char *args[])</font></strong>
+{
+
+    BYTE i,j,k,*p,*q,line[200]={0},sw_P=0,rebuild=0;
+    BYTE far *s;
+    BYTE far *d;
+    BYTE far *ep;
+    WORD w,nenvsz,nenvseg,eoesz,o;
+
+    <font color="#4169E1">for</font>(i=0;i&lt;_NCOMS;i++) { <font color="#B22222">/* TEPORARY ONLY!!! */</font>
+        command_help[i] = 0;
+    }    
+
+    Xitable = 1;
+
+printf(<font color="#666666">"PSP = %x PPID = %x\n"</font>,_psp,peek(_psp,PPID_OFS));
+
+    <font color="#B22222">/* save STDIN STDOUT */</font>
+    IN = dup(fileno(stdin));
+    OUT = dup(fileno(stdout));
+
+    D = getcur(P) + 'A';
+
+    bf = malloc(<font color="#4169E1">sizeof</font>(<font color="#4169E1">struct bfile</font>));
+    bf-&gt;prev = NULL;
+    bf-&gt;in = 0;
+    bf-&gt;nest = 0;
+
+    drvs = 0;
+
+    <font color="#B22222">/* get the segment of the environment from the PSP*/</font>
+    envseg = peek(_psp,ENVSEG_OFS);
+    _env = MK_FP(envseg,0);    
+    envsz = peek(envseg-1,3) &lt;&lt; 4; <font color="#B22222">/*get size of block allocated from MCB*/</font>
+
+<font color="#A020F0">#ifdef env_debug</font>
+printf(<font color="#666666">"nargs=%u\n"</font>,nargs);
+printf(<font color="#666666">"envsz=%ux\n"</font>,envsz);
+<font color="#A020F0">#endif</font>
+
+    <font color="#4169E1">if</font>(nargs == 1) {
+        <font color="#4169E1">return</font> 0;
+    }
+
+    <font color="#B22222">/* make the commandline to one string without spaces */</font>
+    <font color="#4169E1">for</font>(i=2,strcpy(line,args[1]);i&lt;nargs;i++)
+        strcat(line,args[i]);
+
+    p=line;
+    strupr(p); <font color="#B22222">/* upper case it*/</font>
+    <font color="#4169E1">while</font>(*p!='\0') {
+        <font color="#4169E1">if</font>(*p=='-') {
+            <font color="#4169E1">switch</font>(*(++p)) {
+                <font color="#4169E1">case</font> 'C': <font color="#B22222">/* execute one command, then exit */</font>
+                    <font color="#B22222">/* can't execute just one command on a permanent shell*/</font>
+                    <font color="#4169E1">if</font>(sw_P == 1)
+                        Xit = 3;
+                    <font color="#4169E1">else</font>
+                        Xit = 2;
+                    <font color="#B22222">/* copy the arg vectors to the command */</font>
+                    <font color="#4169E1">for</font>(i=1;i&lt;nargs;i++) {
+                        <font color="#4169E1">if</font>(strnicmp(args[i],<font color="#666666">"-C"</font>,2)==0){
+                            <font color="#4169E1">if</font>(strlen(args[i]) &gt; 2)
+                                args[i] = &amp;args[i][2];
+                            <font color="#4169E1">else</font>
+                                i++;
+                            <font color="#4169E1">break</font>;
+                        }
+                    }
+
+                    <font color="#4169E1">for</font>(j=0;i&lt;nargs;i++,j++) {
+                        arg[j] = args[i];
+                    }
+                    Xitable = eh = 1;
+                    <font color="#4169E1">return</font> j;
+
+                <font color="#4169E1">case</font> 'E': <font color="#B22222">/* set the size of the environment */</font>
+
+                    nenvsz=0;
+                    <font color="#B22222">/* Accept all strings beginning with -E */</font>
+                    <font color="#4169E1">while</font>((!isdigit(*p))&amp;&amp;(*p!='\0')&amp;&amp;(*p!='-')) p++;
+                    <font color="#4169E1">while</font>(isdigit(*p)) nenvsz=nenvsz*10+(*p++)-'0';
+                    
+                    nenvsz &gt;&gt;= 4; <font color="#B22222">/* paragraphs */</font>
+                    <font color="#4169E1">if</font>(nenvsz &lt; 10) nenvsz=10;
+                    <font color="#4169E1">if</font>(nenvsz &gt; 800) nenvsz=800;
+
+                    <font color="#4169E1">if</font>((nenvsz &lt;&lt; 4) &lt; envsz) {
+                        asm {
+                            mov AH,4ah      ;<font color="#B22222">/*resize mem block BX=newsz ES=seg */</font>
+                            mov BX,nenvsz
+                            mov DX,envseg
+                            mov ES,DX
+                            int 21h
+                            jnc e_env_ok
+                        }
+<strong><font color="#FF0000">                        e_env_not_ok:</font></strong>
+                        asm {
+                            sub ax,07h <font color="#B22222">/*errors 7,8,9 possible*/</font>
+                            jz  e_block_dest
+                            dec ax
+                            jz  e_no_mem
+                            jmp e_inv_mem
+                        }
+                        <font color="#B22222">/* probably never happens... remove? */</font>
+<strong><font color="#FF0000">                        e_block_dest:</font></strong>
+                        fprintf(stderr,<font color="#666666">"Environment block destroyed!\nBuilding new.\n"</font>);
+<strong><font color="#FF0000">                        e_inv_mem:</font></strong>
+                        fprintf(stderr,<font color="#666666">"Invalid Environment!\nBuilding new.\n"</font>);
+<strong><font color="#FF0000">                        e_no_mem:</font></strong>
+                        fprintf(stderr,<font color="#666666">"Environment block too small!\nBuilding new.\n"</font>);
+                        asm {
+                            mov ah,49h
+                            mov dx,envseg
+                            mov es,dx
+                            int 21h
+                        }
+                        rebuild = 1;
+    
+                        <font color="#4169E1">break</font>;
+<strong><font color="#FF0000">                        e_env_ok:</font></strong>
+                        
+                        nenvsz &lt;&lt;= 4; <font color="#B22222">/* bytes */</font>
+                        eoesz = strlen(args[0]) + 4;
+                        ep = MK_FP(envseg,0); <font color="#B22222">/* point to beg of env*/</font>
+<font color="#A020F0">#ifdef env_debug</font>
+printf(<font color="#666666">"ep=%Fp\n"</font>,ep);
+<font color="#A020F0">#endif</font>
+
+                        <font color="#4169E1">for</font>(w = 0;(eoesz+w) &lt; nenvsz;w++) {
+                            <font color="#4169E1">if</font>(*(ep+w) == 0){
+                                o = w; <font color="#B22222">/* save pos */</font>
+<font color="#A020F0">#ifdef env_debug</font>
+printf(<font color="#666666">"w=%u; "</font>,w);
+<font color="#A020F0">#endif</font>
+
+                            }
+                        }
+                        ep += o;
+<font color="#A020F0">#ifdef env_debug</font>
+printf(<font color="#666666">"ep=%Fp\n"</font>,ep);
+<font color="#A020F0">#endif</font>
+
+                        *(++ep) = 0;
+                        *(++ep) = 1;
+                        *(++ep) = 0;
+                        q=args[0]; ep++;
+                        <font color="#4169E1">while</font>(*q != 0)
+                            *(ep++)=*(q++);                        
+                        *ep = 0;
+
+                    }
+                    <font color="#4169E1">else</font> {
+                        asm {
+                            mov ah,48h
+                            mov bx,nenvsz
+                            int 21h
+                            jc  l_e_not_ok
+                            mov nenvseg,ax
+                        }
+
+                        <font color="#4169E1">goto</font> l_e_ok;
+<strong><font color="#FF0000">                        l_e_not_ok:</font></strong>
+                        <font color="#4169E1">goto</font> e_env_not_ok;
+<strong><font color="#FF0000">                        l_e_ok:</font></strong>
+
+                        s = MK_FP(envseg,0);
+                        d = MK_FP(nenvseg,0);
+
+<font color="#A020F0">#ifdef env_debug</font>
+printf(<font color="#666666">"envseg=%x envsz=%x\n"</font>,envseg,envsz);
+<font color="#A020F0">#endif</font>
+                        <font color="#4169E1">for</font>(w=0;w&lt;envsz;w++) {
+                            *(d++) = *(s++);
+<font color="#A020F0">#ifdef env_debug</font>
+printf(<font color="#666666">"s(%Fp)-&gt;%Fc d(%Fp)-&gt;%Fc\n"</font>,s,*s,d,*d);
+<font color="#A020F0">#endif</font>
+                        }
+
+                        asm {
+                            mov ah,49h      ;<font color="#B22222">/*free old env*/</font>
+                            mov dx,envseg
+                            mov es,dx
+                            int 21h
+                        }
+                        envsz = nenvsz;
+                        envseg = nenvseg;
+                        poke(_psp,ENVSEG_OFS,envseg);
+
+                    }
+                    <font color="#4169E1">break</font>;
+                    
+
+                <font color="#4169E1">case</font> 'P':<font color="#B22222">/* make a permanent shell */</font>
+                    sw_P = 1;
+                    rebuild = 1;
+                    envsz = 0;
+                    <font color="#B22222">/* Accept all strings beginning with -P */</font>
+                    <font color="#4169E1">while</font>((!isdigit(*p))&amp;&amp;(*p!='\0')&amp;&amp;(*p!='-')) p++;
+                    <font color="#4169E1">while</font>(isdigit(*p)) envsz=envsz*10+(*p++)-'0';
+                    
+                    envsz /= 16; <font color="#B22222">/*paragraphs*/</font>
+                    <font color="#4169E1">if</font>(envsz &lt; 10) envsz=10;
+                    <font color="#4169E1">if</font>(envsz &gt; 800) envsz=800;
+                    
+<strong><font color="#FF0000">                    p_env_retry:</font></strong>
+                    asm {
+                        mov bx,envsz
+                    }
+<strong><font color="#FF0000">                    p_env_not_mem_retry:</font></strong>
+                    asm {
+                        mov ah,48h
+                        int 21h
+                        jnc p_env_ok
+                        sub ax,7
+                        jz p_env_retry
+                        dec ax
+                        jz p_env_not_mem_retry
+                    }
+<strong><font color="#FF0000">                    p_env_ok:</font></strong>
+                    asm {
+                        mov envseg,ax
+                    }
+                    poke(_psp,ENVSEG_OFS,envseg);
+
+                    get_int();
+                    set_int();
+
+                    <font color="#B22222">/* make int 2e point to DOG2eFunc */</font>
+                    asm {
+                        <font color="#B22222">/* save */</font>
+                        mov ax,352eh
+                        mov i2e_o,bx
+                        mov i2e_s,es
+                        int 21h
+                        <font color="#B22222">/* set */</font>
+                        mov ax,252eh
+                        mov dx,offset DOG2eFunc
+                        push cs
+                        pop es
+                        int 21h
+                        <font color="#B22222">/* point int 22 termination address at DOG loop*/</font>
+                        mov ax,2522h
+                        mov dx,offset DOG_loop
+                        mov i22_o,dx
+                        push cs
+                        pop ds
+                        mov i22_s,ds
+                        int 21h
+                    }
+
+                    <font color="#B22222">/* put int handlers in to PSP */</font>
+
+                    poke(_psp,0x0a,i22_o);
+                    poke(_psp,0x0a+2,i22_s);
+                    poke(_psp,0x0e,i23_o);
+                    poke(_psp,0x0e+2,i23_s);
+                    poke(_psp,0x12,i24_o);
+                    poke(_psp,0x12+2,i24_s);
+                    <font color="#B22222">/* makeDOG it's own parrent*/</font>
+                    poke(_psp,PPID_OFS,_psp);
+
+                    Xitable = 0;
+                    <font color="#4169E1">break</font>;
+            }
+        }
+        <font color="#4169E1">else</font>
+            <font color="#B22222">/* ignore */</font>
+            p++;
+    }
+    _env = MK_FP(envseg,0);
+    envsz = peek(envseg-1,3) &lt;&lt; 4; <font color="#B22222">/*get size of block allocated from MCB*/</font>
+
+    <font color="#4169E1">if</font> (rebuild==1) {
+        <font color="#4169E1">if</font>((p=malloc(envsz))!=NULL) {
+            q=p;
+            i=0;
+            sprintf(p,<font color="#666666">"COMSPEC=%s"</font>,args[0]);
+            i += strlen(p)+1;
+            p += i; <font color="#B22222">/*point to after terminating 0 */</font>
+            strcpy(p,<font color="#666666">"PATH=C:\\DOS;C:\\DOG;C:\\;.."</font>);
+            i += strlen(p)+1;
+            p += 26;
+            strcpy(p,<font color="#666666">"PROMPT="</font>);
+            strcat(p,_PROMPT);
+            i += strlen(p)+1;
+            p = q+i;
+            *(p++) = 0; <font color="#B22222">/* = terminating the env */</font>
+            *(p++) = 1; *(p++)=0; <font color="#B22222">/* WORD number of strings to follow*/</font>
+            i += 3;
+            sprintf(p,<font color="#666666">"%s"</font>,args[0]);
+            i += strlen(p)+1;
+            p += i; <font color="#B22222">/*point to after terminating 0 */</font>
+
+            <font color="#4169E1">for</font>(j=0;j&lt;i;j++) { <font color="#B22222">/* copy it to the env block */</font>
+                *(_env+j) = *(q+j);
+<font color="#A020F0">#ifdef env_debug</font>
+                <font color="#4169E1">if</font>(*(q+j) != '\0')
+                    printf(<font color="#666666">"%c"</font>,*(q+j));
+                <font color="#4169E1">else</font>
+                    printf(<font color="#666666">"0\n"</font>);
+<font color="#A020F0">#endif</font>
+            }
+<font color="#A020F0">#ifdef env_debug</font>
+            puts(<font color="#666666">""</font>);
+<font color="#A020F0">#endif</font>
+        }
+        free(p);
+    }
+    <font color="#4169E1">return</font> 0;
+}
+
+        
+
+<font color="#B22222">/**************************************************************************/</font>
+
+<strong><font color="#4169E1"><a name="scankey"></a>void scankey(BYTE *p,BYTE len)</font></strong>
+{
+    BYTE *t,curr,start,scan,key;
+
+    asm{
+        mov AH,03h
+        xor BH,BH
+        int 10h
+        mov start,DL
+        mov curr,DL
+    }
+<strong><font color="#FF0000">    KBD_LOOP:</font></strong>
+    asm{
+        MOV AH,01h
+        INT 16h
+        JZ KBD_LOOP
+        MOV scan,AH
+        MOV key,AL
+    }
+
+    <font color="#4169E1">switch</font>(key) {
+        <font color="#4169E1">case</font> '\0':
+            <font color="#4169E1">switch</font>(scan) {
+                <font color="#4169E1">case</font> 0x48 : <font color="#B22222">/*Up arrow*/</font>
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font> 0x50 : <font color="#B22222">/*down arrow*/</font>
+                    <font color="#4169E1">break</font>;
+
+                <font color="#4169E1">case</font> 0x4B : <font color="#B22222">/*left arrow*/</font>
+                    asm{
+                        MOV AH,03h
+                        XOR BH,BH
+                        INT 10h             <font color="#B22222">/*get cursor pos*/</font>
+                        MOV AL,start           <font color="#B22222">/*get start pos of cmd line*/</font>
+                        CMP DL,AL           <font color="#B22222">/*are we in the start?*/</font>
+                        JE  left_end        <font color="#B22222">/*yes*/</font>
+                        CMP DL,00h          <font color="#B22222">/*are we at poss 0?*/</font>
+                        JNE left_same_row   <font color="#B22222">/*no*/</font>
+                        DEC DH              <font color="#B22222">/*cursor goes up one line*/</font>
+                        MOV DL,50h          <font color="#B22222">/*and to the end*/</font>
+                        JMP left_doit
+                    }
+<strong><font color="#FF0000">                    left_same_row:</font></strong>          <font color="#B22222">/*we are not in the beg of a row*/</font>
+                    asm{DEC DL;}            <font color="#B22222">/*cursor goes back one step*/</font>
+<strong><font color="#FF0000">                    left_doit:</font></strong>
+                    asm{
+                        MOV AH,02h
+                        INT 10h             <font color="#B22222">/*move cursor to new pos*/</font>
+                    }
+                    p--;
+<strong><font color="#FF0000">                    left_end:</font></strong>
+                    <font color="#4169E1">break</font>;
+
+                <font color="#4169E1">case</font> 0x4D : <font color="#B22222">/*Right arrow*/</font>
+                    <font color="#4169E1">if</font> ((curr - start &lt; len) &amp;&amp; ((p+curr-start+1) !='\0'))  {
+                        p++;
+                        curr++;
+                        asm{
+                            MOV AH,03h
+                            XOR BH,BH
+                            INT 10h
+                            CMP DL,50h      <font color="#B22222">/*is it the end of the line?*/</font>
+                            JNE right_same_row <font color="#B22222">/*yes*/</font>
+                            INC DH
+                            MOV DL,00h      <font color="#B22222">/* move cursor to nextline pos 0*/</font>
+                            JMP right_doit
+                        }
+<strong><font color="#FF0000">                        right_same_row:</font></strong>
+                        asm{INC DL;}
+<strong><font color="#FF0000">                        right_doit:</font></strong>
+                        asm{
+                            MOV AH,02h
+                            INT 10h         <font color="#B22222">/* move cursor to new pos*/</font>
+                        }
+                    }
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font> 0x3B : <font color="#B22222">/*F1*/</font>
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font> 0x3C : <font color="#B22222">/*F2*/</font>
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font> 0x3D : <font color="#B22222">/*F3*/</font>
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font> 0x3E : <font color="#B22222">/*F4*/</font>
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font> 0x3F : <font color="#B22222">/*F5*/</font>
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font> 0x40 : <font color="#B22222">/*F6*/</font>
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font> 0x41 : <font color="#B22222">/*F7*/</font>
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font> 0x42 : <font color="#B22222">/*F8*/</font>
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font> 0x43 : <font color="#B22222">/*F9*/</font>
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font> 0x44 : <font color="#B22222">/*F10*/</font>
+                    <font color="#4169E1">break</font>;
+
+            }
+            <font color="#4169E1">break</font>;
+
+        <font color="#4169E1">case</font> '\b':
+            t = p+1;
+            *p = '\0';
+            strcat(p,t);
+            asm{
+                MOV AH,03h
+                XOR BH,BH
+                INT 10h             <font color="#B22222">/*get cursor pos*/</font>
+                PUSH DX             <font color="#B22222">/*save Pos*/</font>
+            }
+            printf(<font color="#666666">"%s"</font>,t);
+            asm {
+                MOV AH,02h
+                XOR BH,BH
+                POP DX
+                INT 10h             <font color="#B22222">/*restore cursor*/</font>
+            }
+            <font color="#4169E1">break</font>;
+
+        <font color="#4169E1">case</font> '\r':
+            putchar('\n');
+            *p = '\0';
+            <font color="#4169E1">return</font>;
+
+<strong><font color="#FF0000">        default:</font></strong>
+            <font color="#4169E1">if</font>((curr-start) &lt; len) {
+                putchar(key);
+                *p = key;
+                p++;
+                curr++;
+            }
+            <font color="#4169E1">else</font>
+                putchar('\x07');
+    }
+
+    asm{
+        JMP KBD_LOOP
+    }
+}
+
+<font color="#B22222">/**************************************************************************/</font>
+
+
+<strong><font color="#4169E1"><a name="getln"></a>BYTE getln(BYTE *s, BYTE lim)</font></strong>
+{
+    BYTE i;
+
+    memset(s,0,lim);
+
+<font color="#A020F0">#if defined scankey</font>
+    scankey(s,lim-1);
+<font color="#A020F0">#else</font>
+    gets(s);
+<font color="#A020F0">#endif</font>
+    i = strlen(s);
+
+
+<font color="#A020F0">#ifdef debug</font>
+fprintf(stderr,<font color="#666666">"getln:2: i:%d s:!%s!\n"</font>,i,s);
+<font color="#A020F0">#endif</font>
+
+    <font color="#4169E1">return</font> i;
+}
+
+<font color="#B22222">/**************************************************************************/</font>
+<strong><font color="#4169E1"><a name="parsecom"></a>BYTE parsecom(BYTE * line,BYTE ll)</font></strong>
+{
+    BYTE i=0,j=0;
+
+<font color="#A020F0">#ifdef debug</font>
+    printf(<font color="#666666">"parsecom:0: line(%s)\n"</font>,line);
+<font color="#A020F0">#endif</font>
+
+    <font color="#4169E1">while</font>((j&lt;20) &amp;&amp; (i&lt;ll)) {
+        <font color="#4169E1">while</font>((isspace(line[i]) || (line[i] == '\0') )&amp;&amp; (i&lt;ll))
+            line[i++] = '\0';
+
+        <font color="#4169E1">if</font>(i&lt;ll)
+            arg[j++] = &amp;line[i];
+
+        <font color="#4169E1">while</font>(!isspace(line[i]) &amp;&amp; (i&lt;ll))
+            i++;
+    }
+
+<font color="#A020F0">#ifdef debug</font>
+    printf(<font color="#666666">"parsecom:3: j=%d line: !%s! arg("</font>,j,line);
+    <font color="#4169E1">for</font>(i=0;i&lt;j;i++)
+        printf(<font color="#666666">"%s|"</font>,arg[i]);
+    printf(<font color="#666666">")\n"</font>);
+<font color="#A020F0">#endif</font>
+
+    <font color="#4169E1">return</font> j;
+}
+
+
+
+<font color="#B22222">/**************************************************************************/</font>
+
+<strong><font color="#4169E1"><a name="getcom"></a>BYTE getcom(BYTE *com)</font></strong>
+{
+
+    BYTE ln,r;
+
+    ln = getln(com, 200);
+
+    <font color="#4169E1">if</font>(redir(com)==0) {
+        com[0] = 0;
+        arg[0] = com;
+        <font color="#4169E1">return</font> 0;
+    }
+
+    ln = strlen(com);
+<font color="#A020F0">#ifdef debug</font>
+    fprintf(stderr,<font color="#666666">"getcom:1: com: !%s! ln:%u\n"</font>,com,ln);
+<font color="#A020F0">#endif</font>
+    r = parsecom(com,ln);
+<font color="#A020F0">#ifdef debug</font>
+    fprintf(stderr,<font color="#666666">"getcom:2: com: !%s! ln:%u\n"</font>,com,ln);
+<font color="#A020F0">#endif</font>
+
+    <font color="#4169E1">if</font>(cBreak) {
+        cBreak = 0;
+        <font color="#4169E1">return</font> 0;
+    }
+
+<font color="#A020F0">#ifdef debug</font>
+    fprintf(stderr,<font color="#666666">"getcom:3: r=%d com: !%s!\n"</font>,r,com);
+<font color="#A020F0">#endif</font>
+    <font color="#4169E1">return</font> r;
+}
+
+<font color="#B22222">/**************************************************************************/</font>
+
+<strong><font color="#4169E1"><a name="isfchar"></a>BYTE isfchar(BYTE c)</font></strong>
+{
+    <font color="#4169E1">if</font>(isalnum(c))
+        <font color="#4169E1">return</font> 1;
+
+    <font color="#4169E1">switch</font>(c) {
+        <font color="#4169E1">case</font> '!':
+        <font color="#4169E1">case</font> '@':
+        <font color="#4169E1">case</font> '#':
+        <font color="#4169E1">case</font> '$':
+        <font color="#4169E1">case</font> '%':
+        <font color="#4169E1">case</font> '&':
+        <font color="#4169E1">case</font> '(':
+        <font color="#4169E1">case</font> ')':
+        <font color="#4169E1">case</font> '{':
+        <font color="#4169E1">case</font> '}':
+        <font color="#4169E1">case</font> '\'':
+        <font color="#4169E1">case</font> '\\':
+        <font color="#4169E1">case</font> '`':
+        <font color="#4169E1">case</font> '.':
+        <font color="#4169E1">case</font> ':':
+            <font color="#4169E1">return</font> 1;
+<strong><font color="#FF0000">        default:</font></strong>
+            <font color="#4169E1">return</font> 0;
+
+    }
+
+}
+
+<font color="#B22222">/**************************************************************************/</font>
+
+<strong><font color="#4169E1"><a name="redir"></a>BYTE redir(BYTE *c)</font></strong>
+{
+    BYTE l,i;
+    BYTE *fo,*fi,*p;
+    FILE *in,*out;
+
+    l = strlen(c);
+    p = c;
+
+
+    <font color="#4169E1">for</font>(i=0;i&lt;l;i++) {
+<font color="#A020F0">#ifdef debug</font>
+printf(<font color="#666666">"redir:0: &amp;p(%x) *p(%c)\n"</font>,p,*p);
+<font color="#A020F0">#endif</font>
+        <font color="#4169E1">if</font>(*p == '>') {
+            *p = '\0';
+            strcpy(fout.opt,<font color="#666666">"w"</font>);
+            <font color="#4169E1">if</font>((*(++p)) == '>') {
+                strcat(fout.opt,<font color="#666666">"a"</font>);
+                *p = ' '; <font color="#B22222">/*erase the &gt;*/</font>
+            }
+
+<font color="#A020F0">#ifdef debug</font>
+printf(<font color="#666666">"redir:1:c(%s) p(%s) *p(%c)\n"</font>,c,p,*p);
+<font color="#A020F0">#endif</font>
+            <font color="#B22222">/* skip spaces and tabs*/</font>
+            <font color="#4169E1">while</font>(isspace(*(p++)));
+            fo=p-1; <font color="#B22222">/*begining of filename*/</font>
+            <font color="#4169E1">while</font>(isfchar(*(++p)));
+            <font color="#B22222">/* p points to first spc AFTER filename*/</font>
+<font color="#A020F0">#ifdef debug</font>
+printf(<font color="#666666">"redir:2:*fo(%c) *p-1(%x) *p(%x) *p+1(%x)\n"</font>,*fo,*(p-1),*p,*(p+1));
+<font color="#A020F0">#endif</font>
+            <font color="#4169E1">if</font>(*(p-1)=='\n')
+                *(p-1)='\0';
+            *p = '\0';
+            strcpy(fout.name,fo);
+            fout.redirect = 1;
+            strcat(c,<font color="#666666">" "</font>);
+            strcat(c,p);
+        }
+
+        <font color="#4169E1">else</font> <font color="#4169E1">if</font>(*p == '<') {
+            *p = '\0';
+            strcpy(fin.opt,<font color="#666666">"r"</font>);
+
+            <font color="#B22222">/* skip spaces and tabs*/</font>
+            <font color="#4169E1">while</font>(isspace(*(p++))) ;
+            <font color="#4169E1">if</font>(isspace(*p))
+                p++;
+            fi=p; <font color="#B22222">/*begining of filename*/</font>
+<font color="#A020F0">#ifdef debug</font>
+printf(<font color="#666666">"redir:3:fi(%x) &amp;fi(%x) &amp;p(%x) *p(%x)\n"</font>,fi,fi,p,p);
+<font color="#A020F0">#endif</font>
+            <font color="#4169E1">while</font>(isfchar(*(++p)))
+            {
+<font color="#A020F0">#ifdef debug</font>
+printf(<font color="#666666">"redir:3:fi(%x) &amp;fi(%x) &amp;p(%x) *p(%x)\n"</font>,fi,fi,p,p);
+<font color="#A020F0">#endif</font>
+            }
+
+            <font color="#B22222">/* p points to first spc AFTER filename*/</font>
+            <font color="#4169E1">if</font>(*(p-1)=='\n')
+                *(p-1)='\0';
+            *p = '\0';
+<font color="#A020F0">#ifdef debug</font>
+printf(<font color="#666666">"redir:4:fi(%s) &amp;fi(%x) &amp;p-1(%x) &amp;p(%x) &amp;p+1(%x)\n"</font>,fi,fi,(p-1),p,(p+1));
+<font color="#A020F0">#endif</font>
+            strcpy(fin.name,fi);
+            fin.redirect = 1;
+            strcat(c,<font color="#666666">" "</font>);
+            strcat(c,p);
+        }
+<font color="#B22222">/*
+        else if(*p == '|') {
+            *p = '\0';
+            p++;
+            strcpy(pipe.line,p);
+            pip.pipe = 1;
+            sprintf(fout.name,"%c:\\%s\\$$%%!!DOG.$$$",D,P);
+            fout.redirect = 1;
+            strcpy(fout.opt,"w");
+
+        }
+*/</font>
+        <font color="#4169E1">else</font> {
+            p++;
+        }
+
+    }
+    <font color="#4169E1">if</font>(fout.redirect) {
+<font color="#A020F0">#ifdef debug</font>
+printf(<font color="#666666">"redir:5:c(%s) fout.name(%s)\n"</font>,c,fout.name);
+<font color="#A020F0">#endif</font>
+        <font color="#4169E1">if</font>((fout.fp = fopen(fout.name,fout.opt)) == NULL) {
+            fprintf(stderr,<font color="#666666">"Unable to redirect output to file %s.\n"</font>,fout.name);
+            fout.redirect=0;
+            <font color="#4169E1">return</font> 0;
+        }
+
+        dup2(fileno(fout.fp),fileno(stdout));
+    }
+
+    <font color="#4169E1">if</font>(fin.redirect) {
+<font color="#A020F0">#ifdef debug</font>
+printf(<font color="#666666">"redir:6:c(%s) fin.name(%s)\n"</font>,c,fin.name);
+<font color="#A020F0">#endif</font>
+        <font color="#4169E1">if</font>((fin.fp = fopen(fin.name,fin.opt)) == NULL) {
+            fprintf(stderr,<font color="#666666">"Unable to redirect input from file %s.\n"</font>,fin.name);
+            fin.redirect=0;
+            <font color="#4169E1">return</font> 0;
+        }
+
+        dup2(fileno(fin.fp),fileno(stdin));
+    }
+
+    <font color="#4169E1">return</font> 1;
+}
+
+<font color="#B22222">/**************************************************************************/</font>
+
+<strong><font color="#4169E1"><a name="getcur"></a>BYTE getcur(BYTE *p)</font></strong>
+{
+    BYTE d,t;
+    asm {
+        MOV ax,1900h
+        INT 21h
+        MOV d,al
+    }
+    t = getcurdir(0,p);
+
+    <font color="#4169E1">if</font> (t!=0) {
+        fprintf(stderr,<font color="#666666">"Error %d while reading dir\n"</font>,t);
+        <font color="#4169E1">return</font> 0xff;
+    }
+
+    <font color="#4169E1">return</font> d;
+}
+
+<font color="#B22222">/****************************************************************************/</font>
+
+
+<strong><font color="#4169E1"><a name="printprompt"></a>void printprompt(void)</font></strong>
+{
+    WORD yr;
+    BYTE dow,mo,day,i,k,h,mi,s,ms;
+
+    prompt = malloc(200);
+
+    <font color="#4169E1">if</font>((prompt = getevar(<font color="#666666">"PROMPT"</font>,prompt)) != NULL)
+        k = strlen(prompt);
+    <font color="#4169E1">else</font> 
+        k = 0;
+       
+<font color="#B22222">/*  0x01 = path
+    0x02 = date
+    0x03 = time
+*/</font>
+
+    <font color="#4169E1">for</font>(i=0;i&lt;k;i++) {
+        <font color="#4169E1">if</font>((prompt[i] == '%')||(prompt[i]=='$')) {
+            <font color="#4169E1">switch</font>(prompt[++i]) {
+                <font color="#4169E1">case</font> '%' :
+                    putchar('%');
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font>  '_':
+                <font color="#4169E1">case</font>  'S':
+                    putchar(' ');
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font>  'b':
+                <font color="#4169E1">case</font>  'B':
+                    putchar('|');
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font>  'e':
+                <font color="#4169E1">case</font>  'E':
+                    putchar('\x1b');
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font>  'h':
+                <font color="#4169E1">case</font>  'H':
+                    putchar('\b');
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font>  'l':
+                <font color="#4169E1">case</font>  'L':
+                    putchar('<');
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font>  'g':
+                <font color="#4169E1">case</font>  'G':
+                    putchar('>');
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font>  'n':
+                    putchar('\n');
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font>  'r':
+                    putchar('\r');
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font>  't':
+                    putchar('\t');
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font>  'p':
+                <font color="#4169E1">case</font>  'P':
+                    D = getcur(P) + 'A';
+                    printf(<font color="#666666">"%c:\\%s"</font>,D,P);
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font>  'd':
+                <font color="#4169E1">case</font>  'D':
+                    asm {
+                        MOV ah,2ah
+                        INT 21h
+                        MOV dow,AL  <font color="#B22222">/*day of week*/</font>
+                        MOV yr,CX     <font color="#B22222">/*year*/</font>
+                        MOV mo,DH     <font color="#B22222">/*month*/</font>
+                        MOV day,DL     <font color="#B22222">/*day*/</font>
+                    }
+                    <font color="#4169E1">switch</font>(dow) {
+                        <font color="#4169E1">case</font> 0 :
+                            printf(<font color="#666666">"Sun "</font>);
+                            <font color="#4169E1">break</font>;
+                        <font color="#4169E1">case</font> 1 :
+                            printf(<font color="#666666">"Mon "</font>);
+                            <font color="#4169E1">break</font>;
+                        <font color="#4169E1">case</font> 2 :
+                            printf(<font color="#666666">"Tue "</font>);
+                            <font color="#4169E1">break</font>;
+                        <font color="#4169E1">case</font> 3 :
+                            printf(<font color="#666666">"Wed "</font>);
+                            <font color="#4169E1">break</font>;
+                        <font color="#4169E1">case</font> 4 :
+                            printf(<font color="#666666">"Thu "</font>);
+                            <font color="#4169E1">break</font>;
+                        <font color="#4169E1">case</font> 5 :
+                            printf(<font color="#666666">"Fri "</font>);
+                            <font color="#4169E1">break</font>;
+                        <font color="#4169E1">case</font> 6 :
+                            printf(<font color="#666666">"Sat "</font>);
+                            <font color="#4169E1">break</font>;
+                        <font color="#4169E1">default</font> :
+                            printf(<font color="#666666">"    "</font>);
+                    }
+                    printf(<font color="#666666">"%02u.%02u.%04u"</font>,day,mo,yr);
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font>  'c':
+                <font color="#4169E1">case</font>  'T':
+                  asm {
+                      MOV ah,2ch
+                      INT 21h
+                      MOV h,ch     <font color="#B22222">/*hours*/</font>
+                      MOV mi,cl     <font color="#B22222">/*minutes*/</font>
+                      MOV s,dh     <font color="#B22222">/*seconds*/</font>
+                      MOV ms,dl     <font color="#B22222">/*milliseconds or hundreds*/</font>
+                  }
+                  printf(<font color="#666666">"%d.%02d.%02d,%02d"</font>,h,mi,s,ms);
+                  <font color="#4169E1">break</font>;
+              <font color="#4169E1">default</font> :
+                ;
+            }
+        }
+        <font color="#4169E1">else</font>
+            putchar(prompt[i]);
+    }
+    free(prompt);
+    <font color="#4169E1">return</font>;
+}
+
+
+
+<font color="#B22222">/**************************************
+***************************************
+**                                   **
+** int main(int nargs, char *argv[]) **
+**                                   **
+***************************************
+*****************************************************************************/</font>
+
+
+
+<strong><font color="#4169E1"><a name="main"></a>int main(int nargs, char *argv[])</font></strong>
+{
+    BYTE i,na,ch;
+
+    na = initialize(nargs, argv);
+
+    <font color="#4169E1">if</font>((_osmajor &lt; 3) &amp;&amp; (_osminor &lt; 30)) {
+        printf(<font color="#666666">"Sorry your DOS is too lame.\nGet at least version 3.30\n"</font>);
+        exit(1);
+    }
+
+
+    <font color="#4169E1">if</font> (eh == 0) {
+        printf(<font color="#666666">"DOG &Auml; Dog Operating Ground Version %u.%02u\n"</font>,DOG_ma,DOG_mi);
+        printf(<font color="#666666">"      Copyright (C) Wolf Bergenheim 1997-2000\n\n"</font>);
+        printf(<font color="#666666">"Type HH for Help\n\n"</font>);
+    }
+
+<font color="#B22222">/*******************************.D.O.G. .L.O.O.P****************************/</font>
+                                                                         <font color="#B22222">/**/</font>
+    <font color="#4169E1">for</font>(EVER) {                                                          <font color="#B22222">/**/</font>
+        asm {                                                            <font color="#B22222">/**/</font>
+<strong><font color="#FF0000">            DOG_loop:</font></strong>                                                    <font color="#B22222">/**/</font>
+        }                                                                <font color="#B22222">/**/</font>
+                                                                         <font color="#B22222">/**/</font>
+                                                                         <font color="#B22222">/**/</font>
+        <font color="#4169E1">if</font>(fout.redirect) {                                              <font color="#B22222">/**/</font>
+<font color="#A020F0">#ifdef debug                                                             </font><font color="#B22222">/**/</font><font color="#A020F0"></font>
+fprintf(stderr,<font color="#666666">"main:0:closing handle %x\n"</font>,fileno(fout.fp));            <font color="#B22222">/**/</font>
+<font color="#A020F0">#endif                                                                   </font><font color="#B22222">/**/</font><font color="#A020F0"></font>
+            dup2(OUT,fileno(stdout));                                    <font color="#B22222">/**/</font>
+            close(fileno(fout.fp));                                      <font color="#B22222">/**/</font>
+            fout.redirect = 0;                                           <font color="#B22222">/**/</font>
+        }                                                                <font color="#B22222">/**/</font>
+                                                                         <font color="#B22222">/**/</font>
+        <font color="#4169E1">if</font>(fin.redirect) {                                               <font color="#B22222">/**/</font>
+<font color="#A020F0">#ifdef debug                                                             </font><font color="#B22222">/**/</font><font color="#A020F0"></font>
+fprintf(stderr,<font color="#666666">"main:0:closing handle %x\n"</font>,fileno(fin.fp));             <font color="#B22222">/**/</font>
+<font color="#A020F0">#endif                                                                   </font><font color="#B22222">/**/</font><font color="#A020F0"></font>
+            dup2(IN,fileno(stdin));                                      <font color="#B22222">/**/</font>
+            close(fileno(fin.fp));                                       <font color="#B22222">/**/</font>
+            fin.redirect = 0;                                            <font color="#B22222">/**/</font>
+        }                                                                <font color="#B22222">/**/</font>
+                                                                         <font color="#B22222">/**/</font>
+        <font color="#4169E1">for</font>(i=0;i&lt;MAXDIR;i++)                                            <font color="#B22222">/**/</font>
+            P[i] = 0;                                                    <font color="#B22222">/**/</font>
+        D = getcur(P) + 'A';                                             <font color="#B22222">/**/</font>
+                                                                         <font color="#B22222">/**/</font>
+        <font color="#B22222">/* Check for cBreak                                               **/</font>
+                                                                         <font color="#B22222">/**/</font>
+        <font color="#4169E1">if</font>(cBreak == 1) {                                                <font color="#B22222">/**/</font>
+            <font color="#4169E1">if</font>(bf-&gt;in) {                                                 <font color="#B22222">/**/</font>
+                <font color="#4169E1">do</font> {                                                     <font color="#B22222">/**/</font>
+                    fprintf(stderr,<font color="#666666">"Abort DOG batch (Y/N)? "</font>);           <font color="#B22222">/**/</font>
+                    ch = getchar();                                      <font color="#B22222">/**/</font>
+                    <font color="#4169E1">if</font>((ch=='y') || (ch=='Y')) {                         <font color="#B22222">/**/</font>
+                        clearbat();                                      <font color="#B22222">/**/</font>
+                        cBreak = 0;                                      <font color="#B22222">/**/</font>
+                        <font color="#4169E1">break</font>;                                           <font color="#B22222">/**/</font>
+                    }                                                    <font color="#B22222">/**/</font>
+                    <font color="#4169E1">else</font> <font color="#4169E1">if</font>((ch=='n') || (ch=='N')) {                    <font color="#B22222">/**/</font>
+                        cBreak = 0;                                      <font color="#B22222">/**/</font>
+                        <font color="#4169E1">break</font>;                                           <font color="#B22222">/**/</font>
+                    }                                                    <font color="#B22222">/**/</font>
+                } <font color="#4169E1">while</font> (1);                                             <font color="#B22222">/**/</font>
+                fprintf(stderr,<font color="#666666">"\n"</font>);                                    <font color="#B22222">/**/</font>
+                <font color="#4169E1">continue</font>;                                                <font color="#B22222">/**/</font>
+            }                                                            <font color="#B22222">/**/</font>
+            <font color="#4169E1">else</font> {                                                       <font color="#B22222">/**/</font>
+<font color="#A020F0">#ifdef debug                                                             </font><font color="#B22222">/**/</font><font color="#A020F0"></font>
+fprintf(stderr,<font color="#666666">"Ctrl Break found!\n"</font>);                                   <font color="#B22222">/**/</font>
+<font color="#A020F0">#endif                                                                   </font><font color="#B22222">/**/</font><font color="#A020F0"></font>
+                cBreak = 0;                                              <font color="#B22222">/**/</font>
+                <font color="#4169E1">continue</font>;                                                <font color="#B22222">/**/</font>
+            }                                                            <font color="#B22222">/**/</font>
+        }                                                                <font color="#B22222">/**/</font>
+                                                                         <font color="#B22222">/**/</font>
+                                                                         <font color="#B22222">/**/</font>
+        <font color="#4169E1">if</font> (eh == 0) {                                                   <font color="#B22222">/**/</font>
+                                                                         <font color="#B22222">/**/</font>
+<font color="#A020F0">#ifdef bat_debug                                                         </font><font color="#B22222">/**/</font><font color="#A020F0"></font>
+fprintf(stderr,<font color="#666666">"main:1:bf:%x  bf-&gt;in=%d\n"</font>,&amp;(*bf),bf-&gt;nest);             <font color="#B22222">/**/</font>
+<font color="#A020F0">#endif                                                                   </font><font color="#B22222">/**/</font><font color="#A020F0"></font>
+            <font color="#4169E1">for</font>(i=0;i&lt;_NARGS;i++)                                        <font color="#B22222">/**/</font>
+                arg[i] = NULL;                                           <font color="#B22222">/**/</font>
+                                                                         <font color="#B22222">/**/</font>
+            <font color="#4169E1">if</font> (bf-&gt;in) {                                                <font color="#B22222">/**/</font>
+                do_bat();                                                <font color="#B22222">/**/</font>
+            }                                                            <font color="#B22222">/**/</font>
+            <font color="#4169E1">else</font> {                                                       <font color="#B22222">/**/</font>
+                printprompt();                                           <font color="#B22222">/**/</font>
+                na = getcom(com);                                        <font color="#B22222">/**/</font>
+<font color="#A020F0">#ifdef debug                                                             </font><font color="#B22222">/**/</font><font color="#A020F0"></font>
+    fprintf(stderr,<font color="#666666">"main:2:You said:/%s/\n"</font>,com);                        <font color="#B22222">/**/</font>
+    fprintf(stderr,<font color="#666666">"main:2:You said:/%s/\n"</font>,arg[0]);                     <font color="#B22222">/**/</font>
+    fprintf(stderr,<font color="#666666">"main:3:Arguments=%d\n"</font>,na);                          <font color="#B22222">/**/</font>
+    fprintf(stderr,<font color="#666666">"main:4:path=%c:\\%s\n"</font>,D,P);                         <font color="#B22222">/**/</font>
+    fprintf(stderr,<font color="#666666">"main:5:fout.redirect=%u\n"</font>,fout.redirect);           <font color="#B22222">/**/</font>
+    fprintf(stderr,<font color="#666666">"main:5:fout.name(%s)\n"</font>,fout.name);                  <font color="#B22222">/**/</font>
+    fprintf(stderr,<font color="#666666">"main:5:fin.redirect=%u\n"</font>,fin.redirect);             <font color="#B22222">/**/</font>
+    fprintf(stderr,<font color="#666666">"main:5:fin.name(%s)\n"</font>,fin.name);                    <font color="#B22222">/**/</font>
+<font color="#A020F0">#endif                                                                   </font><font color="#B22222">/**/</font><font color="#A020F0"></font>
+                do_command(na);                                          <font color="#B22222">/**/</font>
+                                                                         <font color="#B22222">/**/</font>
+            }                                                            <font color="#B22222">/**/</font>
+                                                                         <font color="#B22222">/**/</font>
+            <font color="#B22222">/* printf("\n"); */</font>                                          <font color="#B22222">/**/</font>
+                                                                         <font color="#B22222">/**/</font>
+        }                                                                <font color="#B22222">/**/</font>
+        <font color="#4169E1">else</font> <font color="#4169E1">if</font>(Xit==2) {                                                <font color="#B22222">/**/</font>
+            do_command(na);                                              <font color="#B22222">/**/</font>
+            Xit = 0;                                                     <font color="#B22222">/**/</font>
+            eh = 0;                                                      <font color="#B22222">/**/</font>
+        }                                                                <font color="#B22222">/**/</font>
+                                                                         <font color="#B22222">/**/</font>
+        <font color="#4169E1">else</font> <font color="#4169E1">if</font>(Xit==3) {                                                <font color="#B22222">/**/</font>
+            do_command(na);                                              <font color="#B22222">/**/</font>
+            Xit = 1;                                                     <font color="#B22222">/**/</font>
+        }                                                                <font color="#B22222">/**/</font>
+                                                                         <font color="#B22222">/**/</font>
+<font color="#A020F0">#ifdef debug                                                             </font><font color="#B22222">/**/</font><font color="#A020F0"></font>
+fprintf(stderr,<font color="#666666">"main:7:xit = %u\n"</font>,Xit);                                 <font color="#B22222">/**/</font>
+<font color="#A020F0">#endif                                                                   </font><font color="#B22222">/**/</font><font color="#A020F0"></font>
+                                                                         <font color="#B22222">/**/</font>
+        <font color="#4169E1">if</font>(Xit ==1 &amp;&amp; Xitable==1) <font color="#4169E1">break</font>;                                 <font color="#B22222">/**/</font>
+<font color="#A020F0">#ifdef debug                                                             </font><font color="#B22222">/**/</font><font color="#A020F0"></font>
+    fprintf(stderr,<font color="#666666">"Xit: %d\tXitable: %d\n"</font>,Xit,Xitable);                <font color="#B22222">/**/</font>
+<font color="#A020F0">#endif                                                                   </font><font color="#B22222">/**/</font><font color="#A020F0"></font>
+    }                                                                    <font color="#B22222">/**/</font>
+                                                                         <font color="#B22222">/**/</font>
+<font color="#B22222">/*******************************.D.O.G. .L.O.O.P****************************/</font>
+
+    <font color="#4169E1">return</font> 0;
+
+}
+
+<font color="#B22222">/*****************************
+******************************
+***       END OF main      ***
+******************************
+*****************************************************************************/</font>
+
+<font color="#B22222">/*****************************************
+******************************************
+**                                      **
+**        void do_command( BYTE n)      **
+**                                      **
+******************************************
+****************************************************************************/</font>
+
+
+<strong><font color="#4169E1"><a name="do_command"></a>void do_command( BYTE na)</font></strong>
+{
+    BYTE i;
+<font color="#A020F0">#ifdef do_debug</font>
+BYTE dbi;
+<font color="#A020F0">#endif</font>
+    <font color="#4169E1">if</font> (na==0) <font color="#4169E1">return</font>;
+    <font color="#4169E1">if</font>((strlen(arg[0])==2) || (arg[0][2]=='.') || (arg[0][2]=='\\')) {
+
+        <font color="#4169E1">for</font>(i=0;i&lt;_NCOMS;i++) {
+<font color="#A020F0">#ifdef do_debug</font>
+fprintf(stderr,<font color="#666666">"do_command:1: searching command(%d)=%s\n"</font>,i,commands[i]);
+fprintf(stderr,<font color="#666666">"do_command:2: line is: /"</font>);
+<font color="#4169E1">for</font>(dbi=0;dbi&lt;na;dbi++) {
+    fprintf(stderr,<font color="#666666">"%s/"</font>,arg[dbi]);
+}
+fprintf(stderr,<font color="#666666">"\n"</font>);
+<font color="#A020F0">#endif</font>
+            <font color="#4169E1">if</font>(strnicmp(arg[0],commands[i],2) == 0) {
+                <font color="#4169E1">break</font>;
+            }
+        }
+<font color="#A020F0">#ifdef do_debug</font>
+   fprintf(stderr,<font color="#666666">"\n"</font>);
+<font color="#A020F0">#endif</font>
+        <font color="#4169E1">switch</font>(i) {
+    
+        <font color="#4169E1">case</font> C_BP :
+            do_bp(na);
+            <font color="#4169E1">break</font>;
+        
+        <font color="#4169E1">case</font> C_BR :
+            do_br(na);
+            <font color="#4169E1">break</font>;
+        
+        <font color="#4169E1">case</font> C_CC :
+            
+            <font color="#4169E1">break</font>;
+        
+        <font color="#4169E1">case</font> C_CD :
+            do_cd(na);
+            <font color="#4169E1">break</font>;
+        
+        <font color="#4169E1">case</font> C_CL :
+            do_cl();
+            <font color="#4169E1">break</font>;
+        
+        <font color="#4169E1">case</font> C_CP :
+        
+            <font color="#4169E1">break</font>;
+        
+        <font color="#4169E1">case</font> C_CT :
+            do_ct(na);
+            <font color="#4169E1">break</font>;
+
+        <font color="#4169E1">case</font> C_EH :
+            do_eh(na);
+            <font color="#4169E1">break</font>;
+        
+        <font color="#4169E1">case</font> C_HH :
+            do_hh(na);
+            <font color="#4169E1">break</font>;
+        
+        <font color="#4169E1">case</font> C_LS :
+            do_ls(na);
+            <font color="#4169E1">break</font>;
+        
+        <font color="#4169E1">case</font> C_MD :
+            do_mrd(na);
+            <font color="#4169E1">break</font>;
+        
+        <font color="#4169E1">case</font> C_MV :
+            do_mv(na);
+            <font color="#4169E1">break</font>;
+        
+        <font color="#4169E1">case</font> C_RD :
+            do_mrd(na);
+            <font color="#4169E1">break</font>;
+        
+        <font color="#4169E1">case</font> C_RM :
+            do_rm(na);
+            <font color="#4169E1">break</font>;
+        
+        <font color="#4169E1">case</font> C_SE :
+            do_se(na);
+            <font color="#4169E1">break</font>;
+        
+        <font color="#4169E1">case</font> C_SZ :
+            do_sz(na);
+            <font color="#4169E1">break</font>;
+
+        <font color="#4169E1">case</font> C_TP :
+            do_tp(na);
+            <font color="#4169E1">break</font>;
+        
+        <font color="#4169E1">case</font> C_VF :
+            do_vf(na);
+            <font color="#4169E1">break</font>;
+        
+        <font color="#4169E1">case</font> C_VR :
+            do_vr();
+            <font color="#4169E1">break</font>;
+        
+        <font color="#4169E1">case</font> C_XX :
+            <font color="#4169E1">if</font>(Xitable==1)
+                do_xx();
+            <font color="#4169E1">break</font>;
+        <font color="#4169E1">default</font> :
+            <font color="#4169E1">if</font>((arg[0][1]==':') &amp;&amp; (arg[0][2] == '\0')) {
+                do_chdr(arg[0][0]);
+                <font color="#4169E1">return</font>;
+            }
+            <font color="#4169E1">else</font> <font color="#4169E1">if</font>((arg[0][0] == '.') &amp;&amp; (arg[0][1] == '.')) {
+                arg[1] = arg[0];
+                arg[0] = commands[C_CD];
+                do_cd(2);
+                <font color="#4169E1">return</font>;
+            }
+            <font color="#4169E1">else</font> <font color="#4169E1">if</font>((arg[0][0] =='*') || (arg[0][0]=='?'))
+                <font color="#4169E1">return</font>;
+            <font color="#4169E1">else</font> {
+                do_exe(na);
+                D = getcur(P) +'A';
+                <font color="#4169E1">return</font>;
+            }
+
+             <font color="#B22222">/*
+             printf("Bad command or filename.\n");
+             */</font>
+        }
+        <font color="#4169E1">return</font>;
+    }
+
+    <font color="#4169E1">else</font> <font color="#4169E1">if</font> ((strlen(arg[0])==0) || (strcmp(arg[0],<font color="#666666">"."</font>)==0) || (arg[0][0] =='*') || (arg[0][0]=='?')) {
+        printf(<font color="#666666">""</font>);
+        <font color="#4169E1">return</font>;
+    }
+    <font color="#4169E1">else</font> <font color="#4169E1">if</font>(strcmp(arg[0],<font color="#666666">"\\"</font>)==0) {
+        arg[1] = arg[0];
+        arg[0] = commands[C_CD];
+        do_mrd(2);
+        <font color="#4169E1">return</font>;
+    }
+
+    <font color="#4169E1">else</font> <font color="#4169E1">if</font> (strlen(arg[0])!=2) {
+            do_exe(na);
+            D = getcur(P) +'A';
+            <font color="#4169E1">return</font>;
+
+
+    }
+}
+
+<font color="#B22222">/*************************************
+**************************************
+**                                  **
+**        INTERNAL COMMANDS         **
+**                                  **
+**************************************
+*************************************/</font>
+
+<font color="#A020F0">#include </font><font color="#666666">"bp.c"</font><font color="#A020F0"></font>
+<font color="#A020F0">#include </font><font color="#666666">"br.c"</font><font color="#A020F0"></font>
+<font color="#A020F0">#include </font><font color="#666666">"cc.c"</font><font color="#A020F0"></font>
+<font color="#A020F0">#include </font><font color="#666666">"cmrd.c"</font><font color="#A020F0"></font>
+<font color="#A020F0">#include </font><font color="#666666">"cl.c"</font><font color="#A020F0"></font>
+<font color="#A020F0">#include </font><font color="#666666">"cp.c"</font><font color="#A020F0"></font>
+<font color="#A020F0">#include </font><font color="#666666">"ct.c"</font><font color="#A020F0"></font>
+<font color="#A020F0">#include </font><font color="#666666">"eh.c"</font><font color="#A020F0"></font>
+<font color="#A020F0">#include </font><font color="#666666">"hh.c"</font><font color="#A020F0"></font>
+<font color="#A020F0">#include </font><font color="#666666">"ls.c"</font><font color="#A020F0"></font>
+<font color="#A020F0">#include </font><font color="#666666">"mv.c"</font><font color="#A020F0"></font>
+<font color="#A020F0">#include </font><font color="#666666">"rm.c"</font><font color="#A020F0"></font>
+<font color="#A020F0">#include </font><font color="#666666">"se.c"</font><font color="#A020F0"></font>
+<font color="#A020F0">#include </font><font color="#666666">"sz.c"</font><font color="#A020F0"></font>
+<font color="#A020F0">#include </font><font color="#666666">"tp.c"</font><font color="#A020F0"></font>
+<font color="#A020F0">#include </font><font color="#666666">"vf.c"</font><font color="#A020F0"></font>
+<font color="#A020F0">#include </font><font color="#666666">"vr.c"</font><font color="#A020F0"></font>
+<font color="#A020F0">#include </font><font color="#666666">"xx.c"</font><font color="#A020F0"></font>
+
+<font color="#B22222">/*************************************
+**************************************
+**                                  **
+**        void do_exe(BYTE n)       **
+**                                  **
+**************************************
+****************************************************************************/</font>
+
+
+<strong><font color="#4169E1"><a name="do_exe"></a>void do_exe(BYTE n)</font></strong>
+{
+
+    BYTE d,i,ic,ie,id,*p,*q,*r,*cpath,envi[255],file[128],exec_f;
+    BYTE s[200], com[80],exe[80],dog[80],path[60],trunam[128],prog[120];
+    <font color="#4169E1">struct ffblk</font> *fb;
+
+    <font color="#4169E1">for</font> (i=0;i&lt;200;i++) {
+        s[i] = '\0';
+    }
+    fb = malloc(<font color="#4169E1">sizeof</font>(<font color="#4169E1">struct ffblk</font>));
+
+    <font color="#4169E1">for</font> (i=0;i&lt;12;i++) {
+        com[i] = '\0';
+        exe[i] = '\0';
+        dog[i] = '\0';
+    }
+
+    <font color="#B22222">/* Make s contain ALL of the args */</font>
+    <font color="#4169E1">for</font> (i=1;i&lt;n;i++) {
+        strcat(s,arg[i]);
+        strcat(s,<font color="#666666">" "</font>);
+    }
+
+    <font color="#B22222">/*First try to exec arg[0]*/</font>
+    strcpy(prog,arg[0]);
+<font color="#A020F0">#ifdef exe_debug</font>
+        printf(<font color="#666666">"do_exe:1360:prog=%s\n"</font>,prog);
+<font color="#A020F0">#endif</font>
+    i = findfirst(prog,fb,0x37); <font color="#B22222">/*attrib = 00100111 */</font>
+    <font color="#4169E1">if</font> (i == 0) {
+<font color="#A020F0">#ifdef exe_debug</font>
+        printf(<font color="#666666">"do_exe:1363:prog=%s\n"</font>,prog);
+        printf(<font color="#666666">"do_exe:1364:%s a directory\n"</font>,((fb-&gt;ff_attrib &amp; FA_DIREC) == FA_DIREC)?<font color="#666666">"Is"</font>:<font color="#666666">"Isn't"</font>);
+        printf(<font color="#666666">"do_exe:1365:ff_attrib = 0x%x\n"</font>,fb-&gt;ff_attrib);
+<font color="#A020F0">#endif</font>
+        <font color="#4169E1">if</font>((fb-&gt;ff_attrib &amp; FA_DIREC) == FA_DIREC) {
+            arg[1] = prog;
+            arg[0] = commands[C_CD];
+            do_cd(2);
+            free(fb);
+            <font color="#4169E1">return</font>;
+        }
+
+        <font color="#4169E1">if</font>(strstr(fb-&gt;ff_name,<font color="#666666">".COM"</font>) == NULL) {
+            <font color="#4169E1">if</font> (strstr(fb-&gt;ff_name,<font color="#666666">".EXE"</font>) == NULL) {
+                <font color="#4169E1">if</font> (strstr(fb-&gt;ff_name,<font color="#666666">".DOG"</font>) == NULL) {
+<font color="#A020F0">#ifdef exe_debug</font>
+printf(<font color="#666666">"do_exe:1379:ff_name = %s\n"</font>,fb-&gt;ff_name);
+<font color="#A020F0">#endif</font>
+
+                    exec_f = NON;
+                }
+                <font color="#4169E1">else</font> {
+                    exec_f = DOG;
+                    strcpy(dog,prog);
+<font color="#A020F0">#ifdef exe_debug</font>
+printf(<font color="#666666">"do_exe:1388:ff_name = %s\n"</font>,fb-&gt;ff_name);
+<font color="#A020F0">#endif</font>
+                }
+            }
+            <font color="#4169E1">else</font> {
+                exec_f = EXE;
+                strcpy(exe,prog);
+<font color="#A020F0">#ifdef exe_debug</font>
+printf(<font color="#666666">"do_exe:1396:ff_name = %s\n"</font>,fb-&gt;ff_name);
+<font color="#A020F0">#endif</font>
+            }
+        }
+        <font color="#4169E1">else</font> {
+            exec_f = COM;
+            strcpy(com,prog);
+<font color="#A020F0">#ifdef exe_debug</font>
+printf(<font color="#666666">"do_exe:1404:ff_name = %s\n"</font>,fb-&gt;ff_name);
+<font color="#A020F0">#endif</font>
+        }
+
+    }
+
+    <font color="#4169E1">if</font>(prog[1] == ':') {
+        strcpy(file,prog);
+        <font color="#4169E1">goto</font> do_exe_enp;
+    }
+    <font color="#4169E1">if</font>(prog[0] == '\\') {
+        strcpy(file,prog);
+        <font color="#4169E1">goto</font> do_exe_enp;
+    }
+
+    getevar(<font color="#666666">"PATH"</font>,envi);
+    p = malloc(255);
+    strcpy(p,<font color="#666666">".;"</font>);
+    strcat(p,envi);
+    strcpy(envi,p);
+    free(p);
+<font color="#A020F0">#ifdef exe_debug</font>
+    printf(<font color="#666666">"do_exe:PATH=%s\n"</font>,envi);
+<font color="#A020F0">#endif     </font>
+    <font color="#4169E1">for</font>(cpath=strtok(envi,<font color="#666666">";"</font>);;cpath=strtok(NULL,<font color="#666666">";"</font>)) {
+        <font color="#4169E1">if</font>(cpath == NULL) <font color="#4169E1">break</font>;
+<font color="#A020F0">#ifdef exe_debug</font>
+        printf(<font color="#666666">"do_exe:dir=%s\n"</font>,cpath);
+<font color="#A020F0">#endif</font>
+        strcpy(file,cpath);
+        <font color="#4169E1">if</font>(file[strlen(file)-1] != '\\')
+            strcat(file,<font color="#666666">"\\"</font>);
+        strcat(file,arg[0]);
+<strong><font color="#FF0000">        do_exe_enp:</font></strong>
+        strcpy(com,file);
+        strcpy(exe,file);
+        strcpy(dog,file);
+        strcat(com,<font color="#666666">".COM"</font>);
+        strcat(exe,<font color="#666666">".EXE"</font>);
+        strcat(dog,<font color="#666666">".DOG"</font>);
+<font color="#A020F0">#ifdef exe_debug</font>
+        printf(<font color="#666666">"do_exe:file=%s\n"</font>,file);
+        printf(<font color="#666666">"do_exe:com=%s\n"</font>,com);
+        printf(<font color="#666666">"do_exe:exe=%s\n"</font>,exe);
+        printf(<font color="#666666">"do_exe:dog=%s\n"</font>,dog);
+<font color="#A020F0">#endif</font>
+        <font color="#4169E1">if</font>(findfirst(com,fb,0x27) == 0) {
+<font color="#A020F0">#ifdef exe_debug</font>
+        printf(<font color="#666666">"\ndo_exe:c:file=%s\n"</font>,fb-&gt;ff_name);
+<font color="#A020F0">#endif</font>
+            exec_f = COM;
+            <font color="#4169E1">break</font>;
+        }
+        <font color="#4169E1">else</font> <font color="#4169E1">if</font> (findfirst(exe,fb,0x27) == 0) {
+<font color="#A020F0">#ifdef exe_debug</font>
+        printf(<font color="#666666">"\ndo_exe:e:file=%s\n"</font>,fb-&gt;ff_name);
+<font color="#A020F0">#endif</font>
+            exec_f = EXE;
+            <font color="#4169E1">break</font>;
+        }
+        <font color="#4169E1">else</font> <font color="#4169E1">if</font> (findfirst(dog,fb,0x27) == 0) {
+<font color="#A020F0">#ifdef exe_debug</font>
+        printf(<font color="#666666">"\ndo_exe:d:file=%s\n"</font>,fb-&gt;ff_name);
+<font color="#A020F0">#endif</font>
+            exec_f = DOG;
+            <font color="#4169E1">break</font>;
+        }
+        <font color="#4169E1">else</font> <font color="#4169E1">if</font>(findfirst(file,fb,0x27) == 0) {
+<font color="#A020F0">#ifdef exe_debug</font>
+        printf(<font color="#666666">"\ndo_exe:.:file=%s\n"</font>,fb-&gt;ff_name);
+<font color="#A020F0">#endif</font>
+            <font color="#4169E1">if</font>(strstr(fb-&gt;ff_name,<font color="#666666">".COM"</font>) == NULL) {
+                <font color="#4169E1">if</font> (strstr(fb-&gt;ff_name,<font color="#666666">".EXE"</font>) == NULL) {
+                    <font color="#4169E1">if</font> (strstr(fb-&gt;ff_name,<font color="#666666">".DOG"</font>) == NULL) {
+                        exec_f = NON;
+                    }
+                    <font color="#4169E1">else</font> {
+                        strcpy(dog,file);
+                        exec_f = DOG;
+                    }
+                }
+                <font color="#4169E1">else</font> {
+                    strcpy(exe,file);
+                    exec_f = EXE;
+                }
+            }
+            <font color="#4169E1">else</font> {
+                strcpy(com,file);
+                exec_f = COM;
+            }
+            <font color="#4169E1">break</font>;
+        }
+        
+        <font color="#4169E1">else</font> {
+            exec_f = NON;
+        }
+
+<font color="#A020F0">#ifdef exe_debug</font>
+        printf(<font color="#666666">"do_exe:exec_f = %u\n"</font>,exec_f);
+<font color="#A020F0">#endif</font>
+
+    }
+
+<strong><font color="#FF0000">    exec_now:</font></strong>
+
+<font color="#A020F0">#ifdef exe_debug</font>
+        printf(<font color="#666666">"do_exe::exec_f = %u\n"</font>,exec_f);
+        printf(<font color="#666666">"do_exe:file=%s\n"</font>,file);
+        printf(<font color="#666666">"do_exe:com=%s\n"</font>,com);
+        printf(<font color="#666666">"do_exe:exe=%s\n"</font>,exe);
+        printf(<font color="#666666">"do_exe:dog=%s\n"</font>,dog);
+<font color="#A020F0">#endif</font>
+        
+    <font color="#4169E1">switch</font>(exec_f) {
+        <font color="#4169E1">case</font> NON:
+            printf(<font color="#666666">"%s: Bad command or Filename\n"</font>,arg[0]);
+            free(fb);
+            <font color="#4169E1">return</font>;
+        <font color="#4169E1">case</font> COM:
+<font color="#A020F0">#ifdef exe_debug</font>
+printf(<font color="#666666">"do_exe:found %s in %s\n"</font>,fb-&gt;ff_name,cpath);
+<font color="#A020F0">#endif</font>
+            errorlevel=my_exe(trueName(com,trunam),s);
+            <font color="#4169E1">break</font>;
+        <font color="#4169E1">case</font> EXE:
+<font color="#A020F0">#ifdef exe_debug</font>
+printf(<font color="#666666">"do_exe:found %s in %s -&gt; %s\n"</font>,fb-&gt;ff_name,cpath,exe);
+<font color="#A020F0">#endif</font>
+            errorlevel=my_exe(trueName(exe,trunam),s);
+            <font color="#4169E1">break</font>;
+        <font color="#4169E1">case</font> DOG:
+<font color="#A020F0">#ifdef exe_debug</font>
+printf(<font color="#666666">"do_exe:found %s in %s\n"</font>,fb-&gt;ff_name,cpath);
+<font color="#A020F0">#endif</font>
+            bf-&gt;na = n;
+            bf-&gt;line = 0;
+            <font color="#4169E1">for</font>(i=0;i&lt;_NARGS;i++) {
+                bf-&gt;args[i] = malloc(strlen(arg[i]+1));
+                memset(bf-&gt;args[i],0,strlen(arg[i]+1));
+                strcpy(bf-&gt;args[i],arg[i]);
+            }
+            d = getcur(path) + 'A';
+            sprintf(bf-&gt;name,<font color="#666666">"%c:\\%s\\%s"</font>,d,path,dog);
+            bf-&gt;in = 1;
+            do_bat();
+            free(fb);
+            <font color="#4169E1">return</font>;
+    }
+
+    <font color="#4169E1">switch</font>(errorlevel &gt;&gt; 8) {
+        <font color="#4169E1">case</font> 0:
+            <font color="#4169E1">if</font>((errorlevel &amp; 0xFF) == 0)
+                printf(<font color="#666666">"\n%s exited.\n"</font>,trunam);
+            <font color="#4169E1">else</font>
+                printf(<font color="#666666">"Program %s returned %d.\n"</font>,trunam,errorlevel &amp; 0xFF);
+
+            <font color="#4169E1">break</font>;
+        <font color="#4169E1">case</font> 1:
+            printf(<font color="#666666">"%s aborted by Ctrl-C.\n"</font>,trunam);
+            <font color="#4169E1">break</font>;
+        <font color="#4169E1">case</font> 2:
+            printf(<font color="#666666">"%s: critical error abort.\n"</font>,trunam);
+            <font color="#4169E1">return</font>;
+        <font color="#4169E1">case</font> 3:
+            printf(<font color="#666666">"TSR %s loaded in to memory.\n"</font>,trunam);
+            <font color="#4169E1">return</font>;
+        <font color="#4169E1">case</font> 77:
+            <font color="#4169E1">switch</font>(errorlevel &amp; 0xFF) {
+                <font color="#4169E1">case</font> 0x1:
+                    puts(<font color="#666666">"Function number invalid."</font>);
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font> 0x2:
+                    puts(<font color="#666666">"File not found."</font>);
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font> 0x5:
+                    puts(<font color="#666666">"Access denied."</font>);
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font> 0x8:
+                    puts(<font color="#666666">"Insufficient memory."</font>);
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font> 0xA:
+                    puts(<font color="#666666">"Invalid environment."</font>);
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">case</font> 0xB:
+                    puts(<font color="#666666">"Invalid format."</font>);
+                    <font color="#4169E1">break</font>;
+                <font color="#4169E1">default</font> :
+                    <font color="#4169E1">break</font>;
+            }
+            <font color="#4169E1">break</font>;
+<strong><font color="#FF0000">        default:</font></strong>
+            <font color="#4169E1">break</font>;
+    }
+
+    free(fb);
+    <font color="#4169E1">return</font>;
+
+}
+
+<font color="#B22222">/***************************************************************************/</font>
+
+<strong><font color="#4169E1"><a name="my_exe"></a>WORD my_exe(BYTE *prog, BYTE *args)</font></strong>{
+
+
+    BYTE buf[128];
+    WORD rc;
+    WORD saveSS, saveSP;
+    <font color="#4169E1">struct fcb</font> fcb1, fcb2;
+    <font color="#4169E1">struct ExecBlock</font> execBlock, *eb;
+
+    eb = &amp;execBlock;
+
+<font color="#B22222">/* generate Pascal string from the command line */</font>
+    memcpy(&amp;buf[1], args, buf[0] = strlen(args));
+    memcpy(&amp;buf[1] + buf[0], <font color="#666666">"\xd"</font>, 2);
+
+<font color="#B22222">/* fill execute structure */</font>
+    execBlock.env = 0;
+    execBlock.line = (char far *)buf;
+    execBlock.fcb1 = (<font color="#4169E1">struct fcb</font> far *)&amp;fcb1;
+    execBlock.fcb2 = (<font color="#4169E1">struct fcb</font> far *)&amp;fcb2;
+
+<font color="#B22222">/* fill FCBs */</font>
+    <font color="#4169E1">if</font> ((args = parsfnm(args, &amp;fcb1, 1)) != NULL)
+          parsfnm(args, &amp;fcb2, 1);
+
+    asm{
+        push    si
+        push    di
+        push    ds
+
+        mov     dx, prog              <font color="#B22222">/* load file name */</font>
+        push    ds
+        pop     es
+        mov     bx, eb                <font color="#B22222">/* load parameter block */</font>
+        mov     ax, 4b00h
+
+        mov     Word Ptr cs:[saveSP], sp
+        mov     Word Ptr cs:[saveSS], ss
+        int     21h
+        cli
+        mov     ss, Word Ptr cs:[saveSS]
+        mov     sp, Word Ptr cs:[saveSP]
+        sti
+
+        jc      exec_error  <font color="#B22222">/*if there was an error, the error code is in AX*/</font>
+        xor     ax, ax      <font color="#B22222">/*otherwise, clear AX */</font>
+        mov     ah,4dh
+        int     21h
+        jmp     exec_OK
+    }
+<strong><font color="#FF0000">    exec_error:</font></strong>
+    asm{
+        mov        ah,77h
+    }
+<strong><font color="#FF0000">    exec_OK:</font></strong>
+    asm{
+        mov     rc,ax
+        pop     ds
+        pop     di
+        pop     si
+    }
+    <font color="#4169E1">return</font> rc;
+}
+
+
+
+<font color="#B22222">/**************************************************************************/</font>
+
+<strong><font color="#4169E1"><a name="do_chdr"></a>void do_chdr(BYTE dr)</font></strong>
+{
+    BYTE d;
+
+
+
+    d = toupper(dr) - 'A';
+
+    asm {
+        MOV ah,0eh
+        MOV dl,d
+        INT 21h
+        MOV ah,19h
+        INT 21h
+        CMP al,dl
+        JE  chdr_yes
+    }
+    puts(<font color="#666666">"Invalid Drive"</font>);
+<strong><font color="#FF0000">    chdr_yes:</font></strong>
+    <font color="#4169E1">return</font>;
+}
+
+</pre>
+
+
+<!-- END of Table-->
+</TD></tr></table>
+
+
+</body>
+</html>
+</body>
+
+</html>

@@ -1,0 +1,123 @@
+
+<html>
+<head>
+<title>../../SRC/BR.C</title>
+<meta name="generator" content="c2html 0.9.2">
+<meta name="date" content="2000-03-21T19:26:17+00:00">
+</head>
+
+<body bgcolor="#FFFFFF">
+<?php
+    $title="DOG - Developer - Source";
+  include("../include/head.php");
+?>
+  
+<!-- Left side -->
+  
+<?php include("../include/dleft.htmlf"); ?>
+  
+<!-- Right side -->
+<TD>
+<pre width="80"><font color="#B22222">/*
+
+BR.C - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
+
+Copyright (C) 1999,2000 Wolf Bergenheim
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+Developers:
+Wolf Bergenheim (WB)
+
+History
+18.03.00 - Extracted from DOG.C - WB
+
+****************************************************************************/</font>
+
+<strong><font color="#4169E1">BYTE cbreak(BYTE s)</font></strong>;
+
+<strong><font color="#4169E1"><a name="do_br"></a>void do_br(BYTE n)</font></strong>
+{
+
+    BYTE f;
+
+    <font color="#4169E1">if</font>(n==1) {
+
+        f = cbreak(0xff);
+        printf(<font color="#666666">"BReak is "</font>);
+        <font color="#4169E1">switch</font>(f) {
+            <font color="#4169E1">case</font> 0 :
+                    puts(<font color="#666666">"OFF"</font>);
+                    <font color="#4169E1">break</font>;
+            <font color="#4169E1">case</font> 1 :
+                    puts(<font color="#666666">"ON"</font>);
+                    <font color="#4169E1">break</font>;
+       }
+    }
+    <font color="#4169E1">else</font> <font color="#4169E1">if</font>(n==2) {
+
+        <font color="#4169E1">if</font> (stricmp(arg[1],<font color="#666666">"ON"</font>)==0) {
+            f=cbreak(1);
+        }
+        <font color="#4169E1">else</font> <font color="#4169E1">if</font> (stricmp(arg[1],<font color="#666666">"OFF"</font>)==0) {
+            f=cbreak(0);
+        }
+        <font color="#4169E1">else</font> {
+            puts(<font color="#666666">"You MUST specify either ON or OFF."</font>);
+            <font color="#4169E1">return</font>;
+        }
+    }
+    <font color="#4169E1">else</font> {
+        puts(<font color="#666666">"Invalid number of arguments."</font>);
+    }
+    <font color="#4169E1">return</font>;
+}
+
+<font color="#B22222">/**************************************************************************/</font>
+
+<strong><font color="#4169E1"><a name="cbreak"></a>BYTE cbreak(BYTE s)</font></strong>
+{
+    asm{
+        mov AH,33h
+        mov AL,s
+        cmp AL,0FFh
+        je     cbreak_query
+        mov DL,AL
+        mov AL,01h
+        int 21h
+    }
+    <font color="#4169E1">return</font> 0;
+<strong><font color="#FF0000">    cbreak_query:</font></strong>
+    asm{
+        mov AL,00h
+        int 21h
+        mov s,DL
+    }
+    <font color="#4169E1">return</font> s;
+}
+
+
+</pre>
+
+
+<!-- END of Table-->
+</TD></tr></table>
+
+
+</body>
+</html>
+</body>
+
+</html>
