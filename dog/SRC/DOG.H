@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <errno.h>
 #include <fcntl.h>
 
-#define debug
+#define de bug
 #define list
 #define do_de bug
 #define ls_de	bug
@@ -282,8 +282,6 @@ struct bfile {
 struct red {
     BYTE name[MAXDIR];
     FILE *fp;
-	  WORD fh;
-	  WORD fo;
     BYTE redirect;
     BYTE opt[3];
 }fout, fin;
