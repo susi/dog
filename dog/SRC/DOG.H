@@ -80,11 +80,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _BS 0x8;
 #define _TAB 0x9;
 #define _SPC 0x32;
-#define _PROMPT "%l=%p=%g%_"
-#define _DOG_PROMPT "%n%_%_%b\\_%n%_%_%b%_.\\---.%n%_/%_%_%_,__/%n/%_%_%_/%p%_%_"
-#define _DOG_PROMPT2 "%_%_%_%__%n%_%_%_/%_\\__%n%_%_(_'%_%_@\\___%n%_%_/%_%_%_%_%_%_%_%_%_O%n%_/%_%_%_(_____/%n/_____/%_%_%_U%n%p%t%t"
-#define _COW_PROMPT "%t%_%_(__)%n%t%_%_~..~%n%_%_/-------(..)%n%_/%_|%_%_%_%_%_||%n*%_%_||----||%n%_%_%_^^%_%_%_%_^^%n%p%g"
-#define _COW_PROMPT2 "%t%_%_(__)%n%t%_%_(oo)%n%_%_/-------(..)%n%_/%_|%_%_%_%_%_||%n*%_%_||W---||%n%_%_%_^^%_%_%_%_^^%n%p%g"
+#define _PROMPT "$l$p$g$_"
+#define _DOG_PROMPT "$n$_$_$b\\_$n$_$_$b$_.\\---.$n$_/$_$_$_,__/$n/$_$_$_/$p$_$_"
+#define _DOG_PROMPT2 "$_$_$_$__$n$_$_$_/$_\\__$n$_$_(_'$_$_@\\___$n$_$_/$_$_$_$_$_$_$_$_$_O$n$_/$_$_$_(_____/$n/_____/$_$_$_U$n$p$t$t"
+#define _COW_PROMPT "$t$_$_(__)$n$t$_$_~..~$n$_$_/-------(..)$n$_/$_|$_$_$_$_$_||$n*$_$_||----||$n$_$_$_^^$_$_$_$_^^$n$p$g"
+#define _COW_PROMPT2 "$t$_$_(__)$n$t$_$_(oo)$n$_$_/-------(..)$n$_/$_|$_$_$_$_$_||$n*$_$_||W---||$n$_$_$_^^$_$_$_$_^^$n$p$g"
 
 /*
   
@@ -163,17 +163,17 @@ C:\DOG>_
 
 #define PPID_OFS 0x0016
 #define ENVSEG_OFS 0x002C
-#define DOG_VER 080bh
+#define DOG_VER 081bh
 #define DOG_MA 0
 #define DOG_MI 8
-#define DOG_RE 0x0b
+#define DOG_RE 0x1b
 
 /* Define Global Variables */
 BYTE DOG_ma = DOG_MA, DOG_mi = DOG_MI, DOG_re = DOG_RE;
 BYTE Xit = 0, Xitable = 1, eh = 0, D=0, P[MAXDIR]; 
 BYTE comline[200]= {0}, *com = comline, *arg[_NARGS], varg[_NARGS][200], *prompt;
 BYTE commands[_NCOMS][3] = {
-    "BP",
+  "BP",
 	"BR",
 	"CC",
 	"CD",
@@ -195,7 +195,7 @@ BYTE commands[_NCOMS][3] = {
 	"XX"};
 
 BYTE command_des[_NCOMS][21] = {
-    "BeeP                ",
+  "BeeP                ",
 	"BReak               ",
 	"Change Codepage     ",
 	"Change Directory    ",
@@ -217,6 +217,20 @@ BYTE command_des[_NCOMS][21] = {
 	"eXit                "};
 
 BYTE *command_help[_NCOMS];
+
+/*
+Structure of the flags variable. Tells which flags were given to DOG
+3 2 1 0
+^ ^ ^ ^
+| | | +-- P
+| | +---- E
+| +------ C
++-------- 0
+*/
+BYTE flags;
+#define FLAG_P 0x1
+#define FLAG_E 0x2
+#define FLAG_C 0x4
 
 #define C_BP 0
 #define	C_BR 1
@@ -316,7 +330,6 @@ void do_ct(BYTE n);
 void do_cd(BYTE n);
 void do_hh(BYTE n);
 void do_eh(BYTE n);
-void do_cd(BYTE n);
 void do_mrd(BYTE n);
 void do_xx(void);
 

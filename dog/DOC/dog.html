@@ -1,0 +1,323 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<meta name="Author" content="Wolf Bergenheim <dog@users.sourceforge.net">
+<meta name="Description" content="Index of the DOG command interpeter homepage">
+<title>DOG - Documentation</title>
+</head>
+<body bgcolor="#4682b4" text="#000000" link="#ffffff" vlink="#33666CC" alink="#ff0033">
+<center><h1>DOG Documentation</h1></center>
+<hr>
+<center><h2>Command line Syntax</h2></center>
+<tt>DOG [-P[[:]envsize]&brvbar;-E:envsz&brvbar;-C command line]</tt> 
+<p>
+<b>Parameters</b>: 
+<ul>
+  <li>-P - Makes DOG a PERMANENT shell. Using this flag will also result in the 
+    <br>
+    execution of dog.dog in the current directory.
+  <li>-E envsz - Makes the environment to <tt>(envsz / 16)</tt> 16 bit pages. 
+  <li>-C command line - Executes the <tt>command line</tt> and exits. 
+</ul>
+<hr>
+
+<hr>
+<a name="top"></a>
+<center><h2>Commands</h2></center>
+<p>The internal commands are: </p>
+<ul>
+  <li><tt><a href="#CD">CD</a></tt> 
+  <li><tt><a href="#CT">CT</a></tt>
+  <li><tt><a href="#EH">EH</a></tt> 
+  <li><tt><a href="#HH">HH</a></tt>
+  <li><tt><a href="#MD">MD</a></tt> 
+  <li><tt><a href="#RD">RD</a></tt>
+  <li><tt><a href="#SE">SE</a></tt>
+  <li><tt><a href="#XX">XX</a></tt> 
+</ul>
+<p>The external commands are:</p>
+<ul>
+<li><tt><a href="#BR">BR</a></tt>
+<li><tt><a href="#CC">CC</a></tt>
+<li><tt><a href="#CL">CL</a></tt>
+<li><tt><a href="#CP">CP</a></tt>
+<li><tt><a href="#CT">CT</a></tt>
+<li><tt><a href="#LS">LS</a></tt>
+<li><tt><a href="#MV">MV</a></tt>
+<li><tt><a href="#RM">RM</a></tt>
+<li><tt><a href="#SZ">SZ</a></tt>
+<li><tt><a href="#TP">TP</a></tt>
+<li><tt><a href="#VF">VF</a></tt>
+<li><tt><a href="#VR">VR</a></tt>
+</ul>
+<hr>
+<hr>
+
+<center><h3><a name="BR">BR</a></h3></center>
+<b>Syntax</b>: <tt>BR [ON&brvbar;OFF]</tt><br>
+<b>Parameters</b>: <ul>
+<li>ON  - Set DOS Break flag to ON (check for break on all DOS calls).
+  <li>OFF - Set DOS Break flag to OFF (check for break only when
+       reading/writing stdin/stdout/stderr).
+</ul>
+<b>Effect</b>: Toggles the DOS Break flag. In case no parameters are given
+it returns the Break Flag<br>
+<br>
+<a href="#top">Top</a>
+<hr>
+
+<center><h3><a name="CC">CC</a> </h3></center>
+<font color="#ff0022">NOT implemented yet</font>
+<br><br>
+<b>Syntax</b>: <tt>CC [CodePage]</tt><br>
+<b>Parameters</b>:
+<ul>
+<li>CodePage - The new codepage to use for characters.
+  <li> - cc without Args returns the codepages availabe, and shows the active.
+</ul>
+<b>Effect</b>: Changes the current codepage to CodePage. <br>
+<a href="#top">Top</a>
+<hr>
+
+<center><h3><a name="CD">CD</a></h3></center>
+<b>Syntax</b>: <tt>CD [Path]</tt><br>
+<b>Parameters</b>: 
+<ul>
+  <li>Path - The destination path. The <tt>..</tt> directory can be appended directly 
+    to cd like in DOS. e.g.<tt>cd..</tt><br>
+    Every dot over the first two will be iterpeted as one more parrent directory; 
+    thus <tt>....</tt> is equal to <tt>..\..\..</tt>
+  <li> - cd without Args returns the current directory. 
+</ul>
+<b>Effect</b>: Changes the current directory to Path.
+<br>
+<b>Note</b>: Directories are executable. This means that you do not have
+to write <tt>CD</tt> in order to change directory.
+<br>
+<a href="#top">Top</a>
+<hr>
+
+<center><h3><a name="CL">CL</a></h3></center>
+<b>Syntax</b>: <tt>CL</tt><br>
+<b>Effect</b>: Clears the screen. Works on 50 lines/page screens too.
+<br>
+<a href="#top">Top</a>
+<hr>
+
+<center><h3><a name="CP">CP</a></h3></center>
+<b>Syntax</b>: <tt>CP src trg</tt><br>
+<ul>
+  <li>src - The file you want to copy. The <tt>*</tt> and <tt>?</tt> wildcards 
+    are <b>NOT</b> OK. 
+  <li>trg - Path to the target file or directory.
+</ul>
+<p><b>Effect</b>: Copies the source file to <tt>trg</tt>.<br>
+  <b>Note</b>: This command is not ready yet.<br>
+  <a href="#top"></a><a href="#top">Top</a> </p>
+<hr>
+
+<center><h3><a name="CT">CT</a></h3></center>
+<b>Syntax</b>: <tt>CT Device</tt><br>
+<b>Parameters</b>:
+<ul>
+<li>Device - the name of the device that io is set to. Eg. CON, AUX, NUL...
+</ul>
+<b>Effect</b>: Changes the current IO terminal to Device. <br>
+<a href="#top">Top</a>
+<hr>
+
+<center>
+<h3><a name="EH">EH</a></h3>
+</center>
+<center>
+</center>
+<b>Syntax</b>: <tt>EH text</tt><br>
+<b>Parameters</b>: 
+<ul>
+  <li>text - anything you want to type out from a DOG file. 
+    <p>Use these special characters to format the text. 
+    <ul>
+      <li><tt>$$</tt> - the $sign. 
+      <li><tt>$_</tt> - space 
+      <li><tt>$b</tt> - vertical bar ( &brvbar; ) 
+      <li><tt>$e</tt> - The ESC character (ASCII 27 = 1b in hex) 
+      <li><tt>$h</tt> - backspace (removes 1 character)
+      <li><tt>$l</tt> - Left angle ( &lt; ) 
+      <li><tt>$g</tt> - Right angle ( &gt; ) 
+      <li><tt>$n</tt> - New line 
+      <li><tt>$r</tt> - Carriage return 
+      <li><tt>$t</tt> - Tabulator 
+    </ul>
+</ul>
+<p><b>Effect</b>: Print a (formatted) string to stdio (normally the screen). EH 
+  by itself wil put a new line. <br>
+  <b>Note</b>: You can have many strings, they will be separated by one space 
+  regardless of what kind of whitespace you specify on the command line<br>
+  <a href="#top"></a><a href="#top"></a><a href="#top">Top</a> </p>
+<hr>
+
+<center><h3><a name="HH">HH</a></h3></center>
+<b>Syntax</b>: <tt>HH</tt><br>
+<b>Effect</b>: Prints all DOG commands, and names. <br>
+<a href="#top">Top</a>
+<hr>
+
+<center><h3><a name="LS">LS</a></h3></center>
+<b>Syntax</b>: <tt>LS [arg_list] [search pattern]</tt><br>
+<b>Parameters</b>: <ul>
+<li>The args can be given in any order.
+<li>arg_list can be any of the following args.
+     <ul>
+<li>-a - Any file Attribute
+       <li>-d - Directories Only
+       <li>-f - Files Only
+       <li>-h - help text
+       <li>-l - show volume label
+       <li>-? - syntax
+     </ul>
+
+<li>search pattern - a list of filenames to find. The <tt>*</tt> and
+     <tt>?</tt> wildcards are OK.
+</ul>
+
+<b>Effect</b>: List files according to switches and search pattern.
+<br>
+<a href="#top">Top</a>
+<hr>
+
+<center><h3><a name="MD">MD</a></h3></center>
+<b>Syntax</b>: <tt>MD &lt;dir&gt;</tt><br>
+<b>Parameters</b>: <ul>
+<li>dir - Name or Path of new directory.
+</ul>
+<b>Effect</b>: Creates a new directory as in <tt>COMMAND.COM</tt>.
+<br>
+<a href="#top">Top</a>
+<hr>
+
+<center>
+  <h3><a name="MV">MV</a></h3>
+</center>
+<b>Syntax</b>: <tt>MV &lt;old_name&gt; &lt;new_name&gt;</tt><br>
+<b>Parameters</b>: <ul>
+<li>old_name - The path to the file you want to change. * and ? are OK
+  <li>new_name - The path to the new filename. * and ? are OK
+</ul>
+<b>Effect</b>: Renames (or moves) a fiile.<br>
+<a href="#top">Top</a>
+<hr>
+
+<center><h3><a name="RD">RD</a></h3></center>
+<b>Syntax</b>: <tt>RD &lt;dir&gt;</tt><br>
+<b>Parameters</b>: <ul>
+<li>dir - Name or path of EMPTY directory to remove.
+</ul>
+<b>Effect</b>: Removes a directory as in <tt>COMMAND.COM</tt>.
+<br>
+<a href="#top">Top</a>
+<hr>
+
+<center><h3><a name="RM">RM</a></h3></center>
+<b>Syntax</b>: <tt>RM &lt;list&gt;</tt><br>
+<b>Parameters</b>: <ul>
+<li>list - A space separated list of files you want to delete.
+       No more multiple commands to delete <tt>*.BK! *.BKP</tt> etc files!
+</ul>
+<b>Effect</b>: Delete files as per the <tt>COMMAND.COM DEL/DELETE</tt> command.
+<br>
+<a href="#top">Top</a>
+<hr>
+
+<center><h3><a name="SE">SE</a></h3></center>
+<b>Syntax</b>: <tt>SE [env_var=[string]]</tt><br>
+<b>Parameters</b>: <ul>
+<li>env_var - the name of the environment variable. The name is UPPERCASED
+       Predefines ones are:
+       <ul>
+<li>PATH - A ; separated list of directories that are searched
+	      in to find a program.
+	 <li>PROMPT - The string may consist of normal text and
+	      these special characters
+	      <ul>
+          <li><tt>$$</tt> - the $ sign. 
+          <li><tt>$_</tt> OR <tt>$S</tt> - space
+		<li><tt>$b</tt> - vertical bar ( &brvbar; )
+		<li><tt>$e</tt> - The ESC character (ASCII 27 = 1b in hex)
+		<li><tt>$h</tt> - Backspace (deletes a char)
+		<li><tt>$l</tt> - Left angle ( &lt; )
+		<li><tt>$g</tt> - Right angle ( &gt; )
+		<li><tt>$n</tt> - New line
+		<li><tt>$r</tt> - Carriage return
+		<li><tt>$t</tt> - Tabulator
+		<li><tt>$p</tt> - Current drive and path
+		<li><tt>$c</tt> OR <tt>$T</tt> - Current time.
+		<li><tt>$d</tt> OR <tt>$D</tt> - Current Date.
+	      </ul>
+<li>COMSPEC - Path to DOG
+       </ul>
+<li>string - The value that env_var should have.
+</ul>
+<b>Effect</b>: Sets the specified env_var to string in the environment.
+Without arguments the command prints all env_vars to the screen.
+<br>
+<a href="#top">Top</a>
+<hr>
+
+<center><h3><a name="SZ">SZ</a></h3></center>
+<b>Syntax</b>: <tt>SZ [-k&brvbar;-m]</tt> [path]<br>
+<b>Parameters</b>: 
+<ul>
+  <li>-k - give sizes in kb 
+  <li>-m - give sizes in Mb 
+  <li>path - the directory or file you want to know the size of. Wildcards * and 
+    ? ar OK.
+</ul>
+<b>Effect</b>: Prints the size of the files in the current directory, or in path. 
+<hr>
+
+<center>
+<h3><a name="TP">TP</a></h3>
+</center>
+<center>
+</center>
+<b>Syntax</b>: <tt>TP file_list</tt><br>
+<b>Parameters</b>: <ul>
+<li>file_list - A space separated list of filenames.
+</ul>
+<b>Effect</b>: Types the contents of the files in file_list to stdout.
+<br>
+<a href="#top">Top</a>
+<hr>
+
+<center><h3><a name="VF">VF</a></h3></center>
+<b>Syntax</b>: <tt>VF [ON&brvbar;OFF]</tt><br>
+<b>Parameters</b>: <ul>
+<li>ON - Set the DOS Verify flag to ON
+  <li>OFF - Set the DOS Verify flag to OFF
+</ul>
+<b>Effect</b>: If ON or OFF specified sets Verify flag to this value,
+else returns the current setting.
+<br>
+<a href="#top">Top</a>
+<hr>
+
+<center><h3><a name="VR">VR</a></h3></center>
+<b>Syntax</b>: <tt>VR</tt><br>
+<b>Effect</b>: Prints the DOG and DOS version. Interprets OS/2 and IBM version 
+correctly, also detects Window$ and FreeDOS and DOSEmu. <br>
+<a href="#top">Top</a>
+<hr>
+
+<center><h3><a name="XX">XX</a></h3></center>
+<b>Syntax</b>: <tt>XX</tt><br>
+<b>Effect</b>: Exit the current DOG shell. Works only if the shell is not
+               a primary shell.
+<br>
+<a href="#top">Top</a>
+<hr>
+
+
+</body>
+</html>
+

@@ -27,6 +27,7 @@ History
            would loop in DR-DOS because it returns 1, not 18 as I
            thought it would... - WB
 2001-05-34 - Extracted from DOG to be a standalone program.
+2002-02-21 - Changed the date to be in yyy-mm-dd format
 
 ****************************************************************************/
 
@@ -98,7 +99,7 @@ void show_entry(struct ffblk *fb)
 	m = (fb->ff_fdate &  0x01e0)>>5;
 	d = (fb->ff_fdate &  0x001f);
 
-	printf("   %02d.%02d.%04d   ",d,m,y);
+	printf("   %04d-%02d-%02d   ",y,m,d);
 
 	h = (fb->ff_ftime & 0x0F800)>>11;
 	min = (fb->ff_ftime & 0x03E0)>>5;
@@ -199,7 +200,7 @@ void do_ls(void)
 	 fb = malloc(sizeof(struct ffblk));
 	 m = 0;
 
-	 printf("    size   ASRHD   dd.mm.yyyy   hh:mm.ss   name\n\n");
+	 printf("    size   ASRHD   yyyy-mm-dd   hh:mm.ss   name\n\n");
 
 	 for(j=0;j < ls_f.npatt;j++) {
 
