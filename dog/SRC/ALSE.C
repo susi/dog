@@ -325,11 +325,17 @@ WORD mkudata(WORD oldseg, WORD *nseg, WORD bsz, WORD nbsz)
 {
 	WORD w;
 	BYTE far *p,far *s,far *d;
-  
-  while ( (w = allocmem(nbsz,nseg)) != 0xFFFF) {
+  printf("nbsz = %x\n",nbsz);
+  while( (w = allocmem(nbsz,nseg)) != 0xffff) {
+    printf("newseg=%x nbsz=%x\n",*nseg,nbsz);
     nbsz = w;
-    fprintf(stderr,"Insufficient memory to allocate!\nReallocating\n");
+		perror("mkudata()");
+		printf("w = %x\n",w);
+    printf("newseg=%x nbsz=%x\n",*nseg,nbsz);
+		if(nbsz == 0) exit(-3);
   }
+	if(w == 0) exit(-3);
+
   p = MK_FP(*nseg,0); /* point to beg of block*/
 #ifdef b_debug
   printf("p=%Fp\n",p);
@@ -339,7 +345,7 @@ WORD mkudata(WORD oldseg, WORD *nseg, WORD bsz, WORD nbsz)
 
   if(nbsz >= bsz) { /* copy stuff from oldseg to newseg */
     bsz <<= 4; /* bytes */
-    w = *nseg;
+		w = *nseg;
     s = MK_FP(oldseg,0);
     d = MK_FP(w,0);
         
@@ -358,6 +364,27 @@ WORD mkudata(WORD oldseg, WORD *nseg, WORD bsz, WORD nbsz)
   return nbsz;
 }
 
+
+/****************************************************************************/
+WORD myallocmem(WORD sz, WORD *seg) {
+	WORD s,e,m;
+	asm clc
+	asm mov ah,48h;
+	asm mov bx,sz;
+	asm int 21h;
+	asm jc mam_error;
+	asm mov s, ax;
+	*seg = s;
+	return 0;
+	mam_error:
+	asm mov m,bx;
+	asm mov e,ax;
+	
+	printf("Error(%x): Only %d bytes (%x paragraphs) available\n",e,m*0x10,m);
+
+	
+	return 1;
+}
 
 /****************************************************************************/
 

@@ -149,6 +149,24 @@ History
              parsecom() to use the new evarreplace() function to get env
              vars on the commandline. cleaned initialize to set the default
              env variables with setevar() instead of building it by hand -WB
+2002-04-24 - Bugfixes submitted by K.Harikiran:
+             * after evareplace() the ll variable needed to be updated to the
+               new length of line.
+             * Unable to create a temp file in the root dir of Mr Harikiran.
+             * Bug in do_exe: prepended CWD to name of DOGfile, without any
+               apparent reason.
+             -WB
+2002-04-26 - More bug fixes submitted by K.Harikiran:
+              * -C switch to dog doesn't work. (not fixed yet)
+             Changed mktmpfile() so that it will first check for TEMP and
+             TMP env vars and use the path specified there. If that fails it
+             will use the dir supplied to the function. -WB
+2002-04-27 - Fixed -C switch. For some reason the code for the -C switch 
+             had dropped away. -WB
+2002-05-12 - Changed the do_exe() to execute any .COM .EXE .DOG file even if
+             a directory with the same name exists
+             e.g.: FOO.COM and a directory FOO exists; if you type foo, then
+             FOO.COM is executed, if you want the dir FOO you type FOO. -WB
 */
 
 #include "dog.h"
@@ -159,12 +177,12 @@ History
 BYTE initialize(int nargs, char *args[])
 {
   
-  BYTE i,j,k,*p,*q,line[200]={0},rebuild=0;
+  BYTE i,j,k,*p,*q,line[200]={0};
   BYTE far *s;
   BYTE far *d;
   BYTE far *ep;
   WORD w,nenvsz,nenvseg,eoesz,o,naliassz,naliasseg;
-  
+  j = 0;
 /*
  for(i=0;i<_NCOMS;i++) { /* TEMPORARY ONLY!!! * /
     command_help[i] = 0;
@@ -190,12 +208,13 @@ BYTE initialize(int nargs, char *args[])
   bf->nest = 0;
   
   drvs = 0;
-
+  
   /* get the segment of the environment from the PSP*/
   envseg = peek(_psp,ENVSEG_OFS);
   _env = MK_FP(envseg,0);    
   envsz = peek(envseg-1,3) << 4; /*get size of block allocated from MCB*/
-
+  aliassz = 0x200;
+  
 #ifdef env_debug
   printf("nargs=%u\n",nargs);
   printf("envsz=%ux\n",envsz);
@@ -210,7 +229,7 @@ BYTE initialize(int nargs, char *args[])
     p=line;
     strupr(p); /* upper case it*/
     while(*p!='\0') {
-      if(*p=='-') {
+      if((*p=='-') || (*p=='/')) {
         switch(*(++p)) {
          case 'A': /* set size of alias block */
           flags |= FLAG_A;
@@ -218,25 +237,46 @@ BYTE initialize(int nargs, char *args[])
           /* Accept all strings beginning with -A */
           while((!isdigit(*p))&&(*p!='\0')&&(*p!='-')) p++;
           while(isdigit(*p)) naliassz=naliassz*10+(*p++)-'0';
-          
+
+#if 0          
           naliassz >>= 4; /* paragraphs */
-          if(naliassz < 10) naliassz=10;
-          if(naliassz > 800) naliassz=800;
+          if(naliassz < 0x10) naliassz=0x10;
+          if(naliassz > 0x800) naliassz=0x800;
           
           aliassz = mkudata(aliasseg, &naliasseg, aliassz, naliassz);
           aliassz <<= 4;
           aliasseg = naliasseg;
+#endif
           break;
+
+         case 'C': /* execute one command, then exit */
+          flags |= FLAG_C;
+          eh = 1;
+          /* copy the arg vectors to the command */
+          for(i=1;i<nargs;i++) {
+            if(strnicmp(args[i],"-C",2)==0){
+              if(strlen(args[i]) > 2)
+                args[i] = &args[i][2];
+              else
+                i++;
+              break;
+            }
+          }
+          for(j=0;i<nargs;i++,j++) {
+            arg[j] = args[i];
+          }
+          break;
+          
          case 'E': /* set the size of the environment */
           flags |= FLAG_E;
           nenvsz=0;
           /* Accept all strings beginning with -E */
           while((!isdigit(*p))&&(*p!='\0')&&(*p!='-')) p++;
           while(isdigit(*p)) nenvsz=nenvsz*10+(*p++)-'0';
-          
+#if 0          
           nenvsz >>= 4; /* paragraphs */
-          if(nenvsz < 10) nenvsz=10;
-          if(nenvsz > 800) nenvsz=800;
+          if(nenvsz < 0x10) nenvsz=0x10;
+          if(nenvsz > 0x800) nenvsz=0x800;
           
           nenvseg = envseg;
           
@@ -249,17 +289,16 @@ BYTE initialize(int nargs, char *args[])
           envsz = nenvsz << 4;
           envseg = nenvseg;
           poke(_psp,ENVSEG_OFS,envseg);
-          
+#endif          
           break;
           
          case 'P':/* make a permanent shell */
           flags |= FLAG_P;
-          rebuild = 1;
           nenvsz = 0;
           /* Accept all strings beginning with -P */
           while((!isdigit(*p))&&(*p!='\0')&&(*p!='-')) p++;
           while(isdigit(*p)) nenvsz=nenvsz*10+(*p++)-'0';
-          
+#if 0          
           nenvsz /= 16; /*paragraphs*/
           if(nenvsz < 0x10) nenvsz=0x10;
           if(nenvsz > 0x800) nenvsz=0x800;
@@ -268,7 +307,7 @@ BYTE initialize(int nargs, char *args[])
           
           envseg=nenvseg;
           poke(_psp,ENVSEG_OFS,nenvseg);
-          
+#endif
 #ifdef b_debug
           printf("envseg=0x%x envsz=0x%x\n",envseg,envsz);
 #endif
@@ -314,34 +353,61 @@ BYTE initialize(int nargs, char *args[])
           break;
         }
       }
-      else
-      /* ignore */
-      p++;
+      else {
+        /* ignore */
+        p++;
+      }
     }
   }
-  _env = MK_FP(envseg,0);
-	envsz = peek(envseg-1,3) << 4; /*get size of block allocated from MCB*/
-  if (rebuild==1) {
+
+  if(( ( flags & FLAG_E ) == FLAG_E ) || ( ( flags & FLAG_P ) == FLAG_P ) ) {
+    nenvsz >>= 4; /* paragraphs */
+    if(nenvsz < 0x5) nenvsz=0x5;
+    if(nenvsz > 0x800) nenvsz=0x800;
+  
+    nenvseg = envseg;
+#ifdef b_debug
+    printf("initialize():before mkudata: envsz = (%x) nenvsz = (%x)\n",envsz,nenvsz);
+#endif
+    nenvsz = mkudata(envseg, &nenvseg, envsz, nenvsz);
+#ifdef b_debug
+    printf("env @ %04x0 (%x) nenv @ %04x0 (%x)\n",envseg,envsz,nenvseg,nenvsz);
+#endif
+    /* envsz = nenvsz << 4; */
+    envseg = nenvseg;
+    poke(_psp,ENVSEG_OFS,envseg);
+    _env = MK_FP(envseg,0);
+    envsz = peek(envseg-1,3) << 4; /*get size of block allocated from MCB*/
     setevar("COMSPEC",args[0]);
-    setevar("PATH","..");
+    for(p = & args[0][strlen(args[0])];*p != '\\';p--);
+    *p = '\0';
+    setevar("PATH",args[0]);
     setevar("PROMPT",_PROMPT);
   }
-
-#ifdef b_debug
-    printf("initialize:flags = %x flags = %x\n",flags,flags & FLAG_A);
-#endif
-  if ( (flags & FLAG_A) != FLAG_A ) {
-#ifdef b_debug
-    printf("aliassz = %x aliasseg = %x\n",aliassz, aliasseg);
-#endif
-    aliassz = mkudata(0, &aliasseg, 0, 0x10);
-    aliassz <<= 4;
-#ifdef b_debug
-    printf("aliassz = %x aliasseg = %x\n",aliassz, aliasseg);
-#endif
+  else {
+    _env = MK_FP(envseg,0);
+    envsz = peek(envseg-1,3) << 4; /*get size of block allocated from MCB*/
   }
+
+  if ( naliassz == 0 ) {
+    naliassz = aliassz;
+  }
+
+  naliassz >>= 4; /* para */
+  if(naliassz < 0x5) naliassz=0x5;
+  if(naliassz > 0x800) naliassz=0x800;
+#ifdef b_debug
+  printf("aliassz = %x aliasseg = %x\n",aliassz, aliasseg);
+	printf("initialize():before mkudata: aliassz = (%x) naliassz = (%x)\n",aliassz,naliassz);
+#endif
+  aliassz = mkudata(0, &aliasseg, 0, naliassz);
+
+	/*  aliassz <<= 4; */
+#ifdef b_debug
+    printf("aliassz = %x aliasseg = %x\n",aliassz, aliasseg);
+#endif
   
-  return 0;
+  return j;
 }
 
 
@@ -386,20 +452,27 @@ BYTE parsecom(BYTE * line,BYTE ll)
 #endif
   ll = strlen(line);
   evarreplace(line,ll);
+  ll = strlen(line);
 #ifdef parse_debug
-  printf("parsecom:0-3: line(%s)\n",line);
+  printf("parsecom:0-3: line(%s) ll=%d\n",line,ll);
 #endif
 
   i=0;
   while((j<_NARGS) && (i<ll)) {
-    while((isspace(line[i]) || (line[i] == '\0') )&& (i<ll))
-    line[i++] = '\0';
-    
+    while((isspace(line[i]) || (line[i] == '\0') )&& (i<ll)) {
+#ifdef b_debug
+      printf("parsecom:2-0: %c(%x)[%d]\n",line[i],line[i],i);
+#endif
+      line[i++] = '\0';
+    }
     if(i<ll) {
       arg[j++] = &line[i];
     }
     
     while(!isspace(line[i]) && (i<ll)) {
+#ifdef b_debug
+      printf("parsecom:2-1: %c(%x)[%d]\n",line[i],line[i],i);
+#endif
 			i++;
 		}
   }
@@ -486,6 +559,15 @@ BYTE isfchar(BYTE c)
 WORD mktmpfile(char *dir)
 {
   WORD w;
+  char tmp[128];
+  
+  memset(tmp,0,128);
+  if (getevar("TEMP",tmp) != NULL) {
+    strcpy(dir,tmp);
+  }
+  else if (getevar("TMP",tmp) != NULL) {
+    strcpy(dir,tmp);
+  }
   
   asm MOV AH,5ah ; /* create temp filename*/
   asm MOV CX,00h ; /* (00000000 00000010) hidden */
@@ -597,7 +679,7 @@ BYTE redir(BYTE *c)
       
       *p = '\0';
       p++;
-      strcpy(pip.pcmd,p);
+      strcpy(pip.pcmd,p); /* add code to get tmp from evar */
       sprintf(pip.pname,"%c:\\%s\\",D,P);
       
       /***/
@@ -607,6 +689,10 @@ BYTE redir(BYTE *c)
       
       pip.phandle = mktmpfile(pip.pname);
       
+#ifdef debug
+      printf("redir:6:c(%s) p(%s) *p(%c) pip.pname=(%s)\n",c,p,*p,pip.pname);
+#endif
+
       if (pip.phandle == 0) {
         fprintf(stderr, "Unable to create pipe\n");
         return 0;
@@ -870,16 +956,13 @@ int main(int nargs, char *argv[])
 {
   BYTE i,na,ch;
   
+	
+	printf("Coreleft() = %x\n",coreleft());
   na = initialize(nargs, argv);
-  
+	
   if((_osmajor < 3) && (_osminor < 30)) {
     printf("Sorry your DOS is too lame.\nGet at least version 3.30\n");
     exit(1);
-  }
-  
-  if((flags & FLAG_P) == FLAG_P) {
-    arg[0] = "dog.dog";
-    do_command(1);
   }
   
   /* make int D0 point to D0GFunc */
@@ -895,6 +978,12 @@ int main(int nargs, char *argv[])
   asm push cs
   asm pop es
   asm INT 21h
+
+  if((flags & FLAG_P) == FLAG_P) {
+    arg[0] = "dog.dog";
+    do_command(1);
+  }
+
   
   if (eh == 0) {
     printf("DOG - Dog Operating Ground Version %u.%u.%02x\n",DOG_ma,DOG_mi,DOG_re);
@@ -995,7 +1084,7 @@ int main(int nargs, char *argv[])
       else if(pip.pstatus == 1) {
         strcpy(com,pip.pcmd);
         if(redir(com)==0) {
-	  com[0] = 0;
+          com[0] = 0;
           arg[0] = com;
         }
         
@@ -1028,20 +1117,35 @@ int main(int nargs, char *argv[])
       
       /* printf("\n"); */                                          
       
-    }                                                                
-    else if(Xit==2) {                                                
-      do_command(na);                                              
-      Xit = 0;                                                     
-      eh = 0;                                                      
-    }                                                                
-    
-    else if(Xit==3) {                                                
-      do_command(na);                                              
-      Xit = 1;                                                     
-    }                                                                
+    }
+    else if( (flags & FLAG_C ) == FLAG_C ) {
+      if ( (flags & FLAG_P ) == FLAG_P ) {
+        Xit = 0;                                                     
+        eh = 0;
+#ifdef debug                                                             
+        fprintf(stderr,"main:6-0:Xit = %u\n",Xit);                                 
+        fprintf(stderr,"main:6-1:flags = %u\n",flags);                                 
+#endif
+      }
+      else {
+        Xit = 1;
+#ifdef debug                                                             
+        fprintf(stderr,"main:6-2:Xit = %u\n",Xit);                                 
+        fprintf(stderr,"main:6-3:flags = %u\n",flags);                                 
+#endif
+      }
+#ifdef debug                                                             
+      fprintf(stderr,"main:6-4:Xit = %u\n",Xit);                                 
+      fprintf(stderr,"main:6-5:flags = %u\n",flags);                                 
+#endif
+      
+      do_command(na);
+    }
     
 #ifdef debug                                                             
-    fprintf(stderr,"main:7:xit = %u\n",Xit);                                 
+    fprintf(stderr,"main:7:Xit = %u\n",Xit);                                 
+    fprintf(stderr,"main:7:flags = %u\n",flags);                                 
+    fprintf(stderr,"main:7:xit = %u\n",(flags & FLAG_P ) == FLAG_P);
 #endif                                                                   
     
     
@@ -1053,7 +1157,7 @@ int main(int nargs, char *argv[])
       varg[i][0] = '\0';
     }                                                                  
     
-    if(Xit ==1 && Xitable==1) break;                                   
+    if((Xit == 1) && ( (flags & FLAG_P ) != FLAG_P )) break;
 #ifdef debug                                                             
     fprintf(stderr,"Xit: %d\tXitable: %d\n",Xit,Xitable);                
 #endif                                                                   
@@ -1231,11 +1335,13 @@ void do_command( BYTE na)
 void do_exe(BYTE n)
 {
   
-  BYTE d,i,ic,ie,id,*p,*q,*r,*cpath,envi[255],file[128],exec_f;
+  BYTE d,i,ic,ie,id,*p,*q,*r,*cpath,envi[255],file[128],exec_f, xd;
   BYTE s[200], com[80],exe[80],dog[80],path[60],trunam[128],prog[120];
   struct ffblk *fb;
 
 	exec_f = NON;
+  
+  xd = 0;
   
   for (i=0;i<200;i++) {
     s[i] = '\0';
@@ -1267,11 +1373,7 @@ void do_exe(BYTE n)
     printf("do_exe:3:ff_attrib = 0x%x\n",fb->ff_attrib);
 #endif
     if((fb->ff_attrib & FA_DIREC) == FA_DIREC) {
-      arg[1] = prog;
-      arg[0] = commands[C_CD];
-      do_cd(2);
-      free(fb);
-      return;
+      xd = 1;
     }
     
     if(strstr(fb->ff_name,".COM") == NULL) {
@@ -1418,7 +1520,14 @@ void do_exe(BYTE n)
 #endif
   
   switch(exec_f) {
-  case NON:
+   case NON:
+    if (xd == 1) {
+      arg[1] = prog;
+      arg[0] = commands[C_CD];
+      do_cd(2);
+      free(fb);
+      return;
+    }
     printf("%s: Bad command or Filename\n",arg[0]);
     free(fb);
     return;
@@ -1437,7 +1546,7 @@ void do_exe(BYTE n)
    case DOG:
 #ifdef exe_debug
     printf("do_exe:26:found %s in %s ->%s\n",fb->ff_name,cpath,dog);
-		printf("do_exe:27:bf->args[i] = %s\n",bf->args);
+		printf("do_exe:27:bf->args[i] = %x\n",bf->args);
 #endif
     bf->na = n;
     bf->line = 0;
@@ -1447,17 +1556,19 @@ void do_exe(BYTE n)
         bf->args[i] = (bf->cline) + (arg[i] - comline);
 #ifdef bat_debug
         printf("do_exe:28:bf->args[%u](%x) =  (bf->cline(%x)) + (arg[%u](%x) - comline(%x))\n",i,bf->args[i],bf->cline,i,arg[i], comline);
-				printf("do_exe:29:bf->args[i] = %s\n",bf->args);
+				printf("do_exe:29:bf->args[i] = %s\n",bf->args[i]);
 #endif
       }
 #ifdef bat_debug
 			else {
-        printf("do_exe:30:arg[%u] == 0",i);
+        printf("do_exe:30:arg[%u] == 0\n",i);
 			}
 #endif
     }
-    d = getcur(path) + 'A';
-    sprintf(bf->name,"%c:\\%s\\%s",d,path,dog);
+#ifdef exe_debug
+    printf("do_exe:31:bf->name= %s\n",dog);
+#endif
+    sprintf(bf->name,"%s",dog);
     bf->in = 1;
     do_bat();
     free(fb);

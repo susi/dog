@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define cd_de bug
 #define eh_de bug
 #define ca_de bug
-#define b_de bug
+#define b_debug
 #define parse_de bug
 #define prompt_de bug
 
@@ -282,6 +282,8 @@ struct bfile {
 struct red {
     BYTE name[MAXDIR];
     FILE *fp;
+	  WORD fh;
+	  WORD fo;
     BYTE redirect;
     BYTE opt[3];
 }fout, fin;
@@ -325,6 +327,7 @@ void setalias(BYTE *varname, BYTE *value);
 BYTE *getudata(BYTE *varname, BYTE *value, WORD blockseg);
 BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg);
 WORD mkudata(WORD oldseg, WORD *nseg, WORD bsz, WORD nbsz);
+WORD myallocmem(WORD sz, WORD *seg);
 BYTE aliasreplace(BYTE *com);
 void evarreplace(BYTE *com, BYTE ln);
 
