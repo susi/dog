@@ -130,7 +130,7 @@ History
            changed its variable names to be more consistent with dt.c - EW
 13.04.00 - rewrote initialize(). now both XX and SE work. As does the 
            -E command-line switch - WB
-01.08.00 - rewrote (allmost completely) do_exe to handle the PATH variable.
+01.08.00 - rewrote (allmost completely) do_exe to handle the PATH variable. -WB
 
 */
 
@@ -1335,7 +1335,7 @@ void do_exe(BYTE n)
 {
 
     BYTE d,i,ic,ie,id,*p,*q,*r,*cpath,envi[255],file[128],exec_f;
-    BYTE s[200], com[80],exe[80],dog[80],path[60],trunam[128];
+    BYTE s[200], com[80],exe[80],dog[80],path[60],trunam[128],prog[120];
     struct ffblk *fb;
 
     for (i=0;i<200;i++) {
@@ -1356,39 +1356,67 @@ void do_exe(BYTE n)
     }
 
     /*First try to exec arg[0]*/
-
-    i = findfirst(arg[0],fb,0x3f); /*ANY attrib = 00111111 */
+    strcpy(prog,arg[0]);
+#ifdef exe_debug
+        printf("do_exe:1360:prog=%s\n",prog);
+#endif
+    i = findfirst(prog,fb,0x37); /*attrib = 00100111 */
     if (i == 0) {
+#ifdef exe_debug
+        printf("do_exe:1363:prog=%s\n",prog);
+        printf("do_exe:1364:%s a directory\n",((fb->ff_attrib & FA_DIREC) == FA_DIREC)?"Is":"Isn't");
+        printf("do_exe:1365:ff_attrib = 0x%x\n",fb->ff_attrib);
+#endif
         if((fb->ff_attrib & FA_DIREC) == FA_DIREC) {
-            arg[1] = arg[0];
+            arg[1] = prog;
             arg[0] = commands[C_CD];
             do_cd(2);
             free(fb);
             return;
         }
 
-        p = strstr(arg[0],".COM");
-        q = strstr(arg[0],".EXE");
-        r = strstr(arg[0],".DOG");
-            
-        if(p == NULL) {
-            if (q == NULL) {
-                if (r == NULL) {
+        if(strstr(fb->ff_name,".COM") == NULL) {
+            if (strstr(fb->ff_name,".EXE") == NULL) {
+                if (strstr(fb->ff_name,".DOG") == NULL) {
+#ifdef exe_debug
+printf("do_exe:1379:ff_name = %s\n",fb->ff_name);
+#endif
+
                     exec_f = NON;
                 }
                 else {
                     exec_f = DOG;
+                    strcpy(dog,prog);
+#ifdef exe_debug
+printf("do_exe:1388:ff_name = %s\n",fb->ff_name);
+#endif
                 }
             }
             else {
                 exec_f = EXE;
+                strcpy(exe,prog);
+#ifdef exe_debug
+printf("do_exe:1396:ff_name = %s\n",fb->ff_name);
+#endif
             }
         }
         else {
             exec_f = COM;
+            strcpy(com,prog);
+#ifdef exe_debug
+printf("do_exe:1404:ff_name = %s\n",fb->ff_name);
+#endif
         }
 
-        if (exec_f != NON) goto exec_now;
+    }
+
+    if(prog[1] == ':') {
+        strcpy(file,prog);
+        goto do_exe_enp;
+    }
+    if(prog[0] == '\\') {
+        strcpy(file,prog);
+        goto do_exe_enp;
     }
 
     getevar("PATH",envi);
@@ -1409,6 +1437,7 @@ void do_exe(BYTE n)
         if(file[strlen(file)-1] != '\\')
             strcat(file,"\\");
         strcat(file,arg[0]);
+        do_exe_enp:
         strcpy(com,file);
         strcpy(exe,file);
         strcpy(dog,file);
@@ -1421,31 +1450,72 @@ void do_exe(BYTE n)
         printf("do_exe:exe=%s\n",exe);
         printf("do_exe:dog=%s\n",dog);
 #endif
-        ic = findfirst(com,fb,0);
-        ie = findfirst(exe,fb,0);
-        id = findfirst(dog,fb,0);
+        if(findfirst(com,fb,0x27) == 0) {
 #ifdef exe_debug
-printf("ic = %u ie = %u id = %u\n",ic,ie,id);
+        printf("\ndo_exe:c:file=%s\n",fb->ff_name);
 #endif
-        if(ic == 0) {
             exec_f = COM;
             break;
         }
-        else if (ie == 0) {
+        else if (findfirst(exe,fb,0x27) == 0) {
+#ifdef exe_debug
+        printf("\ndo_exe:e:file=%s\n",fb->ff_name);
+#endif
             exec_f = EXE;
             break;
         }
-        else if (ie == 0) {
+        else if (findfirst(dog,fb,0x27) == 0) {
+#ifdef exe_debug
+        printf("\ndo_exe:d:file=%s\n",fb->ff_name);
+#endif
             exec_f = DOG;
             break;
         }
+        else if(findfirst(file,fb,0x27) == 0) {
+#ifdef exe_debug
+        printf("\ndo_exe:.:file=%s\n",fb->ff_name);
+#endif
+            if(strstr(fb->ff_name,".COM") == NULL) {
+                if (strstr(fb->ff_name,".EXE") == NULL) {
+                    if (strstr(fb->ff_name,".DOG") == NULL) {
+                        exec_f = NON;
+                    }
+                    else {
+                        strcpy(dog,file);
+                        exec_f = DOG;
+                    }
+                }
+                else {
+                    strcpy(exe,file);
+                    exec_f = EXE;
+                }
+            }
+            else {
+                strcpy(com,file);
+                exec_f = COM;
+            }
+            break;
+        }
+        
         else {
             exec_f = NON;
         }
 
+#ifdef exe_debug
+        printf("do_exe:exec_f = %u\n",exec_f);
+#endif
+
     }
 
     exec_now:
+
+#ifdef exe_debug
+        printf("do_exe::exec_f = %u\n",exec_f);
+        printf("do_exe:file=%s\n",file);
+        printf("do_exe:com=%s\n",com);
+        printf("do_exe:exe=%s\n",exe);
+        printf("do_exe:dog=%s\n",dog);
+#endif
         
     switch(exec_f) {
         case NON:
@@ -1460,9 +1530,9 @@ printf("do_exe:found %s in %s\n",fb->ff_name,cpath);
             break;
         case EXE:
 #ifdef exe_debug
-printf("do_exe:found %s in %s\n",fb->ff_name,cpath);
+printf("do_exe:found %s in %s -> %s\n",fb->ff_name,cpath,exe);
 #endif
-        errorlevel=my_exe(trueName(exe,trunam),s);
+            errorlevel=my_exe(trueName(exe,trunam),s);
             break;
         case DOG:
 #ifdef exe_debug
