@@ -145,319 +145,320 @@ History
 
 BYTE initialize(int nargs, char *args[])
 {
-
-    BYTE i,j,k,*p,*q,line[200]={0},sw_P=0,rebuild=0;
-    BYTE far *s;
-    BYTE far *d;
-    BYTE far *ep;
-    WORD w,nenvsz,nenvseg,eoesz,o;
-
-    for(i=0;i<_NCOMS;i++) { /* TEPORARY ONLY!!! */
-        command_help[i] = 0;
-    }    
-
-    Xitable = 1;
-
-printf("PSP = %x PPID = %x\n",_psp,peek(_psp,PPID_OFS));
-
+  
+  BYTE i,j,k,*p,*q,line[200]={0},sw_P=0,rebuild=0;
+  BYTE far *s;
+  BYTE far *d;
+  BYTE far *ep;
+  WORD w,nenvsz,nenvseg,eoesz,o;
+  
+  for(i=0;i<_NCOMS;i++) { /* TEPORARY ONLY!!! */
+    command_help[i] = 0;
+  }    
+  
+  Xitable = 1;
+  
+  printf("PSP = %x PPID = %x\n",_psp,peek(_psp,PPID_OFS));
+  
     /* save STDIN STDOUT */
-    IN = dup(fileno(stdin));
-    OUT = dup(fileno(stdout));
+  IN = dup(fileno(stdin));
+  OUT = dup(fileno(stdout));
+  
+  pip.pstatus = 0;
+  
+  D = getcur(P) + 'A';
+  
+  bf = malloc(sizeof(struct bfile));
+  bf->prev = NULL;
+  bf->in = 0;
+  bf->nest = 0;
+  
+  drvs = 0;
 
-	  pip.pstatus = 0;
-	
-	  D = getcur(P) + 'A';
-
-    bf = malloc(sizeof(struct bfile));
-    bf->prev = NULL;
-    bf->in = 0;
-    bf->nest = 0;
-
-    drvs = 0;
-
-    /* get the segment of the environment from the PSP*/
-    envseg = peek(_psp,ENVSEG_OFS);
-    _env = MK_FP(envseg,0);    
-    envsz = peek(envseg-1,3) << 4; /*get size of block allocated from MCB*/
-
+  /* get the segment of the environment from the PSP*/
+  envseg = peek(_psp,ENVSEG_OFS);
+  _env = MK_FP(envseg,0);    
+  envsz = peek(envseg-1,3) << 4; /*get size of block allocated from MCB*/
+  
 #ifdef env_debug
-printf("nargs=%u\n",nargs);
-printf("envsz=%ux\n",envsz);
+  printf("nargs=%u\n",nargs);
+  printf("envsz=%ux\n",envsz);
 #endif
-
-    if(nargs == 1) {
-        return 0;
-    }
-
-    /* make the commandline to one string without spaces */
-    for(i=2,strcpy(line,args[1]);i<nargs;i++)
-        strcat(line,args[i]);
-
-    p=line;
-    strupr(p); /* upper case it*/
-    while(*p!='\0') {
-        if(*p=='-') {
-            switch(*(++p)) {
-                case 'C': /* execute one command, then exit */
-                    /* can't execute just one command on a permanent shell*/
-                    if(sw_P == 1)
-                        Xit = 3;
-                    else
-                        Xit = 2;
-                    /* copy the arg vectors to the command */
-                    for(i=1;i<nargs;i++) {
-                        if(strnicmp(args[i],"-C",2)==0){
-                            if(strlen(args[i]) > 2)
-                                args[i] = &args[i][2];
-                            else
-                                i++;
-                            break;
-                        }
-                    }
-
-                    for(j=0;i<nargs;i++,j++) {
-                        arg[j] = args[i];
-                    }
-                    Xitable = eh = 1;
-                    return j;
-
-                case 'E': /* set the size of the environment */
-
-                    nenvsz=0;
-                    /* Accept all strings beginning with -E */
-                    while((!isdigit(*p))&&(*p!='\0')&&(*p!='-')) p++;
-                    while(isdigit(*p)) nenvsz=nenvsz*10+(*p++)-'0';
-                    
-                    nenvsz >>= 4; /* paragraphs */
-                    if(nenvsz < 10) nenvsz=10;
-                    if(nenvsz > 800) nenvsz=800;
-
-                    if((nenvsz << 4) < envsz) {
-
-                        asm mov AH,4ah      ;/*resize mem block BX=newsz ES=seg */
-                        asm mov BX,nenvsz
-                        asm mov DX,envseg
-                        asm mov ES,DX
-                        asm int 21h
-                        asm jnc e_env_ok
-
-                        e_env_not_ok:
-
-                        asm sub ax,07h /*errors 7,8,9 possible*/
-                        asm jz  e_block_dest
-                        asm dec ax
-                        asm jz  e_no_mem
-                        asm jmp e_inv_mem
-
-                        /* probably never happens... remove? */
-                        e_block_dest:
-                        fprintf(stderr,"Environment block destroyed!\nBuilding new.\n");
-                        e_inv_mem:
-                        fprintf(stderr,"Invalid Environment!\nBuilding new.\n");
-                        e_no_mem:
-                        fprintf(stderr,"Environment block too small!\nBuilding new.\n");
-
-                        asm mov ah,49h
-                        asm mov dx,envseg
-                        asm mov es,dx
-                        asm INT 21h
-
-                        rebuild = 1;
-    
-                        break;
-                        e_env_ok:
-                        
-                        nenvsz <<= 4; /* bytes */
-                        eoesz = strlen(args[0]) + 4;
-                        ep = MK_FP(envseg,0); /* point to beg of env*/
-#ifdef env_debug
-printf("ep=%Fp\n",ep);
-#endif
-
-                        for(w = 0;(eoesz+w) < nenvsz;w++) {
-                            if(*(ep+w) == 0){
-                                o = w; /* save pos */
-#ifdef env_debug
-printf("w=%u; ",w);
-#endif
-
-                            }
-                        }
-                        ep += o;
-#ifdef env_debug
-printf("ep=%Fp\n",ep);
-#endif
-
-                        *(++ep) = 0;
-                        *(++ep) = 1;
-                        *(++ep) = 0;
-                        q=args[0]; ep++;
-                        while(*q != 0)
-                            *(ep++)=*(q++);                        
-                        *ep = 0;
-
-                    }
-                    else {
-
-                        asm mov ah,48h
-                        asm mov bx,nenvsz
-                        asm int 21h
-                        asm jc  l_e_not_ok
-                        asm mov nenvseg,ax
-
-
-                        goto l_e_ok;
-                        l_e_not_ok:
-                        goto e_env_not_ok;
-                        l_e_ok:
-
-                        s = MK_FP(envseg,0);
-                        d = MK_FP(nenvseg,0);
-
-#ifdef env_debug
-printf("envseg=%x envsz=%x\n",envseg,envsz);
-#endif
-                        for(w=0;w<envsz;w++) {
-                            *(d++) = *(s++);
-#ifdef env_debug
-printf("s(%Fp)->%Fc d(%Fp)->%Fc\n",s,*s,d,*d);
-#endif
-                        }
-
-
-                        asm MOV ah,49h      ;/*free old env*/
-                        asm MOV dx,envseg
-                        asm MOV es,dx
-                        asm INT 21h
-
-                        envsz = nenvsz;
-                        envseg = nenvseg;
-                        poke(_psp,ENVSEG_OFS,envseg);
-
-                    }
-                    break;
-                    
-
-                case 'P':/* make a permanent shell */
-                    sw_P = 1;
-                    rebuild = 1;
-                    envsz = 0;
-                    /* Accept all strings beginning with -P */
-                    while((!isdigit(*p))&&(*p!='\0')&&(*p!='-')) p++;
-                    while(isdigit(*p)) envsz=envsz*10+(*p++)-'0';
-                    
-                    envsz /= 16; /*paragraphs*/
-                    if(envsz < 10) envsz=10;
-                    if(envsz > 800) envsz=800;
-                    
-                    p_env_retry:
-                    asm MOV bx,envsz
-
-                    p_env_not_mem_retry:
-
-                    asm MOV ah,48h
-                    asm INT 21h
-                    asm jnc p_env_ok
-                    asm sub ax,7
-                    asm jz p_env_retry
-                    asm dec ax
-                    asm jz p_env_not_mem_retry
-                    
-                    p_env_ok:
-                    
-                    asm MOV envseg,ax
-                    
-                    poke(_psp,ENVSEG_OFS,envseg);
-
-                    get_int();
-                    set_int();
-
-                    /* make int 2e point to D0GFunc */
-                    
-                        /* save */
-                    asm MOV ax,352eh
-                    asm MOV i2e_o,bx
-                    asm MOV i2e_s,es
-                    asm INT 21h
-                        /* set */
-                    asm MOV ax,252eh
-                    asm MOV dx,offset D0GFunc
-                    asm push cs
-                    asm pop es
-                    asm INT 21h
-
-								    /* point int 22 termination address at DOG loop*/
-                    asm MOV ax,2522h
-                    asm MOV dx,offset DOG_loop
-                    asm MOV i22_o,dx
-                    asm push cs
-                    asm pop ds
-                    asm MOV i22_s,ds
-                    asm INT 21h
-                    
-
-                    /* put int handlers in to PSP */
-
-                    poke(_psp,0x0a,i22_o);
-                    poke(_psp,0x0a+2,i22_s);
-                    poke(_psp,0x0e,i23_o);
-                    poke(_psp,0x0e+2,i23_s);
-                    poke(_psp,0x12,i24_o);
-                    poke(_psp,0x12+2,i24_s);
-                    /* makeDOG it's own parrent*/
-                    poke(_psp,PPID_OFS,_psp);
-
-                    Xitable = 0;
-                    break;
-            }
-        }
-        else
-            /* ignore */
-            p++;
-    }
-    _env = MK_FP(envseg,0);
-    envsz = peek(envseg-1,3) << 4; /*get size of block allocated from MCB*/
-
-    if (rebuild==1) {
-        if((p=malloc(envsz))!=NULL) {
-            q=p;
-            i=0;
-            sprintf(p,"COMSPEC=%s",args[0]);
-            i += strlen(p)+1;
-            p += i; /*point to after terminating 0 */
-            strcpy(p,"PATH=C:\\DOS;C:\\DOG;C:\\;..");
-            i += strlen(p)+1;
-            p += 26;
-            strcpy(p,"PROMPT=");
-            strcat(p,_PROMPT);
-            i += strlen(p)+1;
-            p = q+i;
-            *(p++) = 0; /* = terminating the env */
-            *(p++) = 1; *(p++)=0; /* WORD number of strings to follow*/
-            i += 3;
-            sprintf(p,"%s",args[0]);
-            i += strlen(p)+1;
-            p += i; /*point to after terminating 0 */
-
-            for(j=0;j<i;j++) { /* copy it to the env block */
-                *(_env+j) = *(q+j);
-#ifdef env_debug
-                if(*(q+j) != '\0')
-                    printf("%c",*(q+j));
-                else
-                    printf("0\n");
-#endif
-            }
-#ifdef env_debug
-            puts("");
-#endif
-        }
-        free(p);
-    }
+  
+  if(nargs == 1) {
     return 0;
+  }
+  
+  /* make the commandline to one string without spaces */
+  for(i=2,strcpy(line,args[1]);i<nargs;i++)
+    strcat(line,args[i]);
+
+  p=line;
+  strupr(p); /* upper case it*/
+  while(*p!='\0') {
+    if(*p=='-') {
+      switch(*(++p)) {
+      case 'C': /* execute one command, then exit */
+	/* can't execute just one command on a permanent shell*/
+	if(sw_P == 1)
+	  Xit = 3;
+	else
+	  Xit = 2;
+	/* copy the arg vectors to the command */
+	for(i=1;i<nargs;i++) {
+	  if(strnicmp(args[i],"-C",2)==0){
+	    if(strlen(args[i]) > 2)
+	      args[i] = &args[i][2];
+	    else
+	      i++;
+	    break;
+	  }
+	}
+	
+	for(j=0;i<nargs;i++,j++) {
+	  arg[j] = args[i];
+	}
+	Xitable = eh = 1;
+	return j;
+	
+      case 'E': /* set the size of the environment */
+	
+	nenvsz=0;
+	/* Accept all strings beginning with -E */
+	while((!isdigit(*p))&&(*p!='\0')&&(*p!='-')) p++;
+	while(isdigit(*p)) nenvsz=nenvsz*10+(*p++)-'0';
+	
+	nenvsz >>= 4; /* paragraphs */
+	if(nenvsz < 10) nenvsz=10;
+	if(nenvsz > 800) nenvsz=800;
+	
+	if((nenvsz << 4) < envsz) {
+	  
+	  asm mov AH,4ah      ;/*resize mem block BX=newsz ES=seg */
+	  asm mov BX,nenvsz
+	    asm mov DX,envseg
+	    asm mov ES,DX
+	    asm int 21h
+	    asm jnc e_env_ok
+	    
+	    e_env_not_ok:
+	  
+	  asm sub ax,07h /*errors 7,8,9 possible*/
+	    asm jz  e_block_dest
+	    asm dec ax
+	    asm jz  e_no_mem
+	    asm jmp e_inv_mem
+	   
+	    /* probably never happens... remove? */
+	  e_block_dest:
+	  fprintf(stderr,"Environment block destroyed!\nBuilding new.\n");
+	  e_inv_mem:
+	  fprintf(stderr,"Invalid Environment!\nBuilding new.\n");
+	  e_no_mem:
+	  fprintf(stderr,"Environment block too small!\nBuilding new.\n");
+	  
+	  asm mov ah,49h
+	    asm mov dx,envseg
+	    asm mov es,dx
+	    asm INT 21h
+	    
+	    rebuild = 1;
+	  
+	  break;
+	  e_env_ok:
+	  
+	  nenvsz <<= 4; /* bytes */
+	  eoesz = strlen(args[0]) + 4;
+	  ep = MK_FP(envseg,0); /* point to beg of env*/
+#ifdef env_debug
+	  printf("ep=%Fp\n",ep);
+#endif
+	  
+	  for(w = 0;(eoesz+w) < nenvsz;w++) {
+	    if(*(ep+w) == 0){
+	      o = w; /* save pos */
+#ifdef env_debug
+	      printf("w=%u; ",w);
+#endif
+	      
+	    }
+	  }
+	  ep += o;
+#ifdef env_debug
+	  printf("ep=%Fp\n",ep);
+#endif
+	  
+	  *(++ep) = 0;
+	  *(++ep) = 1;
+	  *(++ep) = 0;
+	  q=args[0]; ep++;
+	  while(*q != 0)
+	    *(ep++)=*(q++);                        
+	  *ep = 0;
+	  
+	}
+	else {
+	  
+	  asm mov ah,48h
+	    asm mov bx,nenvsz
+	    asm int 21h
+	    asm jc  l_e_not_ok
+	    asm mov nenvseg,ax
+	    
+	    
+	    goto l_e_ok;
+	  l_e_not_ok:
+	  goto e_env_not_ok;
+	  l_e_ok:
+	  
+	  s = MK_FP(envseg,0);
+	  d = MK_FP(nenvseg,0);
+
+#ifdef env_debug
+	  printf("envseg=%x envsz=%x\n",envseg,envsz);
+#endif
+	  for(w=0;w<envsz;w++) {
+	    *(d++) = *(s++);
+#ifdef env_debug
+	    printf("s(%Fp)->%Fc d(%Fp)->%Fc\n",s,*s,d,*d);
+#endif
+	  }
+	  
+	  
+	  asm MOV ah,49h      ;/*free old env*/
+	  asm MOV dx,envseg
+	    asm MOV es,dx
+	    asm INT 21h
+	    
+	    envsz = nenvsz;
+	  envseg = nenvseg;
+	  poke(_psp,ENVSEG_OFS,envseg);
+	  
+	}
+	break;
+	
+	
+      case 'P':/* make a permanent shell */
+	sw_P = 1;
+	rebuild = 1;
+	envsz = 0;
+	/* Accept all strings beginning with -P */
+	while((!isdigit(*p))&&(*p!='\0')&&(*p!='-')) p++;
+	while(isdigit(*p)) envsz=envsz*10+(*p++)-'0';
+	
+	envsz /= 16; /*paragraphs*/
+	if(envsz < 10) envsz=10;
+	if(envsz > 800) envsz=800;
+	
+	p_env_retry:
+	asm MOV bx,envsz
+	  
+	  p_env_not_mem_retry:
+	
+	asm MOV ah,48h
+                    asm INT 21h
+	  asm jnc p_env_ok
+	  asm sub ax,7
+	  asm jz p_env_retry
+	  asm dec ax
+                    asm jz p_env_not_mem_retry
+	  
+	  p_env_ok:
+	
+	asm MOV envseg,ax
+	  
+	  poke(_psp,ENVSEG_OFS,envseg);
+	
+	get_int();
+	set_int();
+	
+	/* make int 2e point to D0GFunc */
+	
+	/* save */
+	asm MOV ax,352eh
+	  asm MOV i2e_o,bx
+	  asm MOV i2e_s,es
+	  asm INT 21h
+	  /* set */
+	  asm MOV ax,252eh
+	  asm MOV dx,offset D0GFunc
+	  asm push cs
+	  asm pop es
+	  asm INT 21h
+
+	  /* point int 22 termination address at DOG loop*/
+	  asm MOV ax,2522h
+	  asm MOV dx,offset DOG_loop
+	  asm MOV i22_o,dx
+	  asm push cs
+	  asm pop ds
+	  asm MOV i22_s,ds
+	  asm INT 21h
+	  
+	  
+	  
+	  /* put int handlers in to PSP */
+	  
+	  poke(_psp,0x0a,i22_o);
+	poke(_psp,0x0a+2,i22_s);
+	poke(_psp,0x0e,i23_o);
+	poke(_psp,0x0e+2,i23_s);
+	poke(_psp,0x12,i24_o);
+	poke(_psp,0x12+2,i24_s);
+	/* makeDOG it's own parrent*/
+	poke(_psp,PPID_OFS,_psp);
+	
+	Xitable = 0;
+	break;
+      }
+    }
+    else
+      /* ignore */
+            p++;
+  }
+  _env = MK_FP(envseg,0);
+    envsz = peek(envseg-1,3) << 4; /*get size of block allocated from MCB*/
+  
+  if (rebuild==1) {
+    if((p=malloc(envsz))!=NULL) {
+      q=p;
+      i=0;
+      sprintf(p,"COMSPEC=%s",args[0]);
+      i += strlen(p)+1;
+      p += i; /*point to byte after terminating 0 */
+      strcpy(p,"PATH=C:\\DOS;C:\\DOG;C:\\;..");
+      i += strlen(p)+1;
+      p += 26;
+      strcpy(p,"PROMPT=");
+      strcat(p,_PROMPT);
+      i += strlen(p)+1;
+      p = q+i;
+      *(p++) = 0; /* = terminating the env */
+      *(p++) = 1; *(p++)=0; /* WORD number of strings to follow*/
+      i += 3;
+      sprintf(p,"%s",args[0]);
+      i += strlen(p)+1;
+      p += i; /*point to after terminating 0 */
+      
+      for(j=0;j<i;j++) { /* copy it to the env block */
+	*(_env+j) = *(q+j);
+#ifdef env_debug
+	if(*(q+j) != '\0')
+	  printf("%c",*(q+j));
+	else
+	  printf("0\n");
+#endif
+      }
+#ifdef env_debug
+      puts("");
+#endif
+    }
+    free(p);
+  }
+  return 0;
 }
 
-        
+
 
 /**************************************************************************/
 
@@ -468,79 +469,79 @@ printf("s(%Fp)->%Fc d(%Fp)->%Fc\n",s,*s,d,*d);
 
 BYTE getln(BYTE *s, BYTE lim)
 {
-    BYTE i;
-
-    memset(s,0,lim);
-
-    gets(s);
-
-	  i = strlen(s);
-
+  BYTE i;
+  
+  memset(s,0,lim);
+  
+  gets(s);
+  
+  i = strlen(s);
+  
 #ifdef debug
-fprintf(stderr,"getln:2: i:%d s:!%s!\n",i,s);
+  fprintf(stderr,"getln:2: i:%d s:!%s!\n",i,s);
 #endif
-
-    return i;
+  
+  return i;
 }
 
 /**************************************************************************/
 BYTE parsecom(BYTE * line,BYTE ll)
 {
-	BYTE i=0,j=0,k=0;
-	BYTE ename[80],eval[80];
-	BYTE *p;
-	
+  BYTE i=0,j=0,k=0;
+  BYTE ename[80],eval[80];
+  BYTE *p;
+  
 #ifdef parse_debug
-    printf("parsecom:0: line(%s)\n",line);
+  printf("parsecom:0: line(%s)\n",line);
 #endif
-	
-	while((j<_NARGS) && (i<ll)) {
-		while((isspace(line[i]) || (line[i] == '\0') )&& (i<ll))
-			line[i++] = '\0';
-		
-		if(i<ll) {
-			if(line[i] == '%') {
-				if( line[i+1] == '%' )
-					arg[j++] = &line[++i];
-				else if(isdigit(line[++i])) {
+  
+  while((j<_NARGS) && (i<ll)) {
+    while((isspace(line[i]) || (line[i] == '\0') )&& (i<ll))
+      line[i++] = '\0';
+    
+    if(i<ll) {
+      if(line[i] == '%') {
+	if( line[i+1] == '%' )
+	  arg[j++] = &line[++i];
+	else if(isdigit(line[++i])) {
 					arg[j] = varg[line[i++] -'0'];
-					j++;
+	  j++;
 #ifdef parse_debug
-					printf("parsecom:1:arg[%u]=(%s)\n",j-1,arg[j-1]);
+	  printf("parsecom:1:arg[%u]=(%s)\n",j-1,arg[j-1]);
 #endif
-				}
-				else {
-					for(k=0;isalnum(line[i]) && (i<ll);k++,i++) {
-						ename[k] = line[i];
-#ifdef parse_debug
-					printf("parsecom:2.0:ename[%u]=(%c);line[%u]=(%c)\n",k,ename[k],i,line[i]);
-#endif
-					}
-					ename[k]= '\0';
-					getevar(ename,varg[j]); /* replace $varname with value*/
-					arg[j] = varg[j];
-					j++;
-#ifdef parse_debug
-					printf("parsecom:2.1:arg[%u]=(%s) varg[%u]=%s ename=(%s)\n",j-1,arg[j-1],j-1,varg[j-1],ename);
-#endif
-				}
-			}
-			else {
-				arg[j++] = &line[i];
-			}
-		}
-	
-		while(!isspace(line[i]) && (i<ll))
-			i++;
 	}
+	else {
+	  for(k=0;isalnum(line[i]) && (i<ll);k++,i++) {
+	    ename[k] = line[i];
 #ifdef parse_debug
-    printf("parsecom:3: j=%d line: !%s! arg(varg):",j,line);
-    for(i=0;i<20;i++)
-        printf("\t%s(%s)\n",arg[i],varg[i]);
+	    printf("parsecom:2.0:ename[%u]=(%c);line[%u]=(%c)\n",k,ename[k],i,line[i]);
+#endif
+	  }
+	  ename[k]= '\0';
+	  getevar(ename,varg[j]); /* replace $varname with value*/
+	  arg[j] = varg[j];
+	  j++;
+#ifdef parse_debug
+	  printf("parsecom:2.1:arg[%u]=(%s) varg[%u]=%s ename=(%s)\n",j-1,arg[j-1],j-1,varg[j-1],ename);
+#endif
+	}
+      }
+      else {
+	arg[j++] = &line[i];
+      }
+    }
+    
+    while(!isspace(line[i]) && (i<ll))
+      i++;
+  }
+#ifdef parse_debug
+  printf("parsecom:3: j=%d line: !%s! arg(varg):",j,line);
+  for(i=0;i<20;i++)
+    printf("\t%s(%s)\n",arg[i],varg[i]);
     printf("\n");
 #endif
-
-    return j;
+  
+  return j;
 }
 
 
@@ -549,267 +550,267 @@ BYTE parsecom(BYTE * line,BYTE ll)
 
 BYTE getcom(BYTE *com)
 {
-
-    BYTE ln,r;
-
-    ln = getln(com, 200);
-
-    if(redir(com)==0) {
-        com[0] = 0;
-        arg[0] = com;
-        return 0;
-    }
-
+  
+  BYTE ln,r;
+  
+  ln = getln(com, 200);
+  
+  if(redir(com)==0) {
+    com[0] = 0;
+    arg[0] = com;
+    return 0;
+  }
+  
     ln = strlen(com);
 #ifdef debug
-    fprintf(stderr,"getcom:1: com: !%s! ln:%u\n",com,ln);
+  fprintf(stderr,"getcom:1: com: !%s! ln:%u\n",com,ln);
 #endif
-    r = parsecom(com,ln);
+  r = parsecom(com,ln);
 #ifdef debug
-    fprintf(stderr,"getcom:2: com: !%s! ln:%u\n",com,ln);
+  fprintf(stderr,"getcom:2: com: !%s! ln:%u\n",com,ln);
 #endif
-
-    if(cBreak) {
-        cBreak = 0;
-        return 0;
-    }
-
+  
+  if(cBreak) {
+    cBreak = 0;
+    return 0;
+  }
+  
 #ifdef debug
-    fprintf(stderr,"getcom:3: r=%d com: !%s!\n",r,com);
+  fprintf(stderr,"getcom:3: r=%d com: !%s!\n",r,com);
 #endif
-    return r;
+  return r;
 }
 
 /**************************************************************************/
 
 BYTE isfchar(BYTE c)
 {
-    if(isalnum(c))
-        return 1;
-
-    switch(c) {
-        case '!':
-        case '@':
-        case '#':
-        case '$':
-        case '%':
-        case '&':
-        case '(':
-        case ')':
-        case '{':
-        case '}':
-        case '\'':
-        case '\\':
-        case '`':
-        case '.':
-        case ':':
-            return 1;
-        default:
-            return 0;
-
-    }
-
+  if(isalnum(c))
+    return 1;
+  
+  switch(c) {
+  case '!':
+  case '@':
+  case '#':
+  case '$':
+  case '%':
+  case '&':
+  case '(':
+  case ')':
+  case '{':
+  case '}':
+  case '\'':
+  case '\\':
+  case '`':
+  case '.':
+  case ':':
+    return 1;
+  default:
+    return 0;
+    
+  }
+  
 }
 /**************************************************************************/
 
 WORD mktmpfile(char *dir)
 {
-	WORD w;
-	
-	asm MOV AH,5ah ; /* create temp filename*/
-	asm MOV CX,00h ; /* (00000000 00000010) hidden */
+  WORD w;
+  
+  asm MOV AH,5ah ; /* create temp filename*/
+  asm MOV CX,00h ; /* (00000000 00000010) hidden */
 	asm MOV DX,dir ; /* DS:DX -> dir in which to create */
-	asm INT 21h      ;
-	asm JC mtf_1 ; /* Error */
-	asm MOV w,AX ;
+  asm INT 21h      ;
+  asm JC mtf_1 ; /* Error */
+  asm MOV w,AX ;
 	return w;
-	mtf_1:
-	asm MOV w,AX ;
-	switch(w) {
-	 case 3:
-		fprintf(stderr,"Path not found: %s\n",dir);
-		break;
-	 case 4:
-		fprintf(stderr,"Toomany open files.\n");
-		break;
-	 case 5:
-		fprintf(stderr,"Access Denied.\n");
-	 default:
-		fprintf(stderr,"Error  %x.\n",w);
-	}
-	
-	return 0;
+  mtf_1:
+  asm MOV w,AX ;
+  switch(w) {
+  case 3:
+    fprintf(stderr,"Path not found: %s\n",dir);
+    break;
+  case 4:
+    fprintf(stderr,"Toomany open files.\n");
+    break;
+  case 5:
+    fprintf(stderr,"Access Denied.\n");
+  default:
+    fprintf(stderr,"Error  %x.\n",w);
+  }
+  
+  return 0;
 }
 /**************************************************************************/
 
 BYTE redir(BYTE *c)
 {
-	BYTE l,i,pl;
-	WORD fh;
-	BYTE *fo,*fi,*p, *tmpcmd;
-	FILE *in,*out;
-	
-	l = strlen(c);
-	p = c;
-
-	for(i=0;i<l;i++) {
+  BYTE l,i,pl;
+  WORD fh;
+  BYTE *fo,*fi,*p, *tmpcmd;
+  FILE *in,*out;
+  
+  l = strlen(c);
+  p = c;
+  
+  for(i=0;i<l;i++) {
 #ifdef debug
-printf("redir:0: &p(%x) *p(%c)\n",p,*p);
+    printf("redir:0: &p(%x) *p(%c)\n",p,*p);
 #endif
-		if(*p == '>') {
-			*p = '\0';
-			strcpy(fout.opt,"w");
-			if((*(++p)) == '>') {
-				strcat(fout.opt,"a");
-				*p = ' '; /*erase the >*/
-			}
-
+    if(*p == '>') {
+      *p = '\0';
+      strcpy(fout.opt,"w");
+      if((*(++p)) == '>') {
+	strcat(fout.opt,"a");
+	*p = ' '; /*erase the >*/
+      }
+      
 #ifdef debug
-printf("redir:1:c(%s) p(%s) *p(%c)\n",c,p,*p);
+      printf("redir:1:c(%s) p(%s) *p(%c)\n",c,p,*p);
 #endif
-            /* skip spaces and tabs*/
-			while(isspace(*(p++)));
+      /* skip spaces and tabs*/
+      while(isspace(*(p++)));
 			fo=p-1; /*begining of filename*/
-			while(isfchar(*(++p)));
-			/* p points to first spc AFTER filename*/
+      while(isfchar(*(++p)));
+      /* p points to first spc AFTER filename*/
 #ifdef debug
-printf("redir:2:*fo(%c) *p-1(%x) *p(%x) *p+1(%x)\n",*fo,*(p-1),*p,*(p+1));
+      printf("redir:2:*fo(%c) *p-1(%x) *p(%x) *p+1(%x)\n",*fo,*(p-1),*p,*(p+1));
 #endif
-			if(*(p-1)=='\n')
-				*(p-1)='\0';
+      if(*(p-1)=='\n')
+	*(p-1)='\0';
 			*p = '\0';
-			strcpy(fout.name,fo);
-			fout.redirect = 1;
-			strcat(c," ");
-			strcat(c,p);
-		}
-		
-		else if(*p == '<') {
-			*p = '\0';
+      strcpy(fout.name,fo);
+      fout.redirect = 1;
+      strcat(c," ");
+      strcat(c,p);
+    }
+    
+    else if(*p == '<') {
+      *p = '\0';
 			strcpy(fin.opt,"r");
-
-            /* skip spaces and tabs*/
-			while(isspace(*(p++))) ;
-			if(isspace(*p))
-				p++;
-			fi=p; /*begining of filename*/
+      
+      /* skip spaces and tabs*/
+      while(isspace(*(p++))) ;
+      if(isspace(*p))
+	p++;
+      fi=p; /*begining of filename*/
 #ifdef debug
-printf("redir:3:fi(%x) &fi(%x) &p(%x) *p(%x)\n",fi,fi,p,p);
+      printf("redir:3:fi(%x) &fi(%x) &p(%x) *p(%x)\n",fi,fi,p,p);
 #endif
-			while(isfchar(*(++p))) {
+      while(isfchar(*(++p))) {
 #ifdef debug
-printf("redir:4:fi(%x) &fi(%x) &p(%x) *p(%x)\n",fi,fi,p,p);
+	printf("redir:4:fi(%x) &fi(%x) &p(%x) *p(%x)\n",fi,fi,p,p);
 #endif
-			}
-			
-            /* p points to first spc AFTER filename*/
-			if(*(p-1)=='\n')
-				*(p-1)='\0';
-			*p = '\0';
+      }
+      
+      /* p points to first spc AFTER filename*/
+      if(*(p-1)=='\n')
+	*(p-1)='\0';
+      *p = '\0';
 #ifdef debug
-printf("redir:5:fi(%s) &fi(%x) &p-1(%x) &p(%x) &p+1(%x)\n",fi,fi,(p-1),p,(p+1));
+      printf("redir:5:fi(%s) &fi(%x) &p-1(%x) &p(%x) &p+1(%x)\n",fi,fi,(p-1),p,(p+1));
 #endif
-			strcpy(fin.name,fi);
+      strcpy(fin.name,fi);
 			fin.redirect = 1;
-			strcat(c," ");
-			strcat(c,p);
-		}
-		else if(*p == '|') {
-			memset(pip.pname,0,MAXDIR+13);
-			memset(pip.pcmd,0,200);
-
-			if(pip.pstatus == 1) {
+      strcat(c," ");
+      strcat(c,p);
+    }
+    else if(*p == '|') {
+      memset(pip.pname,0,MAXDIR+13);
+      memset(pip.pcmd,0,200);
+      
+      if(pip.pstatus == 1) {
 				close(pip.phandle);
-				unlink(pip.pname);
-				pip.pstatus = 0;
-			}
-
-			*p = '\0';
-			p++;
-			strcpy(pip.pcmd,p);
-			sprintf(pip.pname,"%c:\\%s\\",D,P);
-
-			/***/
+	unlink(pip.pname);
+	pip.pstatus = 0;
+      }
+      
+      *p = '\0';
+      p++;
+      strcpy(pip.pcmd,p);
+      sprintf(pip.pname,"%c:\\%s\\",D,P);
+      
+      /***/
 #ifdef debug
-					printf("redir:6:c(%s) p(%s) *p(%c) pip.pname=(%s)\n",c,p,*p,pip.pname);
+      printf("redir:6:c(%s) p(%s) *p(%c) pip.pname=(%s)\n",c,p,*p,pip.pname);
 #endif
-
-			pip.phandle = mktmpfile(pip.pname);
-
-			if (pip.phandle == 0) {
-				fprintf(stderr, "Unable to create pipe\n");
-				return 0;
-			}
-			
+      
+      pip.phandle = mktmpfile(pip.pname);
+      
+      if (pip.phandle == 0) {
+	fprintf(stderr, "Unable to create pipe\n");
+	return 0;
+      }
+      
 #ifdef debug
-			printf("redir:7:pip.pname=(%s) pip.phandle=(%x)",pip.pname,pip.phandle);
+      printf("redir:7:pip.pname=(%s) pip.phandle=(%x)",pip.pname,pip.phandle);
 #endif
-			/***/
-			
-			if(dup2(pip.phandle,fileno(stdout)) != 0) {
+      /***/
+      
+      if(dup2(pip.phandle,fileno(stdout)) != 0) {
 #ifdef debug
-				printf("redir:6.7:errno=%x",errno);
-				printf("redir:7:pip.pname=(%s) pip.phandle=(%x)",pip.pname,pip.phandle);
+	printf("redir:6.7:errno=%x",errno);
+	printf("redir:7:pip.pname=(%s) pip.phandle=(%x)",pip.pname,pip.phandle);
 #endif
-
-				fprintf(stderr, "Unable to create pipe\n");
-				return 0;
-			}
-			pip.pstatus=2;
-			i = l;
-		}
-		else {
-			p++;
-		}
-		
-	}
-	if(fout.redirect) {
-#ifdef debug
-printf("redir:8:c(%s) fout.name(%s)\n",c,fout.name);
-#endif
-		if((fout.fp = fopen(fout.name,fout.opt)) == NULL) {
-			fprintf(stderr,"Unable to redirect output to file %s.\n",fout.name);
-			fout.redirect=0;
-			return 0;
-		}
-
-		dup2(fileno(fout.fp),fileno(stdout));
-	}
 	
-	if(fin.redirect) {
+	fprintf(stderr, "Unable to create pipe\n");
+	return 0;
+      }
+      pip.pstatus=2;
+      i = l;
+    }
+    else {
+      p++;
+    }
+    
+  }
+  if(fout.redirect) {
+#ifdef debug
+    printf("redir:8:c(%s) fout.name(%s)\n",c,fout.name);
+#endif
+    if((fout.fp = fopen(fout.name,fout.opt)) == NULL) {
+      fprintf(stderr,"Unable to redirect output to file %s.\n",fout.name);
+      fout.redirect=0;
+      return 0;
+    }
+    
+    dup2(fileno(fout.fp),fileno(stdout));
+  }
+  
+  if(fin.redirect) {
 #ifdef debug
 printf("redir:9:c(%s) fin.name(%s)\n",c,fin.name);
 #endif
-		if((fin.fp = fopen(fin.name,fin.opt)) == NULL) {
-			fprintf(stderr,"Unable to redirect input from file %s.\n",fin.name);
+    if((fin.fp = fopen(fin.name,fin.opt)) == NULL) {
+      fprintf(stderr,"Unable to redirect input from file %s.\n",fin.name);
 			fin.redirect=0;
-			return 0;
-		}
-		
-		dup2(fileno(fin.fp),fileno(stdin));
-	}
-	
-	return 1;
+      return 0;
+    }
+    
+    dup2(fileno(fin.fp),fileno(stdin));
+  }
+  
+  return 1;
 }
 
 /**************************************************************************/
 
 BYTE getcur(BYTE *p)
 {
-    BYTE d,t;
-
-    asm MOV ax,1900h
+  BYTE d,t;
+  
+  asm MOV ax,1900h
     asm INT 21h
     asm MOV d,al
-
+    
     t = getcurdir(0,p);
-
-    if (t!=0) {
+  
+  if (t!=0) {
         fprintf(stderr,"Error %d while reading dir\n",t);
-        return 0xff;
-    }
-
-    return d;
+    return 0xff;
+  }
+  
+  return d;
 }
 
 /****************************************************************************/
@@ -818,561 +819,561 @@ BYTE getcur(BYTE *p)
 void printprompt(void)
 {
     WORD yr;
-    BYTE dow,mo,day,i,k,h,mi,s,ms,j;
-	  BYTE ename[80],eval[80];
-
-    prompt = malloc(200);
-
-    if((prompt = getevar("PROMPT",prompt)) != NULL)
-	  k = strlen(prompt);
+  BYTE dow,mo,day,i,k,h,mi,s,ms,j;
+  BYTE ename[80],eval[80];
+  
+  prompt = malloc(200);
+  
+  if((prompt = getevar("PROMPT",prompt)) != NULL)
+    k = strlen(prompt);
     else 
-        k = 0;
-       
+    k = 0;
+  
 #ifdef debug
-		printf("prompt= (%s)\n",prompt);
+  printf("prompt= (%s)\n",prompt);
 #endif
 
-/*  0x01 = path
-    0x02 = date
+  /*  0x01 = path
+   0x02 = date
     0x03 = time
-*/
-
-    for(i=0;i<k;i++) {
-        if(prompt[i]=='$') {
-            switch(prompt[++i]) {
-                case '$' :
-                    putchar('$');
-                    break;
-                case  '_':
-                case  'S':
+   */
+  
+  for(i=0;i<k;i++) {
+    if(prompt[i]=='$') {
+      switch(prompt[++i]) {
+      case '$' :
+	putchar('$');
+	break;
+      case  '_':
+      case  'S':
                     putchar(' ');
-                    break;
-                case  'b':
-                case  'B':
-                    putchar('|');
-                    break;
-                case  'e':
-                case  'E':
-                    putchar('\x1b');
-                    break;
-                case  'h':
-                case  'H':
-                    putchar('\b');
-                    break;
-                case  'l':
-                case  'L':
-                    putchar('<');
-                    break;
-                case  'g':
-                case  'G':
-                    putchar('>');
-                    break;
-                case  'n':
-                    putchar('\n');
-                    break;
-                case  'r':
-                    putchar('\r');
-                    break;
-                case  't':
-                    putchar('\t');
-                    break;
-                case  'p':
-                case  'P':
-                    D = getcur(P) + 'A';
-                    printf("%c:\\%s",D,P);
-                    break;
-                case  'd':
-                case  'D':
-
-                    asm MOV ah,2ah
-                    asm INT 21h
-                    asm MOV dow,AL  /*day of week*/
-                    asm MOV yr,CX     /*year*/
-                    asm MOV mo,DH     /*month*/
-                    asm MOV day,DL     /*day*/
-
-                    switch(dow) {
-                        case 0 :
-                            printf("Sun ");
-                            break;
-                        case 1 :
-                            printf("Mon ");
-                            break;
-                        case 2 :
-                            printf("Tue ");
-                            break;
-                        case 3 :
-                            printf("Wed ");
-                            break;
-                        case 4 :
-                            printf("Thu ");
-                            break;
-                        case 5 :
-                            printf("Fri ");
-                            break;
-                        case 6 :
-                            printf("Sat ");
-                            break;
-                        default :
-                            printf("    ");
-                    }
-                    printf("%04u-%02u-%02u",yr,mo,day);
-                    break;
-                case  'c':
-                case  'T':
-
-                  asm MOV ah,2ch
-                  asm INT 21h
-                  asm MOV h,ch     /*hours*/
-                  asm MOV mi,cl     /*minutes*/
-                  asm MOV s,dh     /*seconds*/
-                  asm MOV ms,dl     /*milliseconds or hundreds*/
-
-                  printf("%d.%02d.%02d,%02d",h,mi,s,ms);
-                  break;
-              default :
-                ;
-            }
-        }
-        else if(prompt[i] == '%') {
-					if(prompt[++i]  == '%')
-						putchar('%');
-					else if(isdigit(prompt[++i])) {
-						printf("%s",varg[prompt[i++] -'0']);
-					}
-					else {
-						for(j=0;isalnum(prompt[i]) && (i<k);j++,i++) {
-							ename[j] = prompt[i];
-						}
-						ename[j]= '\0';
-						getevar(ename,eval); /* replace $varname with value*/
-						printf("%s",eval);
-					}
-					i--;
-			  }
-			  else
-            putchar(prompt[i]);
+	break;
+      case  'b':
+      case  'B':
+	putchar('|');
+	break;
+      case  'e':
+      case  'E':
+	putchar('\x1b');
+	break;
+      case  'h':
+      case  'H':
+	putchar('\b');
+	break;
+      case  'l':
+      case  'L':
+	putchar('<');
+	break;
+      case  'g':
+      case  'G':
+	putchar('>');
+	break;
+      case  'n':
+	putchar('\n');
+	break;
+      case  'r':
+	putchar('\r');
+	break;
+      case  't':
+	putchar('\t');
+	break;
+      case  'p':
+      case  'P':
+	D = getcur(P) + 'A';
+	printf("%c:\\%s",D,P);
+	break;
+      case  'd':
+      case  'D':
+	
+	asm MOV ah,2ah
+	  asm INT 21h
+	  asm MOV dow,AL  /*day of week*/
+	  asm MOV yr,CX     /*year*/
+	  asm MOV mo,DH     /*month*/
+	  asm MOV day,DL     /*day*/
+	  
+	  switch(dow) {
+	  case 0 :
+	    printf("Sun ");
+	    break;
+	  case 1 :
+	    printf("Mon ");
+	    break;
+	  case 2 :
+	    printf("Tue ");
+	    break;
+	  case 3 :
+	    printf("Wed ");
+	    break;
+	  case 4 :
+	    printf("Thu ");
+	    break;
+	  case 5 :
+	    printf("Fri ");
+	    break;
+	  case 6 :
+	    printf("Sat ");
+	    break;
+	  default :
+	    printf("    ");
+	  }
+	printf("%04u-%02u-%02u",yr,mo,day);
+	break;
+      case  'c':
+      case  'T':
+	
+	asm MOV ah,2ch
+	  asm INT 21h
+	  asm MOV h,ch     /*hours*/
+	  asm MOV mi,cl     /*minutes*/
+	  asm MOV s,dh     /*seconds*/
+	  asm MOV ms,dl     /*milliseconds or hundreds*/
+	  
+	  printf("%d.%02d.%02d,%02d",h,mi,s,ms);
+	break;
+      default :
+	;
+      }
     }
+    else if(prompt[i] == '%') {
+      if(prompt[++i]  == '%')
+	putchar('%');
+      else if(isdigit(prompt[++i])) {
+	printf("%s",varg[prompt[i++] -'0']);
+      }
+      else {
+	for(j=0;isalnum(prompt[i]) && (i<k);j++,i++) {
+	  ename[j] = prompt[i];
+	}
+	ename[j]= '\0';
+	getevar(ename,eval); /* replace $varname with value*/
+	printf("%s",eval);
+      }
+      i--;
+    }
+    else
+      putchar(prompt[i]);
+  }
     free(prompt);
-    return;
+  return;
 }
 
 
 
 /**************************************
-***************************************
-**                                   **
-** int main(int nargs, char *argv[]) **
-**                                   **
-***************************************
-*****************************************************************************/
+ ***************************************
+ **                                   **
+ ** int main(int nargs, char *argv[]) **
+ **                                   **
+ ***************************************
+ *****************************************************************************/
 
 
 
 int main(int nargs, char *argv[])
 {
-    BYTE i,na,ch;
-
-    na = initialize(nargs, argv);
-
-    if((_osmajor < 3) && (_osminor < 30)) {
+  BYTE i,na,ch;
+  
+  na = initialize(nargs, argv);
+  
+  if((_osmajor < 3) && (_osminor < 30)) {
         printf("Sorry your DOS is too lame.\nGet at least version 3.30\n");
-        exit(1);
-    }
-
-	/* make int D0 point to D0GFunc */
-	
+    exit(1);
+  }
+  
+  /* make int D0 point to D0GFunc */
+  
 	/* save */
-  	asm MOV ax,35d0h
-		asm MOV id0_o,bx
+  asm MOV ax,35d0h
+    asm MOV id0_o,bx
 		asm MOV id0_s,es
-		asm INT 21h
-		/* set */
-		asm MOV ax,25d0h
-		asm MOV dx,offset D0GFunc
-		asm push cs
-		asm pop es
-		asm INT 21h
-
+    asm INT 21h
+    /* set */
+    asm MOV ax,25d0h
+    asm MOV dx,offset D0GFunc
+    asm push cs
+    asm pop es
+    asm INT 21h
+    
     if (eh == 0) {
-        printf("DOG - Dog Operating Ground Version %u.%u.%02x\n",DOG_ma,DOG_mi,DOG_re);
-        printf("      Copyright (C) Wolf Bergenheim 1997-2000\n\n");
+      printf("DOG - Dog Operating Ground Version %u.%u.%02x\n",DOG_ma,DOG_mi,DOG_re);
+      printf("      Copyright (C) Wolf Bergenheim 1997-2000\n\n");
         printf("Type HH for Help\n\n");
     }
-
-/*******************************.D.O.G. .L.O.O.P****************************/
-                                                                         /**/
-    for(EVER) {                                                          /**/
-                                                                         /**/
-        asm DOG_loop:                                                    /**/
-                                                                         /**/
-                                                                         /**/
-        if(fout.redirect) {                                              /**/
-#ifdef debug                                                             /**/
-fprintf(stderr,"main:0:closing handle %x\n",fileno(fout.fp));            /**/
-#endif                                                                   /**/
-            dup2(OUT,fileno(stdout));                                    /**/
-            close(fileno(fout.fp));                                      /**/
-            fout.redirect = 0;                                           /**/
-        }                                                                /**/
-                                                                         /**/
-        if(fin.redirect) {                                               /**/
-#ifdef debug                                                             /**/
-fprintf(stderr,"main:0:closing handle %x\n",fileno(fin.fp));             /**/
-#endif                                                                   /**/
-            dup2(IN,fileno(stdin));                                      /**/
-            close(fileno(fin.fp));                                       /**/
-            fin.redirect = 0;                                            /**/
-        }                                                                /**/
-
-			if(pip.pstatus == 2) {
-				pip.pstatus = 1;
-				dup2(OUT,fileno(stdout));
-				close(pip.phandle);
-				pip.phandle = open(pip.pname,O_RDONLY);
-				if(pip.phandle > 0x70) {
-					perror("");
-					pip.pstatus = 0;
-					close(pip.phandle);
-					unlink(pip.pname); 
-					goto pipe_end;
-				}
-				if(dup2(pip.phandle,fileno(stdin)) != 0) {
-						printf("Error while reading from file %s.\n",pip.pname);
-					pip.pstatus = 0;
-					close(pip.phandle);
-					unlink(pip.pname); 
-				}
-				
-				pipe_end:
-				;
-			}
-
-			  for(i=0;i<MAXDIR;i++)                                            /**/
-            P[i] = 0;                                                    /**/
-        D = getcur(P) + 'A';                                             /**/
-                                                                         /**/
-        /* Check for cBreak                                               **/
-                                                                         /**/
-        if(cBreak == 1) {                                                /**/
-            if(bf->in) {                                                 /**/
-                do {                                                     /**/
-                    fprintf(stderr,"Abort DOG batch (Y/N)? ");           /**/
-                    ch = getchar();                                      /**/
-                    if((ch=='y') || (ch=='Y')) {                         /**/
-                        clearbat();                                      /**/
-                        cBreak = 0;                                      /**/
-                        break;                                           /**/
-                    }                                                    /**/
-                    else if((ch=='n') || (ch=='N')) {                    /**/
-                        cBreak = 0;                                      /**/
-                        break;                                           /**/
-                    }                                                    /**/
-                } while (1);                                             /**/
-                fprintf(stderr,"\n");                                    /**/
-                continue;                                                /**/
-            }                                                            /**/
-            else {                                                       /**/
-#ifdef debug                                                             /**/
-fprintf(stderr,"Ctrl Break found!\n");                                   /**/
-#endif                                                                   /**/
-                cBreak = 0;                                              /**/
-                continue;                                                /**/
-            }                                                            /**/
-        }                                                                /**/
-                                                                         /**/
-                                                                         /**/
-        if (eh == 0) {                                                   /**/
-                                                                         /**/
-#ifdef bat_debug                                                         /**/
-fprintf(stderr,"main:1:bf:%x  bf->in=%d\n",&(*bf),bf->nest);             /**/
-#endif                                                                   /**/
-            if (bf->in) {                                                /**/
-                do_bat();                                                /**/
-            }                                                            /**/
-            else if(pip.pstatus == 1) {
-							strcpy(com,pip.pcmd);
-							if(redir(com)==0) {
-								com[0] = 0;
-								arg[0] = com;
-							}
-							
-							na = parsecom(com,strlen(com));
-							do_command(na);
-							dup2(IN,fileno(stdin));                                    /**/
-							close(pip.phandle);
-							unlink(pip.pname); 
-							pip.pstatus = 0;
-
-						}
-					  else {                                                       /**/
-                printprompt();                                           /**/
-                na = getcom(com);                                        /**/
-#ifdef debug                                                             /**/
-    fprintf(stderr,"main:2.a:You said:/%s/\n",com);                      /**/
-    fprintf(stderr,"main:2.b:You said:/%s/\n",arg[0]);                   /**/
-    fprintf(stderr,"main:3:Arguments=%d\n",na);                          /**/
-    fprintf(stderr,"main:4:path=%c:\\%s\n",D,P);                         /**/
-    fprintf(stderr,"main:5:fout.redirect=%u\n",fout.redirect);           /**/
-    fprintf(stderr,"main:5:fout.name(%s)\n",fout.name);                  /**/
-    fprintf(stderr,"main:5:fin.redirect=%u\n",fin.redirect);             /**/
-    fprintf(stderr,"main:5:fin.name(%s)\n",fin.name);                    /**/
-    fprintf(stderr,"main:5:pip.pstatus=%u\n",pip.pstatus);               /**/
-    fprintf(stderr,"main:5:pip.pname(%s)\n",pip.pname);                  /**/
-#endif                                                                   /**/
-                do_command(na);                                          /**/
-                                                                         /**/
-            }                                                            /**/
-                                                                         /**/
-            /* printf("\n"); */                                          /**/
-                                                                         /**/
-        }                                                                /**/
-        else if(Xit==2) {                                                /**/
-            do_command(na);                                              /**/
-            Xit = 0;                                                     /**/
-            eh = 0;                                                      /**/
-        }                                                                /**/
-                                                                         /**/
-        else if(Xit==3) {                                                /**/
-            do_command(na);                                              /**/
-            Xit = 1;                                                     /**/
-        }                                                                /**/
-                                                                         /**/
-#ifdef debug                                                             /**/
-fprintf(stderr,"main:7:xit = %u\n",Xit);                                 /**/
-#endif                                                                   /**/
-                                                                         /**/
-			
-			for(i=0;i<na;i++) {                                                /**/
-				strcpy(varg[i],arg[i]);                                          /**/
+  
+  /*******************************.D.O.G. .L.O.O.P****************************/
+  
+  for(EVER) {                                                          
+    
+    asm DOG_loop:                                                    
+    
+    
+    if(fout.redirect) {                                              
+#ifdef debug                                                             
+      fprintf(stderr,"main:0:closing handle %x\n",fileno(fout.fp));            
+#endif                                                                   
+      dup2(OUT,fileno(stdout));                                    
+      close(fileno(fout.fp));                                      
+      fout.redirect = 0;                                           
+    }                                                                
+    
+    if(fin.redirect) {                                               
+#ifdef debug                                                             
+      fprintf(stderr,"main:0:closing handle %x\n",fileno(fin.fp));             
+#endif                                                                   
+      dup2(IN,fileno(stdin));                                      
+      close(fileno(fin.fp));                                       
+      fin.redirect = 0;                                            
+    }                                                                
+    
+    if(pip.pstatus == 2) {
+      pip.pstatus = 1;
+      dup2(OUT,fileno(stdout));
+      close(pip.phandle);
+      pip.phandle = open(pip.pname,O_RDONLY);
+      if(pip.phandle > 0x70) {
+	perror("");
+	pip.pstatus = 0;
+	close(pip.phandle);
+	unlink(pip.pname); 
+	goto pipe_end;
+      }
+      if(dup2(pip.phandle,fileno(stdin)) != 0) {
+	printf("Error while reading from file %s.\n",pip.pname);
+	pip.pstatus = 0;
+	close(pip.phandle);
+	unlink(pip.pname); 
+      }
+      
+      pipe_end:
+      ;
+    }
+    
+    for(i=0;i<MAXDIR;i++)                                            
+      P[i] = 0;                                                    
+    D = getcur(P) + 'A';                                             
+    
+    /* Check for cBreak                                               **/
+    
+    if(cBreak == 1) {                                                
+      if(bf->in) {                                                 
+	do {                                                     
+	  fprintf(stderr,"Abort DOG batch (Y/N)? ");           
+	  ch = getchar();                                      
+	  if((ch=='y') || (ch=='Y')) {                         
+	    clearbat();                                      
+	    cBreak = 0;                                      
+	    break;                                           
+	  }                                                    
+	  else if((ch=='n') || (ch=='N')) {                    
+	    cBreak = 0;                                      
+	    break;                                           
+	  }                                                    
+	} while (1);                                             
+	fprintf(stderr,"\n");                                    
+	continue;                                                
+      }                                                            
+      else {                                                       
+#ifdef debug                                                             
+	fprintf(stderr,"Ctrl Break found!\n");
+#endif                                                                   
+	cBreak = 0;                                              
+	continue;                                                
+      }                                                            
+    }                                                                
+    
+    
+    if (eh == 0) {                                                   
+      
+#ifdef bat_debug                                                         
+      fprintf(stderr,"main:1:bf:%x  bf->in=%d\n",&(*bf),bf->nest);             
+#endif                                                                   
+      if (bf->in) {                                                
+                do_bat();                                                
+      }                                                            
+      else if(pip.pstatus == 1) {
+	strcpy(com,pip.pcmd);
+	if(redir(com)==0) {
+	  com[0] = 0;
+	  arg[0] = com;
+	}
+	
+	na = parsecom(com,strlen(com));
+	do_command(na);
+	dup2(IN,fileno(stdin));                                    
+	close(pip.phandle);
+	unlink(pip.pname); 
+	pip.pstatus = 0;
+	
+      }
+      else {                                                       
+                printprompt();                                           
+                na = getcom(com);                                        
+#ifdef debug                                                             
+	fprintf(stderr,"main:2.a:You said:/%s/\n",com);                      
+	fprintf(stderr,"main:2.b:You said:/%s/\n",arg[0]);                   
+	fprintf(stderr,"main:3:Arguments=%d\n",na);                          
+	fprintf(stderr,"main:4:path=%c:\\%s\n",D,P);                         
+	fprintf(stderr,"main:5:fout.redirect=%u\n",fout.redirect);           
+	fprintf(stderr,"main:5:fout.name(%s)\n",fout.name);                  
+	fprintf(stderr,"main:5:fin.redirect=%u\n",fin.redirect);             
+	fprintf(stderr,"main:5:fin.name(%s)\n",fin.name);                    
+	fprintf(stderr,"main:5:pip.pstatus=%u\n",pip.pstatus);               
+	fprintf(stderr,"main:5:pip.pname(%s)\n",pip.pname);                  
+#endif                                                                   
+	do_command(na);                                          
+                                                                         
+      }                                                            
+      
+      /* printf("\n"); */                                          
+      
+    }                                                                
+    else if(Xit==2) {                                                
+      do_command(na);                                              
+      Xit = 0;                                                     
+      eh = 0;                                                      
+    }                                                                
+                                                                         
+    else if(Xit==3) {                                                
+      do_command(na);                                              
+      Xit = 1;                                                     
+    }                                                                
+    
+#ifdef debug                                                             
+    fprintf(stderr,"main:7:xit = %u\n",Xit);                                 
+#endif                                                                   
+    
+    
+    for(i=0;i<na;i++) {                                                
+      strcpy(varg[i],arg[i]);                                          
 			} 
-			for(;i<_NARGS;i++) {
-				arg[i] = NULL;                                                   /**/
-				varg[i][0] = '\0';
-			}                                                                  /**/
+    for(;i<_NARGS;i++) {
+				arg[i] = NULL;                                                   
+      varg[i][0] = '\0';
+    }                                                                  
 			
-			if(Xit ==1 && Xitable==1) break;                                   /**/
-#ifdef debug                                                             /**/
-    fprintf(stderr,"Xit: %d\tXitable: %d\n",Xit,Xitable);                /**/
-#endif                                                                   /**/
-    }                                                                    /**/
-                                                                         /**/
-/*******************************.D.O.G. .L.O.O.P****************************/
+    if(Xit ==1 && Xitable==1) break;                                   
+#ifdef debug                                                             
+    fprintf(stderr,"Xit: %d\tXitable: %d\n",Xit,Xitable);                
+#endif                                                                   
+    }                                                                    
+  
+  /*******************************.D.O.G. .L.O.O.P****************************/
 
- /* restore */
-		asm MOV ax,25d0h
-		asm MOV dx,id0_s
-		asm PUSH dx
-		asm pop es
-		asm MOV dx,id0_o
-		asm INT 21h
-			
+  /* restore */
+  asm MOV ax,25d0h
+    asm MOV dx,id0_s
+    asm PUSH dx
+    asm pop es
+    asm MOV dx,id0_o
+    asm INT 21h
+    
     return 0;
-
+  
 }
 
 /*****************************
-******************************
-***       END OF main      ***
-******************************
-*****************************************************************************/
+ ******************************
+ ***       END OF main      ***
+ ******************************
+ *****************************************************************************/
 
 /*****************************************
-******************************************
-**                                      **
-**        void do_command( BYTE n)      **
-**                                      **
-******************************************
-****************************************************************************/
+ ******************************************
+ **                                      **
+ **        void do_command( BYTE n)      **
+ **                                      **
+ ******************************************
+ ****************************************************************************/
 
 
 void do_command( BYTE na)
 {
-	BYTE i;
-	
+  BYTE i;
+  
 #ifdef do_debug
-BYTE dbi;
+  BYTE dbi;
 #endif
-    if (na==0) return;
-    if (arg[0][0] == ':') return;
-	  if((strlen(arg[0])==2) || (arg[0][2]=='.') || (arg[0][2]=='\\')) {
-
-        for(i=0;i<_NCOMS;i++) {
-#ifdef do_debug
-fprintf(stderr,"do_command:1: searching command(%d)=%s\n",i,commands[i]);
-fprintf(stderr,"do_command:2: line is: /");
-for(dbi=0;dbi<na;dbi++) {
-    fprintf(stderr,"%s/",arg[dbi]);
-}
-fprintf(stderr,"\n");
-#endif
-            if(strnicmp(arg[0],commands[i],2) == 0) {
-                break;
-            }
-        }
-#ifdef do_debug
-   fprintf(stderr,"\n");
-#endif
-        switch(i) {
+  if (na==0) return;
+  if (arg[0][0] == ':') return;
+  if((strlen(arg[0])==2) || (arg[0][2]=='.') || (arg[0][2]=='\\')) {
     
+    for(i=0;i<_NCOMS;i++) {
+#ifdef do_debug
+      fprintf(stderr,"do_command:1: searching command(%d)=%s\n",i,commands[i]);
+      fprintf(stderr,"do_command:2: line is: /");
+      for(dbi=0;dbi<na;dbi++) {
+	fprintf(stderr,"%s/",arg[dbi]);
+      }
+      fprintf(stderr,"\n");
+#endif
+      if(strnicmp(arg[0],commands[i],2) == 0) {
+	break;
+      }
+    }
+#ifdef do_debug
+    fprintf(stderr,"\n");
+#endif
+    switch(i) {
+      
         case C_BP :
+      /* This is for compatibility only. */
+      do_exe(na);
+      D = getcur(P) +'A';
+      return;
+      
+    case C_BR :
+      /* This is for compatibility only. */
+      do_exe(na);
+      D = getcur(P) +'A';
+      return;
+      
+    case C_CC :
+      
+      break;
+      
+    case C_CD :
+      do_cd(na);
+      break;
+      
+    case C_CL :
+      /* This is for compatibility only. */
+      do_exe(na);
+      D = getcur(P) +'A';
+      return;
+      
+    case C_CP :
 					 /* This is for compatibility only. */
-					 do_exe(na);
-					 D = getcur(P) +'A';
-					 return;
-        
-        case C_BR :
-					 /* This is for compatibility only. */
-					 do_exe(na);
-					 D = getcur(P) +'A';
-					 return;
-        
-        case C_CC :
-            
-            break;
-        
-        case C_CD :
-            do_cd(na);
-            break;
-        
-        case C_CL :
-					 /* This is for compatibility only. */
-					 do_exe(na);
-					 D = getcur(P) +'A';
-					 return;
-        
-        case C_CP :
-					 /* This is for compatibility only. */
-					 do_exe(na);
-					 D = getcur(P) +'A';
-					 return;
-        
-        case C_CT :
-            do_ct(na);
-            break;
-
-        case C_EH :
+      do_exe(na);
+      D = getcur(P) +'A';
+      return;
+      
+    case C_CT :
+      do_ct(na);
+      break;
+      
+    case C_EH :
             do_eh(na);
-            break;
-        
-        case C_HH :
-            do_hh(na);
-            break;
-        
-        case C_LS :
-					 /* This is for compatibility only. */
-					 do_exe(na);
-					 D = getcur(P) +'A';
-					 return;
-        
-        case C_MD :
-            do_mrd(na);
-            break;
-        
-        case C_MV :
-					 /* This is for compatibility only. */
-					 do_exe(na);
-					 D = getcur(P) +'A';
-					 return;
-        
-        case C_RD :
-            do_mrd(na);
-            break;
-        
-        case C_RM :
-					 /* This is for compatibility only. */
-					 do_exe(na);
-					 D = getcur(P) +'A';
-					 return;
-        
-        case C_SE :
-            do_se(na);
-            break;
-        
-        case C_SZ :
-					 /* This is for compatibility only. */
-					 do_exe(na);
-					 D = getcur(P) +'A';
-					 return;
-
-        case C_TP :
-					 /* This is for compatibility only. */
-					 do_exe(na);
-					 D = getcur(P) +'A';
-					 return;
-        
-        case C_VF :
-					 /* This is for compatibility only. */
-					 do_exe(na);
-					 D = getcur(P) +'A';
-					 return;
-        
-        case C_VR :
-					 /* This is for compatibility only. */
-					 do_exe(na);
-					 D = getcur(P) +'A';
-					 return;
-        
-        case C_XX :
-            if(Xitable==1)
-                do_xx();
-            break;
-        default :
-            if((arg[0][1]==':') && (arg[0][2] == '\0')) {
-                do_chdr(arg[0][0]);
-                return;
-            }
-            else if((strncmp(arg[0],"...",3) == 0) || (strcmp(arg[0],"..") == 0)) {
-							arg[1] = arg[0];
-							  arg[0] = commands[C_CD];
-                do_cd(2);
-                return;
-            }
-            else if((arg[0][0] =='*') || (arg[0][0]=='?'))
-                return;
-            else {
-                do_exe(na);
-                D = getcur(P) +'A';
-                return;
-            }
-
-             /*
-             printf("Bad command or filename.\n");
-             */
-        }
-        return;
+      break;
+      
+    case C_HH :
+      do_hh(na);
+      break;
+      
+    case C_LS :
+      /* This is for compatibility only. */
+      do_exe(na);
+      D = getcur(P) +'A';
+      return;
+      
+    case C_MD :
+      do_mrd(na);
+      break;
+      
+    case C_MV :
+      /* This is for compatibility only. */
+      do_exe(na);
+      D = getcur(P) +'A';
+      return;
+      
+    case C_RD :
+      do_mrd(na);
+      break;
+      
+    case C_RM :
+      /* This is for compatibility only. */
+      do_exe(na);
+      D = getcur(P) +'A';
+      return;
+      
+    case C_SE :
+      do_se(na);
+      break;
+      
+    case C_SZ :
+      /* This is for compatibility only. */
+      do_exe(na);
+      D = getcur(P) +'A';
+      return;
+      
+    case C_TP :
+      /* This is for compatibility only. */
+      do_exe(na);
+      D = getcur(P) +'A';
+      return;
+      
+    case C_VF :
+      /* This is for compatibility only. */
+      do_exe(na);
+      D = getcur(P) +'A';
+      return;
+      
+    case C_VR :
+      /* This is for compatibility only. */
+      do_exe(na);
+      D = getcur(P) +'A';
+      return;
+      
+    case C_XX :
+      if(Xitable==1)
+	do_xx();
+      break;
+    default :
+      if((arg[0][1]==':') && (arg[0][2] == '\0')) {
+	do_chdr(arg[0][0]);
+	return;
+      }
+      else if((strncmp(arg[0],"...",3) == 0) || (strcmp(arg[0],"..") == 0)) {
+	arg[1] = arg[0];
+	arg[0] = commands[C_CD];
+	do_cd(2);
+	return;
+      }
+      else if((arg[0][0] =='*') || (arg[0][0]=='?'))
+	return;
+      else {
+	do_exe(na);
+	D = getcur(P) +'A';
+	return;
+      }
+      
+      /*
+       printf("Bad command or filename.\n");
+       */
     }
+    return;
+  }
+  
+  else if ((strlen(arg[0])==0) || (strcmp(arg[0],".")==0) || (arg[0][0] =='*') || (arg[0][0]=='?')) {
+    printf("");
+    return;
+  }
+  else if(strcmp(arg[0],"\\")==0) {
+    arg[1] = arg[0];
+    arg[0] = commands[C_CD];
+    do_mrd(2);
+    return;
+  }
 
-    else if ((strlen(arg[0])==0) || (strcmp(arg[0],".")==0) || (arg[0][0] =='*') || (arg[0][0]=='?')) {
-        printf("");
-        return;
-    }
-    else if(strcmp(arg[0],"\\")==0) {
-        arg[1] = arg[0];
-        arg[0] = commands[C_CD];
-        do_mrd(2);
-        return;
-    }
-
-    else if (strlen(arg[0])!=2) {
-            do_exe(na);
-            D = getcur(P) +'A';
-            return;
-
-
-    }
+  else if (strlen(arg[0])!=2) {
+    do_exe(na);
+    D = getcur(P) +'A';
+    return;
+    
+    
+  }
 }
 
 /*************************************
-**************************************
-**                                  **
-**        INTERNAL COMMANDS         **
-**                                  **
-**************************************
+ **************************************
+ **                                  **
+ **        INTERNAL COMMANDS         **
+ **                                  **
+ **************************************
 *************************************/
 #ifndef port
-#include "cc.c"
-#include "cmrd.c"
+# include "cc.c"
+# include "cmrd.c"
 #include "ct.c"
 #include "eh.c"
 #include "hh.c"
@@ -1380,346 +1381,346 @@ fprintf(stderr,"\n");
 #include "xx.c"
 #endif
 /*************************************
-**************************************
-**                                  **
-**        void do_exe(BYTE n)       **
-**                                  **
-**************************************
-****************************************************************************/
+ **************************************
+ **                                  **
+ **        void do_exe(BYTE n)       **
+ **                                  **
+ **************************************
+ ****************************************************************************/
 
 
 void do_exe(BYTE n)
 {
-
-    BYTE d,i,ic,ie,id,*p,*q,*r,*cpath,envi[255],file[128],exec_f;
-    BYTE s[200], com[80],exe[80],dog[80],path[60],trunam[128],prog[120];
+  
+  BYTE d,i,ic,ie,id,*p,*q,*r,*cpath,envi[255],file[128],exec_f;
+  BYTE s[200], com[80],exe[80],dog[80],path[60],trunam[128],prog[120];
     struct ffblk *fb;
-
-    for (i=0;i<200;i++) {
+  
+  for (i=0;i<200;i++) {
         s[i] = '\0';
-    }
-    fb = malloc(sizeof(struct ffblk));
-
-    for (i=0;i<12;i++) {
-        com[i] = '\0';
-        exe[i] = '\0';
-        dog[i] = '\0';
-    }
-
-    /* Make s contain ALL of the args */
-    for (i=1;i<n;i++) {
-        strcat(s,arg[i]);
+  }
+  fb = malloc(sizeof(struct ffblk));
+  
+  for (i=0;i<12;i++) {
+    com[i] = '\0';
+    exe[i] = '\0';
+    dog[i] = '\0';
+  }
+  
+  /* Make s contain ALL of the args */
+  for (i=1;i<n;i++) {
+    strcat(s,arg[i]);
         strcat(s," ");
-    }
-
-    /*First try to exec arg[0]*/
-    strcpy(prog,arg[0]);
+  }
+  
+  /*First try to exec arg[0]*/
+  strcpy(prog,arg[0]);
 #ifdef exe_debug
-        printf("do_exe:1360:prog=%s\n",prog);
+  printf("do_exe:1360:prog=%s\n",prog);
 #endif
-    i = findfirst(prog,fb,0x37); /*attrib = 00100111 */
-    if (i == 0) {
+  i = findfirst(prog,fb,0x37); /*attrib = 00100111 */
+  if (i == 0) {
 #ifdef exe_debug
-        printf("do_exe:1363:prog=%s\n",prog);
-        printf("do_exe:1364:%s a directory\n",((fb->ff_attrib & FA_DIREC) == FA_DIREC)?"Is":"Isn't");
-        printf("do_exe:1365:ff_attrib = 0x%x\n",fb->ff_attrib);
+    printf("do_exe:1363:prog=%s\n",prog);
+    printf("do_exe:1364:%s a directory\n",((fb->ff_attrib & FA_DIREC) == FA_DIREC)?"Is":"Isn't");
+    printf("do_exe:1365:ff_attrib = 0x%x\n",fb->ff_attrib);
 #endif
         if((fb->ff_attrib & FA_DIREC) == FA_DIREC) {
-            arg[1] = prog;
-            arg[0] = commands[C_CD];
+	  arg[1] = prog;
+	  arg[0] = commands[C_CD];
             do_cd(2);
-            free(fb);
-            return;
+	  free(fb);
+	  return;
         }
-
-        if(strstr(fb->ff_name,".COM") == NULL) {
-            if (strstr(fb->ff_name,".EXE") == NULL) {
+    
+    if(strstr(fb->ff_name,".COM") == NULL) {
+      if (strstr(fb->ff_name,".EXE") == NULL) {
                 if (strstr(fb->ff_name,".DOG") == NULL) {
 #ifdef exe_debug
-printf("do_exe:1379:ff_name = %s\n",fb->ff_name);
+		  printf("do_exe:1379:ff_name = %s\n",fb->ff_name);
 #endif
 
-                    exec_f = NON;
+		  exec_f = NON;
                 }
-                else {
+	else {
                     exec_f = DOG;
-                    strcpy(dog,prog);
+	  strcpy(dog,prog);
 #ifdef exe_debug
 printf("do_exe:1388:ff_name = %s\n",fb->ff_name);
 #endif
                 }
-            }
-            else {
-                exec_f = EXE;
-                strcpy(exe,prog);
+      }
+      else {
+	exec_f = EXE;
+	strcpy(exe,prog);
 #ifdef exe_debug
-printf("do_exe:1396:ff_name = %s\n",fb->ff_name);
+	printf("do_exe:1396:ff_name = %s\n",fb->ff_name);
 #endif
-            }
-        }
-        else {
-            exec_f = COM;
-            strcpy(com,prog);
+      }
+    }
+    else {
+      exec_f = COM;
+      strcpy(com,prog);
 #ifdef exe_debug
-printf("do_exe:1404:ff_name = %s\n",fb->ff_name);
+      printf("do_exe:1404:ff_name = %s\n",fb->ff_name);
 #endif
         }
-
-    }
-
-    if(prog[1] == ':') {
-        strcpy(file,prog);
-        goto do_exe_enp;
-    }
-    if(prog[0] == '\\') {
-        strcpy(file,prog);
-        goto do_exe_enp;
-    }
-
-    getevar("PATH",envi);
-    p = malloc(255);
-    strcpy(p,".;");
-    strcat(p,envi);
-    strcpy(envi,p);
+    
+  }
+  
+  if(prog[1] == ':') {
+    strcpy(file,prog);
+    goto do_exe_enp;
+  }
+  if(prog[0] == '\\') {
+    strcpy(file,prog);
+    goto do_exe_enp;
+  }
+  
+  getevar("PATH",envi);
+  p = malloc(255);
+  strcpy(p,".;");
+  strcat(p,envi);
+  strcpy(envi,p);
     free(p);
 #ifdef exe_debug
-    printf("do_exe:PATH=%s\n",envi);
+  printf("do_exe:PATH=%s\n",envi);
 #endif     
-    for(cpath=strtok(envi,";");;cpath=strtok(NULL,";")) {
-        if(cpath == NULL) break;
+  for(cpath=strtok(envi,";");;cpath=strtok(NULL,";")) {
+    if(cpath == NULL) break;
 #ifdef exe_debug
         printf("do_exe:dir=%s\n",cpath);
 #endif
-        strcpy(file,cpath);
-        if(file[strlen(file)-1] != '\\')
-            strcat(file,"\\");
-        strcat(file,arg[0]);
-        do_exe_enp:
+    strcpy(file,cpath);
+    if(file[strlen(file)-1] != '\\')
+      strcat(file,"\\");
+    strcat(file,arg[0]);
+    do_exe_enp:
         strcpy(com,file);
-        strcpy(exe,file);
-        strcpy(dog,file);
-        strcat(com,".COM");
+    strcpy(exe,file);
+    strcpy(dog,file);
+    strcat(com,".COM");
         strcat(exe,".EXE");
-        strcat(dog,".DOG");
+    strcat(dog,".DOG");
 #ifdef exe_debug
-        printf("do_exe:file=%s\n",file);
-        printf("do_exe:com=%s\n",com);
+    printf("do_exe:file=%s\n",file);
+    printf("do_exe:com=%s\n",com);
         printf("do_exe:exe=%s\n",exe);
-        printf("do_exe:dog=%s\n",dog);
+    printf("do_exe:dog=%s\n",dog);
 #endif
-        if(findfirst(com,fb,0x27) == 0) {
+    if(findfirst(com,fb,0x27) == 0) {
 #ifdef exe_debug
-        printf("\ndo_exe:c:file=%s\n",fb->ff_name);
+      printf("\ndo_exe:c:file=%s\n",fb->ff_name);
 #endif
             exec_f = COM;
-            break;
-        }
+      break;
+    }
         else if (findfirst(exe,fb,0x27) == 0) {
 #ifdef exe_debug
-        printf("\ndo_exe:e:file=%s\n",fb->ff_name);
+	  printf("\ndo_exe:e:file=%s\n",fb->ff_name);
 #endif
-            exec_f = EXE;
-            break;
+	  exec_f = EXE;
+	  break;
         }
-        else if (findfirst(dog,fb,0x27) == 0) {
+    else if (findfirst(dog,fb,0x27) == 0) {
 #ifdef exe_debug
-        printf("\ndo_exe:d:file=%s\n",fb->ff_name);
+      printf("\ndo_exe:d:file=%s\n",fb->ff_name);
 #endif
-            exec_f = DOG;
-            break;
-        }
-        else if(findfirst(file,fb,0x27) == 0) {
+      exec_f = DOG;
+      break;
+    }
+    else if(findfirst(file,fb,0x27) == 0) {
 #ifdef exe_debug
-        printf("\ndo_exe:.:file=%s\n",fb->ff_name);
+      printf("\ndo_exe:.:file=%s\n",fb->ff_name);
 #endif
-            if(strstr(fb->ff_name,".COM") == NULL) {
-                if (strstr(fb->ff_name,".EXE") == NULL) {
-                    if (strstr(fb->ff_name,".DOG") == NULL) {
-                        exec_f = NON;
-                    }
-                    else {
+      if(strstr(fb->ff_name,".COM") == NULL) {
+	if (strstr(fb->ff_name,".EXE") == NULL) {
+	  if (strstr(fb->ff_name,".DOG") == NULL) {
+	    exec_f = NON;
+	  }
+	  else {
                         strcpy(dog,file);
-                        exec_f = DOG;
-                    }
-                }
-                else {
-                    strcpy(exe,file);
-                    exec_f = EXE;
-                }
-            }
-            else {
+	    exec_f = DOG;
+	  }
+	}
+	else {
+	  strcpy(exe,file);
+	  exec_f = EXE;
+	}
+      }
+      else {
                 strcpy(com,file);
-                exec_f = COM;
-            }
-            break;
+	exec_f = COM;
+      }
+      break;
         }
-        
+    
         else {
-            exec_f = NON;
+	  exec_f = NON;
         }
 
 #ifdef exe_debug
         printf("do_exe:exec_f = %u\n",exec_f);
 #endif
-
+    
     }
-
+  
     exec_now:
-
+  
 #ifdef exe_debug
-        printf("do_exe::exec_f = %u\n",exec_f);
-        printf("do_exe:file=%s\n",file);
-        printf("do_exe:com=%s\n",com);
-        printf("do_exe:exe=%s\n",exe);
-        printf("do_exe:dog=%s\n",dog);
+  printf("do_exe::exec_f = %u\n",exec_f);
+  printf("do_exe:file=%s\n",file);
+  printf("do_exe:com=%s\n",com);
+  printf("do_exe:exe=%s\n",exe);
+  printf("do_exe:dog=%s\n",dog);
 #endif
-        
-    switch(exec_f) {
-        case NON:
-            printf("%s: Bad command or Filename\n",arg[0]);
-            free(fb);
-            return;
-        case COM:
+  
+  switch(exec_f) {
+  case NON:
+    printf("%s: Bad command or Filename\n",arg[0]);
+    free(fb);
+    return;
+  case COM:
 #ifdef exe_debug
-printf("do_exe:found %s in %s\n",fb->ff_name,cpath);
+    printf("do_exe:found %s in %s\n",fb->ff_name,cpath);
 #endif
-            errorlevel=my_exe(trueName(com,trunam),s);
-            break;
-        case EXE:
+    errorlevel=my_exe(trueName(com,trunam),s);
+    break;
+  case EXE:
 #ifdef exe_debug
 printf("do_exe:found %s in %s -> %s\n",fb->ff_name,cpath,exe);
 #endif
-            errorlevel=my_exe(trueName(exe,trunam),s);
-            break;
-        case DOG:
+    errorlevel=my_exe(trueName(exe,trunam),s);
+    break;
+  case DOG:
 #ifdef exe_debug
-printf("do_exe:found %s in %s\n",fb->ff_name,cpath);
+    printf("do_exe:found %s in %s\n",fb->ff_name,cpath);
 #endif
-            bf->na = n;
-            bf->line = 0;
-			      memcpy(bf->cline,comline,200);
-            for(i=0;i<_NARGS;i++) {
-							if(arg[i] != 0) {
-								bf->args[i] = (bf->cline) + (arg[i] - comline);
+    bf->na = n;
+    bf->line = 0;
+    memcpy(bf->cline,comline,200);
+    for(i=0;i<_NARGS;i++) {
+      if(arg[i] != 0) {
+	bf->args[i] = (bf->cline) + (arg[i] - comline);
 #ifdef bat_debug
-printf("do_exe::bf->args[%u](%x) =  (bf->cline(%x)) + (arg[%u](%x) - comline(%x))\n",i,bf->args[i],bf->cline,i,arg[i], comline);
+	printf("do_exe::bf->args[%u](%x) =  (bf->cline(%x)) + (arg[%u](%x) - comline(%x))\n",i,bf->args[i],bf->cline,i,arg[i], comline);
 #endif
-							}
-            }
-            d = getcur(path) + 'A';
-            sprintf(bf->name,"%c:\\%s\\%s",d,path,dog);
-            bf->in = 1;
-            do_bat();
-            free(fb);
-            return;
+      }
     }
-
-    switch(errorlevel >> 8) {
-        case 0:
-            if((errorlevel & 0xFF) == 0)
-				        ;
-            else
-                printf("Program %s returned %d.\n",trunam,errorlevel & 0xFF);
-
-            break;
-        case 1:
-            printf("%s aborted by Ctrl-C.\n",trunam);
-            break;
-        case 2:
-            printf("%s: critical error abort.\n",trunam);
-            return;
-        case 3:
-            printf("TSR %s loaded in to memory.\n",trunam);
-            return;
-        case 77:
-            switch(errorlevel & 0xFF) {
-                case 0x1:
-                    puts("Function number invalid.");
-                    break;
-                case 0x2:
-                    puts("File not found.");
-                    break;
-                case 0x5:
-                    puts("Access denied.");
-                    break;
-                case 0x8:
-                    puts("Insufficient memory.");
-                    break;
-                case 0xA:
-                    puts("Invalid environment.");
-                    break;
-                case 0xB:
-                    puts("Invalid format.");
-                    break;
-                default :
-                    break;
-            }
-            break;
-        default:
-            break;
-    }
-
+    d = getcur(path) + 'A';
+    sprintf(bf->name,"%c:\\%s\\%s",d,path,dog);
+    bf->in = 1;
+    do_bat();
     free(fb);
     return;
-
+  }
+  
+  switch(errorlevel >> 8) {
+  case 0:
+    if((errorlevel & 0xFF) == 0)
+      ;
+    else
+      printf("Program %s returned %d.\n",trunam,errorlevel & 0xFF);
+    
+    break;
+  case 1:
+            printf("%s aborted by Ctrl-C.\n",trunam);
+    break;
+  case 2:
+    printf("%s: critical error abort.\n",trunam);
+    return;
+  case 3:
+    printf("TSR %s loaded in to memory.\n",trunam);
+    return;
+  case 77:
+    switch(errorlevel & 0xFF) {
+    case 0x1:
+      puts("Function number invalid.");
+      break;
+    case 0x2:
+      puts("File not found.");
+      break;
+    case 0x5:
+      puts("Access denied.");
+      break;
+    case 0x8:
+      puts("Insufficient memory.");
+      break;
+    case 0xA:
+      puts("Invalid environment.");
+      break;
+    case 0xB:
+      puts("Invalid format.");
+      break;
+    default :
+      break;
+    }
+    break;
+  default:
+    break;
+  }
+  
+  free(fb);
+  return;
+  
 }
 
 /***************************************************************************/
 
 BYTE *trueName(BYTE *name,BYTE *tn)
 {
-  	asm push ds
-	 	asm pop es
-		asm mov si,name
-		asm mov di,tn
-		asm mov ah,60h
-		asm int 21h
-		asm jnc tn_ok
+  asm push ds
+    asm pop es
+    asm mov si,name
+    asm mov di,tn
+    asm mov ah,60h
+    asm int 21h
+    asm jnc tn_ok
     
     return NULL;
-    tn_ok:
-    return tn;
-
+  tn_ok:
+  return tn;
+  
 }
 
 /***************************************************************************/
 
 WORD my_exe(BYTE *prog, BYTE *args){
 
-
-    BYTE buf[128];
-    WORD rc;
-    WORD saveSS, saveSP;
-    struct fcb fcb1, fcb2;
-    struct ExecBlock execBlock, *eb;
-
-    eb = &execBlock;
-
-/* generate Pascal string from the command line */
-    memcpy(&buf[1], args, buf[0] = strlen(args));
-    memcpy(&buf[1] + buf[0], "\xd", 2);
-
-/* fill execute structure */
+  
+  BYTE buf[128];
+  WORD rc;
+  WORD saveSS, saveSP;
+  struct fcb fcb1, fcb2;
+  struct ExecBlock execBlock, *eb;
+  
+  eb = &execBlock;
+  
+  /* generate Pascal string from the command line */
+  memcpy(&buf[1], args, buf[0] = strlen(args));
+  memcpy(&buf[1] + buf[0], "\xd", 2);
+  
+  /* fill execute structure */
     execBlock.env = 0;
-    execBlock.line = (char far *)buf;
-    execBlock.fcb1 = (struct fcb far *)&fcb1;
-    execBlock.fcb2 = (struct fcb far *)&fcb2;
+  execBlock.line = (char far *)buf;
+  execBlock.fcb1 = (struct fcb far *)&fcb1;
+  execBlock.fcb2 = (struct fcb far *)&fcb2;
 
-/* fill FCBs */
-    if ((args = parsfnm(args, &fcb1, 1)) != NULL)
-          parsfnm(args, &fcb2, 1);
-
-    
-    asm push    si
+  /* fill FCBs */
+  if ((args = parsfnm(args, &fcb1, 1)) != NULL)
+    parsfnm(args, &fcb2, 1);
+  
+  
+  asm push    si
     asm push    di
     asm push    ds
-
+    
     asm MOV     dx, prog              /* load file name */
     asm push    ds
     asm pop     es
     asm MOV     bx, eb                /* load parameter block */
     asm MOV     ax, 4b00h
-
+    
     asm MOV     Word Ptr cs:[saveSP], sp
     asm MOV     Word Ptr cs:[saveSS], ss
     asm INT     21h
@@ -1727,7 +1728,7 @@ WORD my_exe(BYTE *prog, BYTE *args){
     asm MOV     ss, Word Ptr cs:[saveSS]
     asm MOV     sp, Word Ptr cs:[saveSP]
     asm sti
-
+    
     asm jc      exec_error  /*if there was an error, the error code is in AX*/
     asm xor     ax, ax      /*otherwise, clear AX */
     asm MOV     ah,4dh
@@ -1736,15 +1737,15 @@ WORD my_exe(BYTE *prog, BYTE *args){
     
     exec_error:
     
-    asm MOV        ah,77h
-
-    exec_OK:
+  asm MOV        ah,77h
     
-    asm MOV     rc,ax
+    exec_OK:
+  
+  asm MOV     rc,ax
     asm pop     ds
     asm pop     di
     asm pop     si
-
+    
     return rc;
 }
 
@@ -1754,23 +1755,23 @@ WORD my_exe(BYTE *prog, BYTE *args){
 
 void do_chdr(BYTE dr)
 {
-    BYTE d;
+  BYTE d;
+  
 
-
-
-    d = toupper(dr) - 'A';
-
-
-    asm MOV ah,0eh
+  
+  d = toupper(dr) - 'A';
+  
+  
+  asm MOV ah,0eh
     asm MOV dl,d
     asm INT 21h
     asm MOV ah,19h
     asm INT 21h
     asm CMP al,dl
     asm JE  chdr_yes
-
+    
     puts("Invalid Drive");
-    chdr_yes:
-    return;
+  chdr_yes:
+  return;
 }
 

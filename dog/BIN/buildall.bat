@@ -34,7 +34,7 @@ cd SRC
 echo changing directory to
 cd
 echo compiling DOG
-call ..\BIN\CC DOG
+call ..\BIN\CC DOG.C
 call ..\BIN\CLEAN DOG
 cd EXT
 echo changing directory to
