@@ -23,7 +23,8 @@ rem echo on
 if (%CC%) == () goto define
 goto start
 :define
-set CC=D:\BORLANDC\BIN\BCC
+rem 
+set CC=C:\BORLANDC\BIN\BCC
 set SET=1
 :start
 if (%1)==() goto use
@@ -31,7 +32,8 @@ if (%1)==() goto use
 goto end
 :use
 echo Usage: %0 PROGRAM.C
-echo compiles programs to tiny (.COM) mode, and optimizes for smallest size
+echo Compiles programs to tiny (.COM) mode, and optimizes for smallest size.
+echo set CC to point to your copy of BCC i.e. SET CC=C:\BORLANDC\BIN\BCC
 goto end
 :clean
 set CC=
