@@ -202,7 +202,7 @@ void do_ls(void)
 	 printf("    size   ASRHD   dd.mm.yyyy   hh:mm.ss   name\n\n");
 		
 	 for(j=0;j < ls_f.npatt;j++) {
-		
+
 #ifdef ls_debug
 		fprintf(stderr,"do_ls:3: ls_f.patt[%u]=%s offset=%x ls_f.patt[%d][last] =  %c\n",j,ls_f.patt[0],ls_f.patt[0],j,ls_f.patt[j][strlen(ls_f.patt[j])-1]);
 #endif
