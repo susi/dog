@@ -1,6 +1,6 @@
 /*
 
-RM.C - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
+RM.C - DOG - Alternate command processor for freeDOS
 
 Copyright (C) 1999,2000 Wolf Bergenheim
 
