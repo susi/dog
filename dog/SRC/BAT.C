@@ -19,7 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 History
 
 06.05.99 - BAT.C is a now also ported.
-
+2002-02-25 - Added support for comments in dog-files. The comment character
+             is # - WB
 */
 #define _BAT_COMS 8
 
@@ -296,7 +297,7 @@ printf("do_batc:2:batch[%d]=(%s)\n",i,batch[i]);
                 break;
 
         }
-        if(arg[0][0] == ':')
+        if((arg[0][0] == ':') || (arg[0][0] == '#'))
         	return;
         else {
         	do_command(n);
