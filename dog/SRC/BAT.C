@@ -404,7 +404,7 @@ void do_sh(BYTE n)
 
 /****************************************************************************/
 
-#if 0
+
 /* if foo == bar action*/
 void do_if(BYTE n)
 {
@@ -442,4 +442,4 @@ void do_if(BYTE n)
   return; 
 }
 
-#endif
+

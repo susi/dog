@@ -133,14 +133,22 @@ History
 01.08.00 - rewrote (allmost completely) do_exe to handle the PATH variable. -WB
 15.08.00 - Moved BP (Beep) to a normal command out of bat.c - WB
 2001-07-17 - Changed the version to be of format X.Y.Z - WB
-2001-07-18 - Added variable subtitution to the commandline. $name is replaced with the value of the env.var name. 
+2001-07-18 - Added variable subtitution to the commandline. $name is
+             replaced with the value of the env.var name. 
              ${0-9} is the parameter number ${0-9} of the PREVIOUS command. -WB
-2001-07-23 - Changed the Variable char to % and the prompt char to $ for compatibility. -WB
+2001-07-23 - Changed the Variable char to % and the prompt char to $ for
+             compatibility. -WB 
 2002-02-21 - Added support for dod.dog if shell is permanent -WB
-2002-03-01 - Internal and external commands are now sepatate. External commands are treated no differently than any other commands.
+2002-03-01 - Internal and external commands are now sepatate. External
+             commands are treated no differently than any other commands.
              $e in prompt will expand to the errorlevel. - WB
 2002-03-11 - use of aliasreplace() to replace set aliases. I put a maximum
-             of 20 iterations, so we won't get unlimited loops.
+             of 20 iterations, so we won't get unlimited loops. -WB
+2002-03-15 - Moved aliasrepace() to the beginning of parsecom(), so that
+             aliases will be parsed for in dog-files. Also changed
+             parsecom() to use the new evarreplace() function to get env
+             vars on the commandline. cleaned initialize to set the default
+             env variables with setevar() instead of building it by hand -WB
 */
 
 #include "dog.h"
@@ -151,7 +159,7 @@ History
 BYTE initialize(int nargs, char *args[])
 {
   
-  BYTE i,j,k,*p,*q,line[200]={0},sw_P=0,rebuild=0;
+  BYTE i,j,k,*p,*q,line[200]={0},rebuild=0;
   BYTE far *s;
   BYTE far *d;
   BYTE far *ep;
@@ -163,9 +171,10 @@ BYTE initialize(int nargs, char *args[])
   }    
 */ 
   Xitable = 1;
-  
+
+#ifdef debug
   printf("PSP = %x PPID = %x\n",_psp,peek(_psp,PPID_OFS));
-  
+#endif
     /* save STDIN STDOUT */
 
   IN = dup(fileno(stdin));
@@ -187,10 +196,6 @@ BYTE initialize(int nargs, char *args[])
   _env = MK_FP(envseg,0);    
   envsz = peek(envseg-1,3) << 4; /*get size of block allocated from MCB*/
 
-  printf("aliassz = %x aliasseg = %x\n",aliassz, aliasseg);
-  aliassz = mkudata(0, &aliasseg, 0, 128);
-  printf("aliassz = %x aliasseg = %x\n",aliassz, aliasseg);
-  
 #ifdef env_debug
   printf("nargs=%u\n",nargs);
   printf("envsz=%ux\n",envsz);
@@ -211,6 +216,18 @@ BYTE initialize(int nargs, char *args[])
       switch(*(++p)) {
 			 case 'A': /* set size of alias block */
 				flags |= FLAG_A;
+				naliassz=0;
+				/* Accept all strings beginning with -A */
+				while((!isdigit(*p))&&(*p!='\0')&&(*p!='-')) p++;
+				while(isdigit(*p)) naliassz=naliassz*10+(*p++)-'0';
+				
+				naliassz >>= 4; /* paragraphs */
+				if(naliassz < 10) naliassz=10;
+				if(naliassz > 800) naliassz=800;
+				
+				aliassz = mkudata(aliasseg, &naliasseg, aliassz, naliassz);
+        aliassz <<= 4;
+				aliasseg = naliasseg;
 				break;
        case 'E': /* set the size of the environment */
 				flags |= FLAG_E;
@@ -226,13 +243,12 @@ BYTE initialize(int nargs, char *args[])
 				nenvseg = envseg;
 				
 				nenvsz = mkudata(envseg, &nenvseg, envsz, nenvsz);
-				
 				if(nenvseg != envseg) {
 
 					rebuild = 1;
 					
 				}
-				envsz = nenvsz;
+				envsz = nenvsz << 4;
 				envseg = nenvseg;
 				poke(_psp,ENVSEG_OFS,envseg);
 
@@ -240,7 +256,6 @@ BYTE initialize(int nargs, char *args[])
 				
        case 'P':/* make a permanent shell */
 				flags |= FLAG_P;
-				sw_P = 1;
 				rebuild = 1;
 				nenvsz = 0;
 				/* Accept all strings beginning with -P */
@@ -309,41 +324,22 @@ BYTE initialize(int nargs, char *args[])
 	envsz = peek(envseg-1,3) << 4; /*get size of block allocated from MCB*/
 
   if (rebuild==1) {
-    if((p=malloc(envsz))!=NULL) {
-      q=p;
-      i=0;
-      sprintf(p,"COMSPEC=%s",args[0]);
-      i += strlen(p)+1;
-      p += i; /*point to byte after terminating 0 */
-      strcpy(p,"PATH=.;..;\\");
-      i += strlen(p)+1;
-      p += 12;
-      strcpy(p,"PROMPT=");
-      strcat(p,_PROMPT);
-      i += strlen(p)+1;
-      p = q+i;
-      *(p++) = 0; /* = terminating the env */
-      *(p++) = 1; *(p++)=0; /* WORD number of strings to follow*/
-      i += 3;
-      sprintf(p,"%s",args[0]);
-      i += strlen(p)+1;
-      p += i; /*point to after terminating 0 */
-      
-      for(j=0;j<i;j++) { /* copy it to the env block */
-				*(_env+j) = *(q+j);
-#ifdef env_debug
-				if(*(q+j) != '\0')
-        printf("%c",*(q+j));
-				else
-        printf("0\n");
-#endif
-      }
-#ifdef env_debug
-      puts("");
-#endif
-    }
-    free(p);
+    setevar("COMSPEC",args[0]);
+    setevar("PATH","..");
+    setevar("PROMPT",_PROMPT);
   }
+
+  if ( (flags & FLAG_A) != FLAG_A ) {
+#ifdef b_debug
+    printf("aliassz = %x aliasseg = %x\n",aliassz, aliasseg);
+#endif
+    aliassz = mkudata(0, &aliasseg, 0, 0x20);
+    aliassz <<= 4;
+#ifdef b_debug
+    printf("aliassz = %x aliasseg = %x\n",aliassz, aliasseg);
+#endif
+  }
+  
   return 0;
 }
 
@@ -376,58 +372,39 @@ BYTE getln(BYTE *s, BYTE lim)
 /**************************************************************************/
 BYTE parsecom(BYTE * line,BYTE ll)
 {
-  BYTE i=0,j=0,k=0;
+  BYTE i=0,j=0;
   BYTE ename[80],eval[80];
   BYTE *p;
   
 #ifdef parse_debug
-  printf("parsecom:0: line(%s)\n",line);
+  printf("parsecom:0-1: line(%s)\n",line);
 #endif
-  
+    for(i=0;(i<MAX_ALIAS_LOOPS) && (aliasreplace(line) != 0xFF);i++);
+#ifdef parse_debug
+  printf("parsecom:0-2: line(%s)\n",line);
+#endif
+  ll = strlen(line);
+  evarreplace(line,ll);
+#ifdef parse_debug
+  printf("parsecom:0-3: line(%s)\n",line);
+#endif
+
+  i=0;
   while((j<_NARGS) && (i<ll)) {
     while((isspace(line[i]) || (line[i] == '\0') )&& (i<ll))
     line[i++] = '\0';
     
     if(i<ll) {
-      if(line[i] == '%') {
-        if( line[i+1] == '%' ) {
-					arg[j++] = &line[++i];
-				}
-        else if(isdigit(line[++i])) {
-					arg[j++] = varg[line[i++] -'0'];
-#ifdef parse_debug
-          printf("parsecom:1:arg[%u]=(%s)\n",j-1,arg[j-1]);
-#endif
-        }
-        else {
-					for(k=0;(line[i] != '%') && (i<ll);k++,i++) {
-						ename[k] = line[i];
-#ifdef parse_debug
-						printf("parsecom:2.0:ename[%u]=(%c);line[%u]=(%c)\n",k,ename[k],i,line[i]);
-#endif
-					}
-          ename[k]= '\0';
-					i++;
-          getevar(ename,varg[j]); /* replace %varname% with value*/
-          arg[j] = varg[j];
-          j++;
-#ifdef parse_debug
-          printf("parsecom:2.1:arg[%u]=(%s) varg[%u]=%s ename=(%s)\n",j-1,arg[j-1],j-1,varg[j-1],ename);
-#endif
-        }
-      }
-      else {
-        arg[j++] = &line[i];
-      }
+      arg[j++] = &line[i];
     }
     
     while(!isspace(line[i]) && (i<ll)) {
 			i++;
 		}
   }
-#ifdef parse_debug
+#ifdef b_debug
   printf("parsecom:3: j=%d line: !%s! arg(varg):",j,line);
-  for(i=0;i<20;i++)
+  for(i=0;i<j;i++)
   printf("\t%s(%s)\n",arg[i],varg[i]);
   printf("\n");
 #endif
@@ -456,9 +433,7 @@ BYTE getcom(BYTE *com)
 #ifdef debug
   fprintf(stderr,"getcom:1: com: !%s! ln:%u\n",com,ln);
 #endif
-  
-  for(i=0;(i<MAX_ALIAS_LOOPS) && (aliasreplace(com) != 0xFF);i++);
-  
+    
   r = parsecom(com,ln);
 #ifdef debug
   fprintf(stderr,"getcom:2: com: !%s! ln:%u\n",com,ln);

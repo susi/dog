@@ -1,0 +1,54 @@
+Fixes/changes:
+some bugfixes esp. in the setevar() and initialize() functions
+Fixed (completely rewrote) processing of varname in commandline (now it
+works as it should have).
+
+New features:
+1) New command AL (ALias) by request of Stuart Axon:
+al alone will display the aliases that are set.
+al alias will clear the alias "alias" if it is set
+al alias real command.
+
+DOG will check for the first word on the command line, if it is an alias, if
+it is it will replace the alias with the "real command". DOG will do
+recursive aliases up to 20 levels of recursion. This is to avoid unlimited
+recusrion if you have set Foo=BAR and BAR=FOO you could potentially end up
+in an infinite loop if you say foo or bar.
+
+-A will set the size of the alias block (default is 256 bytes)
+
+Remade the DOG int D0 functions. Here are the new specs:
+
+Int D0
+******
+
+DOG - Get version
+AH = 01h
+
+Return:
+AX = Version
+	 
+Notes:
+Version is built up like this:
+
+A H  A L
+---  ---
+| |	 | |
+| |	 | +-- code maturity allways one of a (=alpha), b (=beta) OR f (=final)
+| |  +---- Patchlevel
+| +------- Minor version
++--------- Major version
+
+(this implies that the maximum version for DOG is 15.15.15f ;)
+------
+
+DOG - Get internal variables:
+Call with: AH = 02h
+           AL = what variable
+AL=01 Returns DX = environment segment ;ES:BX points to envseg variable
+AL=02 Returns DX = alias segment ; ES:BX points to aliasseg variable
+AL=03 Returns CX = number of strings; ES:BX points to commands
+AL=04 Returns CX = number of strings; ES:BX points to ext_commands
+AL=05 Returns CX = number of strings; ES:BX points to commands_des
+AL=06 Returns CX = number of strings; ES:BX pointsto ext_commands_des
+AL=07 Returns ES:BX points to bf (first bf param block)

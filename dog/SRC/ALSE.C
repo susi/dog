@@ -28,8 +28,12 @@ History
              getudata respectively. - WB
 2002-03-08 - added mkudata().
 2002-03-10 - added do_al(). It works like do_se().
-2002-03-10 - finaly! aliasreplace() is done! and it works! We now have working aliases.
-
+2002-03-10 - finaly! aliasreplace() is done! and it works! We now have
+             working aliases. 
+2002-03-15 - fixed a bug in do_se() snd do_al(); they appended a space to
+             the variable value string. new function evarreplace(). scans
+             the command line for strings like %evar% and %10% and replaces
+             them with the appropriate string.
 **************************************************************************/
 
 void do_al( BYTE n)
@@ -61,6 +65,13 @@ void do_al( BYTE n)
       strcat(p,arg[b]);
       strcat(p," ");
     }
+#ifdef b_debug    
+    printf("do_se:1:p(last)=(%c)\n",*(p+(strlen(p)-1)));
+#endif
+    if(*(p+(strlen(p)-1)) == ' ') *(p+(strlen(p)-1)) = '\0';
+#ifdef b_debug    
+    printf("do_se:2:p(last)=(%c)\n",*(p+(strlen(p)-1)));
+#endif
     if (strlen(p) == 0) p = NULL;
     setalias(arg[1],p);
     free(p);
@@ -97,6 +108,13 @@ void do_se( BYTE n)
       strcat(p,arg[b]);
       strcat(p," ");
     }
+#ifdef b_debug    
+    printf("do_se:1:p(last)=(%c)\n",*(p+(strlen(p)-1)));
+#endif
+    if(*(p+(strlen(p)-1)) == ' ') *(p+(strlen(p)-1)) = '\0';
+#ifdef b_debug    
+    printf("do_se:2:p(last)=(%c)\n",*(p+(strlen(p)-1)));
+#endif
     if (strlen(p) == 0) p = NULL;
     setevar(arg[1],p);
     free(p);
@@ -187,7 +205,10 @@ BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg)
   strupr(varname);
   strcpy(b,varname);
   strcat(b,"=");
-  strcat(b,value);
+  if (value != NULL) strcat(b,value);
+#ifdef b_debug
+  printf("b=(%s)\n",b);
+#endif
   blocksz = peek(blockseg-1,3) << 4;
   
   evalue = eoe = rest = block;
@@ -275,9 +296,15 @@ BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg)
     /*the env var will be owerwritten with rest.*/
   }
   else { /*write value to environment. evalue points*/
-        for(w=0;w<writesize;w++) {
-          *(evalue+w) = *(b+w);
-        }
+#ifdef b_debug
+    printf("b=(%s)\n",b);
+#endif
+    for(w=0;w<writesize;w++) {
+      *(evalue+w) = *(b+w);
+#ifdef b_debug
+      printf("*(b+w)=(%c)\n",*(b+w));
+#endif
+    }
   }
   evalue += w;
   
@@ -331,80 +358,8 @@ WORD mkudata(WORD oldseg, WORD *nseg, WORD bsz, WORD nbsz)
   return nbsz;
 }
 
-/********************************************************************
-  
-  
-	if (oldseg == 0) {
-    mud_retry1:
-    w = allocmem(nbsz,nseg);
-    if (w != 0xFFFF) {
-      nbsz = w;
-      fprintf(stderr,"Insufficient memory to allocate!\nReallocating\n");
-      goto mud_retry1;
-    }
-    p = MK_FP(*nseg,0); /* point to beg of block* /
-#ifdef b_debug
-    printf("p=%Fp\n",p);
-#endif
-    *(p) = 0;
-    *(++p) = 0;
-	}
-  else if(nbsz < bsz) {
-    mud_retry2:
-    w = setblock(oldseg,nbsz);
-    if (w != 0xFFFF) {
-      nbsz = w;
-      fprintf(stderr,"Insufficient memory to allocate!\nReallocating\n");
-      goto mud_retry2;
-    }
-    p = MK_FP(*nseg,0); /* point to beg of block* /
-#ifdef b_debug
-    printf("p=%Fp\n",p);
-#endif
-    *(p) = 0;
-    *(++p) = 0;
-  }
-  else {
-    mud_retry3:
-    w = allocmem(nbsz,nseg);
-    if ( w == 0xFFFF ) {
-      bsz <<= 4; /* bytes * /
-      s = MK_FP(oldseg,0);
-      d = MK_FP((*nseg),0);
-        
-#ifdef b_debug
-      printf("oldseg=%x bsz=%x\n",oldseg,bsz);
-      printf("newseg=%x nbsz=%x\n",*nseg,nbsz);
-#endif
-        for(w=0;w<bsz;w++) {
-          *(d++) = *(s++);
-#ifdef b_debug_2
-          printf("s(%Fp)->%Fc d(%Fp)->%Fc\n",s,*s,d,*d);
-#endif
-        }
-      
-      freemem(oldseg);
-    }
-    else {
-      nbsz = w;
-      fprintf(stderr,"Insufficient memory to allocate!\nReallocating\n");
-      if (nbsz < bsz) {
-        freemem(oldseg);
-        goto mud_retry1;
-      }
-      else {
-        goto mud_retry3;
-      }
-    }
-	}
-#ifdef b_debug
-  printf("oldseg=%x bsz=%x\n",oldseg,bsz);
-  printf("newseg=%x nbsz=%x\n",*nseg,nbsz);
-#endif
-  return nbsz;
-}
 
-/ ****************************************************************************/
+/****************************************************************************/
 
 BYTE aliasreplace(BYTE *com)
 {
@@ -426,3 +381,77 @@ BYTE aliasreplace(BYTE *com)
   }
   return 0xFF;
 }
+
+/****************************************************************************/
+
+void evarreplace(BYTE *com, BYTE ln)
+{
+  BYTE tmp[2],eval[200], evar[50], i, j, *p, *c;
+  BYTE newcom[200];
+  
+  memset(newcom,0,200);
+  
+  for(i=0;i<ln;i++) {
+    if(com[i] == '%') {
+      if( com[i+1] == '%' ) {
+        strcat(newcom,"%");
+#ifdef b_debug
+        printf("evarreplace:0:newcom[%u]=(%c) newcom[%u]=(%c)\n",i,newcom[i],i+1,newcom[i+1]);
+#endif
+        i++;
+      }
+      else if(isdigit(com[i+1])) {
+        for(j=0,i++;isdigit(com[i]);i++) {
+          j = com[i] - '0' + (10 * j);
+        }
+        if (j > 19) j=19;
+        strcat(newcom,varg[j]);
+#ifdef b_debug
+        printf("evarreplace:1:j = %d varg[%d]=(%s) newcom=(%s)\n",j,j,varg[j],newcom);
+#endif
+      }
+      else {
+        i++;
+        memset(eval,0,200);
+        memset(evar,0,50);
+        for(j=0;(com[i] != '%') && (i<ln);j++,i++) {
+          evar[j] = com[i];
+#ifdef b_debug
+          printf("evarreplace:2-0:evar[%u]=(%c);com[%u]=(%c)\n",j,evar[j],i,com[i]);
+#endif
+        }
+#ifdef b_debug
+          printf("evarreplace:2-1:evar[%u]=(%c);com[%u]=(%c)\n",j,evar[j],i,com[i]);
+#endif
+        evar[j]= '\0';
+/*        i++; */
+#ifdef b_debug
+          printf("evarreplace:2-2:evar[%u]=(%c);com[%u]=(%c)\n",j,evar[j],i,com[i]);
+#endif
+        getevar(evar,eval); /* replace %varname% with value*/
+        strcat(newcom,eval);
+#ifdef b_debug
+        printf("evarreplace:3:evar=(%s) eval=(%s) newcom=(%s) com[%u]=(%c)\n",evar,eval,newcom,i,com[i]);
+#endif
+      }
+    }
+    else {
+      tmp[0]=com[i];
+      tmp[1]=0;
+#ifdef b_debug
+        printf("evarreplace:4:com[%d]=(%c)\n",i,com[i]);
+#endif
+      strcat(newcom,tmp);
+    }
+  }
+
+#ifdef b_debug
+        printf("evarreplace:5:com=(%s)\n",com);
+#endif
+  strcpy(com,newcom);
+#ifdef b_debug
+        printf("evarreplace:6:com=(%s)\n",com);
+#endif
+  return;
+}
+

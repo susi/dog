@@ -1,0 +1,19 @@
+al dir ls
+al alias al
+al beep bp
+al cls cl
+al copy cp
+al date dt -d
+al time dt -t
+al move mv
+al del rm
+al verify vf
+al ver vr
+al ctty ct
+al chcp cc
+al echo eh
+al mkdir md
+al rmdir rd
+al set se
+al exit xx
+al type tp
