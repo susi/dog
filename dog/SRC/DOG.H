@@ -30,17 +30,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <errno.h>
 #include <fcntl.h>
 
-#define de bug
+#define de		bug
 #define list
-#define do_de bug
+#define do_de   bug
 #define ls_de	bug
-#define exe_de bug
-#define bat_de bug
-#define cd_de bug
-#define eh_de bug
-#define ca_de bug
+#define exe_de	bug
+#define bat_de	bug
+#define cd_de	bug
+#define eh_de	bug
+#define ca_de	bug
 #define parse_de bug
-#define prompt_de bug
+
 
 #define BYTE unsigned char
 #define WORD unsigned int
@@ -156,72 +156,67 @@ C:\DOG>_
 */
 
 
-#define _NCOMS 9
-#define _NECOMS 11
+#define _NCOMS 20
 #define _NARGS 20
 
 /* PSP */
 
 #define PPID_OFS 0x0016
 #define ENVSEG_OFS 0x002C
-#define DOG_VER 082bh
+#define DOG_VER 081bh
 #define DOG_MA 0
 #define DOG_MI 8
-#define DOG_RE 0x2b
+#define DOG_RE 0x1b
 
 /* Define Global Variables */
 BYTE DOG_ma = DOG_MA, DOG_mi = DOG_MI, DOG_re = DOG_RE;
 BYTE Xit = 0, Xitable = 1, eh = 0, D=0, P[MAXDIR]; 
 BYTE comline[200]= {0}, *com = comline, *arg[_NARGS], varg[_NARGS][200], *prompt;
 BYTE commands[_NCOMS][3] = {
+  "BP",
+	"BR",
 	"CC",
 	"CD",
+	"CL",
+	"CP",
 	"CT",
 	"EH",
 	"HH",
-	"MD",
-	"RD",
-	"SE",
-	"XX"};
-
-BYTE ext_commands[_NECOMS][3] = {
-  "BP",
-	"BR",
-	"CL",
-	"CP",
 	"LS",
+	"MD",
 	"MV",
+	"RD",
 	"RM",
+	"SE",
 	"SZ",
 	"TP",
 	"VF",
-	"VR"};
+	"VR",
+	"XX"};
 
 BYTE command_des[_NCOMS][21] = {
+  "BeeP                ",
+	"BReak               ",
 	"Change Codepage     ",
 	"Change Directory    ",
+	"CLear screen        ",
+	"CoPy                ",
 	"Change Terminal     ",
 	"EcHo                ",
 	"Help                ",
-	"Make Directory      ",
-	"Remove Directory    ",
-	"Set to Environment  ",
-	"eXit                "};
-
-BYTE ext_command_des[_NECOMS][21] = {
-  "BeeP                ",
-	"BReak               ",
-	"CLear screen        ",
-	"CoPy                ",
 	"LiSt files          ",
+	"Make Directory      ",
 	"MoVe file (rename)  ",
+	"Remove Directory    ",
 	"ReMove files        ",
+	"Set to Environment  ",
 	"SiZe of files in dir",
 	"TyPe                ",
 	"VerFy               ",
-	"VeRsion             "};
+	"VeRsion             ",
+	"eXit                "};
 
-/* BYTE *command_help[_NCOMS]; */
+BYTE *command_help[_NCOMS];
 
 /*
 Structure of the flags variable. Tells which flags were given to DOG
@@ -237,21 +232,33 @@ BYTE flags;
 #define FLAG_E 0x2
 #define FLAG_C 0x4
 
-#define	C_CC 0
-#define	C_CD 1
-#define	C_CT 2 
-#define C_EH 3 
-#define C_HH 4 
-#define C_MD 5
-#define C_RD 6
-#define C_SE 7
-#define C_XX 8
+#define C_BP 0
+#define	C_BR 1
+#define	C_CC 2
+#define	C_CD 3
+#define	C_CL 4
+#define	C_CP 5
+#define	C_CT 6 
+#define C_EH 7 
+#define C_HH 8 
+#define C_LS 9 
+#define C_MD 10
+#define C_MV 11
+#define C_RD 12
+#define C_RM 13
+#define C_SE 14
+#define C_SZ 15
+#define C_TP 16
+#define C_VF 17
+#define C_VR 18
+#define C_XX 19
 
 
 
 BYTE cBreak = 0;
 WORD drvs,errorlevel=0,PSP;
 WORD envseg,envsz;
+WORD aliasseg,aliassz;
 BYTE far * _env;
 WORD i22_s, i22_o;
 WORD i23_s, i23_o; /* variables to store old ctrl-c handler*/
@@ -314,6 +321,10 @@ WORD my_exe(BYTE *prog, BYTE *args);
 BYTE *trueName(BYTE *name, BYTE *tn);
 BYTE *getevar(BYTE *varname, BYTE *value);
 void setevar(BYTE *varname, BYTE *value);
+BYTE *getalias(BYTE *varname, BYTE *value);
+void setalias(BYTE *varname, BYTE *value);
+BYTE *getudata(BYTE *varname, BYTE *value, WORD blockseg);
+BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg);
 
 void clearbat(void); /* clear the b file linked list*/
 void prevbat(void); /* return to the previous nest-level in bat*/
