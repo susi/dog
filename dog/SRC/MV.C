@@ -1,6 +1,6 @@
 /*
 
-NN.C - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
+MV.C - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
 
 Copyright (C) 1999,2000 Wolf Bergenheim
 
@@ -25,14 +25,19 @@ TODO: Wildcard recognition (*.*, etc)
 
 History
 18.03.00 - Extracted from DOG.C - WB
+20.10.00 - Renamed nn to mv (It should havee been named mv from the beginning)
+           Fixed do_mv. - WB
 
 **************************************************************************/
 
 WORD newname(BYTE *oldname, BYTE *newname);
 
-void do_nn(BYTE n)
+void do_mv(BYTE n)
 {
-    BYTE *p, wild=0, b, fn[129]={0}, dir[80],nn[129]={0},on[129]={0};
+    BYTE *p, b, ndir[129], odir[129], nn[129]={0},on[129]={0},tn[12]={0}; 
+#ifdef MV_WILD
+    BYTE fn[129]={0}, wild=0;
+#endif
     WORD r;
     struct ffblk ffb,*fb=&ffb;
 
@@ -45,19 +50,34 @@ void do_nn(BYTE n)
 
     while (b != 18) {
     
-        p = arg[1];
+        strcpy(odir,arg[1]); 
+        p = odir;
         
         /* separate path from filename */
-        for(p+=strlen(arg[1])+1;*p!='\\';p--);
-        
-        if(p>arg[1]) {
-            *(++p)=0;
-            strcpy(fn,arg[1]);
-            strcat(fn,fb->ff_name);
+        for(p+=strlen(odir)+1;(*p!='\\') && (p > odir);p--);
+        if (p>odir) {
+            *(++p) = '\0';
         }
         else
-            strcpy(fn,fb->ff_name);
+            strcpy(odir,"");
+
+        strcpy(ndir,arg[2]); 
+        p = ndir;
         
+        /* separate path from filename */
+        for(p+=strlen(ndir)+1;(*p!='\\') && (p > ndir);p--);
+        strcpy(tn,p+1);
+        if (p>ndir) {
+            *(++p) = '\0';
+        }
+        else
+            strcpy(ndir,"");
+
+#ifdef debug_mv
+printf("odir = /%s/ ndir = /%s/\n",odir,ndir);
+#endif
+        
+#ifdef MV_WILD
         if(wild == 1) {
             if(trueName(nn,arg[2]) == NULL) {
                 printf("Malformed path:\n%s\n",arg[2]);
@@ -74,7 +94,13 @@ void do_nn(BYTE n)
                     nn[b]=on[b];
             }
         }
-        puts(on); puts(nn);
+#else
+        strcpy(on,odir);
+        strcat(on,fb->ff_name);
+        strcpy(nn,ndir);
+        strcat(nn,tn);
+#endif
+        printf("%s --> %s\n",on,nn);
         r = newname(on,nn);
     
         if(r != 0) {

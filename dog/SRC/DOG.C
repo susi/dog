@@ -1222,8 +1222,8 @@ fprintf(stderr,"\n");
             do_mrd(na);
             break;
         
-        case C_NN :
-            do_nn(na);
+        case C_MV :
+            do_mv(na);
             break;
         
         case C_RD :
@@ -1322,7 +1322,7 @@ fprintf(stderr,"\n");
 #include "eh.c"
 #include "hh.c"
 #include "ls.c"
-#include "nn.c"
+#include "mv.c"
 #include "rm.c"
 #include "se.c"
 #include "sz.c"

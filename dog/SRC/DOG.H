@@ -156,9 +156,9 @@ C:\DOG>_
 
 #define PPID_OFS 0x0016
 #define ENVSEG_OFS 0x002C
-#define DOG_VER 0071h
+#define DOG_VER 0072h
 #define DOG_MA 0
-#define DOG_MI 71
+#define DOG_MI 72
 
 /* Define Global Variables */
 BYTE DOG_ma = DOG_MA, DOG_mi = DOG_MI;
@@ -176,7 +176,7 @@ BYTE commands[_NCOMS][3] = {
 	"HH",
 	"LS",
 	"MD",
-	"NN",
+	"MV",
 	"RD",
 	"RM",
 	"SE",
@@ -198,7 +198,7 @@ BYTE command_des[_NCOMS][21] = {
 	"Help                ",
 	"LiSt files          ",
 	"Make Directory      ",
-	"New Name (rename)   ",
+	"MoVe file (rename)  ",
 	"Remove Directory    ",
 	"ReMove files        ",
 	"Set to Environment  ",
@@ -221,7 +221,7 @@ BYTE *command_help[_NCOMS];
 #define C_HH 8 
 #define C_LS 9 
 #define C_MD 10
-#define C_NN 11
+#define C_MV 11
 #define C_RD 12
 #define C_RM 13
 #define C_SE 14
@@ -312,7 +312,7 @@ void do_mrd(BYTE n);
 void do_ls(BYTE n);
 void do_xx(void);
 void do_tp(BYTE n);
-void do_nn(BYTE n);
+void do_mv(BYTE n);
 
 /* DOG-file commands */
 void do_ca(BYTE n);
