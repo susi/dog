@@ -201,139 +201,140 @@ BYTE initialize(int nargs, char *args[])
   printf("envsz=%ux\n",envsz);
 #endif
   
-  if(nargs == 1) {
-    return 0;
-  }
+  if(nargs > 1) {
   
-  /* make the commandline to one string without spaces */
-  for(i=2,strcpy(line,args[1]);i<nargs;i++)
+    /* make the commandline to one string without spaces */
+    for(i=2,strcpy(line,args[1]);i<nargs;i++)
     strcat(line,args[i]);
-	
-  p=line;
-  strupr(p); /* upper case it*/
-  while(*p!='\0') {
-    if(*p=='-') {
-      switch(*(++p)) {
-			 case 'A': /* set size of alias block */
-				flags |= FLAG_A;
-				naliassz=0;
-				/* Accept all strings beginning with -A */
-				while((!isdigit(*p))&&(*p!='\0')&&(*p!='-')) p++;
-				while(isdigit(*p)) naliassz=naliassz*10+(*p++)-'0';
-				
-				naliassz >>= 4; /* paragraphs */
-				if(naliassz < 10) naliassz=10;
-				if(naliassz > 800) naliassz=800;
-				
-				aliassz = mkudata(aliasseg, &naliasseg, aliassz, naliassz);
-        aliassz <<= 4;
-				aliasseg = naliasseg;
-				break;
-       case 'E': /* set the size of the environment */
-				flags |= FLAG_E;
-				nenvsz=0;
-				/* Accept all strings beginning with -E */
-				while((!isdigit(*p))&&(*p!='\0')&&(*p!='-')) p++;
-				while(isdigit(*p)) nenvsz=nenvsz*10+(*p++)-'0';
-				
-				nenvsz >>= 4; /* paragraphs */
-				if(nenvsz < 10) nenvsz=10;
-				if(nenvsz > 800) nenvsz=800;
-				
-				nenvseg = envseg;
-				
-				nenvsz = mkudata(envseg, &nenvseg, envsz, nenvsz);
-				if(nenvseg != envseg) {
-
-					rebuild = 1;
-					
-				}
-				envsz = nenvsz << 4;
-				envseg = nenvseg;
-				poke(_psp,ENVSEG_OFS,envseg);
-
-				break;
-				
-       case 'P':/* make a permanent shell */
-				flags |= FLAG_P;
-				rebuild = 1;
-				nenvsz = 0;
-				/* Accept all strings beginning with -P */
-				while((!isdigit(*p))&&(*p!='\0')&&(*p!='-')) p++;
-				while(isdigit(*p)) nenvsz=nenvsz*10+(*p++)-'0';
-				
-        nenvsz /= 16; /*paragraphs*/
-				if(nenvsz < 0x10) nenvsz=0x10;
-				if(nenvsz > 0x800) nenvsz=0x800;
-
-				envsz = mkudata(envseg, &nenvseg, envsz, nenvsz);
-        
-				envseg=nenvseg;
-        poke(_psp,ENVSEG_OFS,nenvseg);
-				
+    
+    p=line;
+    strupr(p); /* upper case it*/
+    while(*p!='\0') {
+      if(*p=='-') {
+        switch(*(++p)) {
+         case 'A': /* set size of alias block */
+          flags |= FLAG_A;
+          naliassz=0;
+          /* Accept all strings beginning with -A */
+          while((!isdigit(*p))&&(*p!='\0')&&(*p!='-')) p++;
+          while(isdigit(*p)) naliassz=naliassz*10+(*p++)-'0';
+          
+          naliassz >>= 4; /* paragraphs */
+          if(naliassz < 10) naliassz=10;
+          if(naliassz > 800) naliassz=800;
+          
+          aliassz = mkudata(aliasseg, &naliasseg, aliassz, naliassz);
+          aliassz <<= 4;
+          aliasseg = naliasseg;
+          break;
+         case 'E': /* set the size of the environment */
+          flags |= FLAG_E;
+          nenvsz=0;
+          /* Accept all strings beginning with -E */
+          while((!isdigit(*p))&&(*p!='\0')&&(*p!='-')) p++;
+          while(isdigit(*p)) nenvsz=nenvsz*10+(*p++)-'0';
+          
+          nenvsz >>= 4; /* paragraphs */
+          if(nenvsz < 10) nenvsz=10;
+          if(nenvsz > 800) nenvsz=800;
+          
+          nenvseg = envseg;
+          
+          nenvsz = mkudata(envseg, &nenvseg, envsz, nenvsz);
+          if(nenvseg != envseg) {
+            
+            rebuild = 1;
+            
+          }
+          envsz = nenvsz << 4;
+          envseg = nenvseg;
+          poke(_psp,ENVSEG_OFS,envseg);
+          
+          break;
+          
+         case 'P':/* make a permanent shell */
+          flags |= FLAG_P;
+          rebuild = 1;
+          nenvsz = 0;
+          /* Accept all strings beginning with -P */
+          while((!isdigit(*p))&&(*p!='\0')&&(*p!='-')) p++;
+          while(isdigit(*p)) nenvsz=nenvsz*10+(*p++)-'0';
+          
+          nenvsz /= 16; /*paragraphs*/
+          if(nenvsz < 0x10) nenvsz=0x10;
+          if(nenvsz > 0x800) nenvsz=0x800;
+          
+          envsz = mkudata(envseg, &nenvseg, envsz, nenvsz);
+          
+          envseg=nenvseg;
+          poke(_psp,ENVSEG_OFS,nenvseg);
+          
 #ifdef b_debug
-        printf("envseg=0x%x envsz=0x%x\n",envseg,envsz);
+          printf("envseg=0x%x envsz=0x%x\n",envseg,envsz);
 #endif
-
-				get_int();
-				set_int();
-				
-				/* make int 2e point to D0GFunc */
-				
-				/* save */
-				asm MOV ax,352eh
-        asm MOV i2e_o,bx
-        asm MOV i2e_s,es
-        asm INT 21h
-        /* set */
-        asm MOV ax,252eh
-        asm MOV dx,offset D0GFunc
-        asm push cs
-        asm pop es
-        asm INT 21h
-        
-        /* point int 22 termination address at DOG loop*/
-        asm MOV ax,2522h
-        asm MOV dx,offset DOG_loop
-        asm MOV i22_o,dx
-        asm push cs
-        asm pop ds
-        asm MOV i22_s,ds
-        asm INT 21h
-        
+          
+          get_int();
+          set_int();
+          
+          /* make int 2e point to D0GFunc */
+          
+          /* save */
+          asm MOV ax,352eh
+          asm MOV i2e_o,bx
+          asm MOV i2e_s,es
+          asm INT 21h
+          /* set */
+          asm MOV ax,252eh
+          asm MOV dx,offset D0GFunc
+          asm push cs
+          asm pop es
+          asm INT 21h
+          
+          /* point int 22 termination address at DOG loop*/
+          asm MOV ax,2522h
+          asm MOV dx,offset DOG_loop
+          asm MOV i22_o,dx
+          asm push cs
+          asm pop ds
+          asm MOV i22_s,ds
+          asm INT 21h
+          
 					/* put int handlers in to PSP */
         
-        poke(_psp,0x0a,i22_o);
-				poke(_psp,0x0a+2,i22_s);
-				poke(_psp,0x0e,i23_o);
-				poke(_psp,0x0e+2,i23_s);
-				poke(_psp,0x12,i24_o);
-				poke(_psp,0x12+2,i24_s);
-				/* makeDOG it's own parrent*/
-				poke(_psp,PPID_OFS,_psp);
-				
-				Xitable = 0;
-				break;
+          poke(_psp,0x0a,i22_o);
+          poke(_psp,0x0a+2,i22_s);
+          poke(_psp,0x0e,i23_o);
+          poke(_psp,0x0e+2,i23_s);
+          poke(_psp,0x12,i24_o);
+          poke(_psp,0x12+2,i24_s);
+          /* makeDOG it's own parrent*/
+          poke(_psp,PPID_OFS,_psp);
+          
+          Xitable = 0;
+          break;
+        }
       }
+      else
+      /* ignore */
+      p++;
     }
-    else
-    /* ignore */
-    p++;
   }
   _env = MK_FP(envseg,0);
 	envsz = peek(envseg-1,3) << 4; /*get size of block allocated from MCB*/
-
   if (rebuild==1) {
     setevar("COMSPEC",args[0]);
     setevar("PATH","..");
     setevar("PROMPT",_PROMPT);
   }
 
+#ifdef b_debug
+    printf("initialize:flags = %x flags = %x\n",flags,flags & FLAG_A);
+#endif
   if ( (flags & FLAG_A) != FLAG_A ) {
 #ifdef b_debug
     printf("aliassz = %x aliasseg = %x\n",aliassz, aliasseg);
 #endif
-    aliassz = mkudata(0, &aliasseg, 0, 0x20);
+    aliassz = mkudata(0, &aliasseg, 0, 0x10);
     aliassz <<= 4;
 #ifdef b_debug
     printf("aliassz = %x aliasseg = %x\n",aliassz, aliasseg);
