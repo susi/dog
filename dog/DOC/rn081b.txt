@@ -1,0 +1,23 @@
+Fixes/changes:
+* Fixed many bugs in the external commands
+
+New features:
+DOG - Backdoor interrupt
+INT D0
+		AL = 01h
+		
+Return:
+	 AX = Version
+	 
+Notes:
+Version is built up like this:
+
+A H  A L
+---  ---
+| |	 | |
+| |	 | +-- code maturity allways one of a (=alpha), b (=beta) OR f (=final)
+| |  +---- Patchlevel
+| +------- Minor version
++--------- Major version
+
+(this implies that the maximum version for DOG is 15.15.15f ;)
