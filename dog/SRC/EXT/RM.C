@@ -38,7 +38,7 @@ BYTE flag_h = FLAG_UNSET;
 
 void rm_file(BYTE *patt)
 {
-  BYTE r,f,i,ok;
+  BYTE r,f,i,ok=1;
   BYTE *p;
   BYTE fn[129]={0};
   struct ffblk fb;
@@ -48,11 +48,17 @@ void rm_file(BYTE *patt)
   if(f==0) {
 	
 	p = patt;
-	for(p+=strlen(patt)+1;(*p!='\\')&&(*p!='/');p--);
+	p+=strlen(patt) - 1;
+	if((*p == '\\') || (*p == '/')) {
+	  *p = '\0';
+	  p--;
+	}
+	for(;(*p!='\\')&&(*p!='/');p--);
 	if(p>patt) {
 	  *(++p)=0;
 	  strcpy(fn,patt);
 	  strcat(fn,fb.ff_name);
+		
 	}
 	else
 	  strcpy(fn,fb.ff_name);
@@ -85,7 +91,7 @@ void rm_file(BYTE *patt)
 		puts(fn);
 	  }
 	}
-	else {
+	else if(ok == 0xff) {
 	  printf("error while removing %s ",fn);
 	  perror("");
 	}
@@ -99,7 +105,8 @@ void rm_file(BYTE *patt)
 	if(p>patt) {
 	  *(++p)=0;
 	  strcpy(fn,patt);
-	  strcat(fn,fb.ff_name);
+	  if((*p != '\\') && (*p != '/'))
+		strcat(fn,fb.ff_name);
 	}
 	else
 	  strcpy(fn,fb.ff_name);
@@ -147,7 +154,6 @@ void rm_list(BYTE *list)
   f = fopen(list,"r");
   if(f != NULL) {
 	while(fscanf(f,"%s",&fn)!=EOF){
-	  printf("fn=%s\n",fn);
 	  rm_file(fn);
 	}
 	fclose(f);
