@@ -30,7 +30,7 @@ void get_int(void)
 	asm MOV i24_o,bx
 	asm MOV i24_s,es
   asm INT 21h
-
+  
 	return;
 }
 
@@ -49,40 +49,46 @@ void set_int(void)
 	asm INT 21h
 	
 	return;
+}
 
-	asm CBreak:
+void DOGError(void)
+{
+/*********************/
+  asm CBreak:
+
 	asm push ax
-		asm push ds
-		asm push bx
-		asm MOV ah, 51h
-		asm INT 21h
-		asm CMP cs:_psp, bx
-		asm je localCBreak
-		asm pop bx
-		asm pop ds
-		asm pop ax
-		asm pop bp
-    asm stc
-		asm iret /*db 0cbh*/
-    
-	  localCBreak:
-	
-	  asm pop bx
-		asm MOV ax, cs
-		asm MOV ds, ax
-		asm push ax
-		asm MOV al, 01h
-		asm MOV cBreak, al
-		asm pop ax
-		asm pop ds
-		asm pop ax
-		asm clc
-    asm pop bp
-		asm iret /*    db 0cah*/
-		asm dw 0200h
-		asm CritErr:
- 		asm iret
-		
+  asm push ds
+  asm push bx
+  asm MOV ah, 51h
+  asm INT 21h
+  asm CMP cs:_psp, bx
+  asm je localCBreak
+  asm pop bx
+  asm pop ds
+  asm pop ax
+  asm pop bp
+  asm stc
+  asm db 0cbh /* retf*/
+  localCBreak:
+  asm pop bx
+  asm MOV ax, cs
+  asm MOV ds, ax
+  asm push ax
+  asm MOV al, 01h
+  asm MOV cBreak, al
+  asm pop ax
+  asm pop ds
+  asm pop ax
+  asm clc
+  asm pop bp
+  asm db 0cah /* fetf */
+  asm dw 0200h
+
+/*********************/
+  asm CritErr:
+  asm mov al,03 /* FAIL */
+  asm iret
+  
 }
 
 void DOGFunc(void)
