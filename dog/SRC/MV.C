@@ -34,7 +34,7 @@ WORD newname(BYTE *oldname, BYTE *newname);
 
 void do_mv(BYTE n)
 {
-    BYTE *p, b, ndir[129], odir[129], nn[129]={0},on[129]={0},tn[12]={0}; 
+    BYTE *p, b, ndir[129], odir[129], nn[129]={0},on[129]={0},tn[12]={0};
 #ifdef MV_WILD
     BYTE fn[129]={0}, wild=0;
 #endif
@@ -45,50 +45,56 @@ void do_mv(BYTE n)
         puts("Invalid number of arguments.");
         return;
     }
-    
+
     b = findfirst(arg[1],fb,0);
 
     while (b != 18) {
-    
-        strcpy(odir,arg[1]); 
+
+        strcpy(odir,arg[1]);
         p = odir;
-        
+
         /* separate path from filename */
         for(p+=strlen(odir)+1;(*p!='\\') && (p > odir);p--);
+#ifdef debug_mv
+printf("%s:odir=(%p)%s,p=(%p)%s\n",__FILE__,odir,odir,p,p);
+#endif
         if (p>odir) {
             *(++p) = '\0';
         }
         else
             strcpy(odir,"");
 
-        strcpy(ndir,arg[2]); 
+        strcpy(ndir,arg[2]);
         p = ndir;
-        
+
         /* separate path from filename */
         for(p+=strlen(ndir)+1;(*p!='\\') && (p > ndir);p--);
-        strcpy(tn,p+1);
+        strcpy(tn,p);
+#ifdef debug_mv
+printf("%s:ndir=(%p)%s,p=(%p)%s\n",__FILE__,ndir,ndir,p,p);
+#endif
         if (p>ndir) {
-            *(++p) = '\0';
+            *(p) = '\0';
         }
         else
             strcpy(ndir,"");
 
 #ifdef debug_mv
-printf("odir = /%s/ ndir = /%s/\n",odir,ndir);
+printf("%s:odir = /%s/ ndir = /%s/\n",__FILE__,odir,ndir);
 #endif
-        
+
 #ifdef MV_WILD
         if(wild == 1) {
             if(trueName(nn,arg[2]) == NULL) {
                 printf("Malformed path:\n%s\n",arg[2]);
                 /* break */
             }
-                
+
             if(trueName(on,fn) == NULL) {
                 printf("Malformed path:\n%s\n",arg[1]);
                 /* break */
             }
-            
+
             for(b=0;nn[b] != '\0';b++) {
                 if(nn[b] == '?')
                     nn[b]=on[b];
@@ -102,24 +108,24 @@ printf("odir = /%s/ ndir = /%s/\n",odir,ndir);
 #endif
         printf("%s --> %s\n",on,nn);
         r = newname(on,nn);
-    
+
         if(r != 0) {
             switch(r) {
                 case 02:
                     printf("%s NOT found.\n",on);
                     break;
-                case 03: 
+                case 03:
                     puts("Path not found.");
                     break;
-                case 05: 
+                case 05:
                     puts("Access denied.");
                     break;
-                case 11: 
+                case 11:
                     puts("Invalid format.");
                     break;
             }
         }
-    
+
         b = findnext(fb);
     }
     return;

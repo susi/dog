@@ -1,6 +1,6 @@
 @echo off
 rem CC.BAT   - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
-rem 
+rem
 rem Copyright (C) 1999,2000 Wolf Bergenheim
 
 rem This program is free software; you can redistribute it and/or
@@ -23,12 +23,12 @@ rem echo on
 if (%CC%) == () goto define
 goto start
 :define
-rem 
+rem
 set CC=C:\BORLANDC\BIN\BCC
 set SET=1
 :start
 if (%1)==() goto use
-%CC% -B -d -mt -O1 -tDc %1 %2 %3 %4 %5 %6 %7 %8 %9
+%CC% -B -d -mt -Od -tDc -Z %1 %2 %3 %4 %5 %6 %7 %8 %9
 goto end
 :use
 echo Usage: %0 PROGRAM.C
