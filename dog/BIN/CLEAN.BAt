@@ -31,3 +31,4 @@ echo.
 echo %1.C DID NOT COMPILE SUCCESSFULLY!
 echo Please send the possible output to dog@users.sf.net. Thanks.
 pause
+:end
