@@ -155,7 +155,7 @@ C:\DOG>_
 
 /* Define Global Variables */
 BYTE DOG_ma = DOG_MA, DOG_mi = DOG_MI;
-BYTE Xit = 0, Xitable = 0, eh = 0, D=0, P[MAXDIR]; 
+BYTE Xit = 0, Xitable = 1, eh = 0, D=0, P[MAXDIR]; 
 BYTE comline[200]= {0}, *com = comline, *arg[_NARGS], history[50][200], *prompt;
 BYTE commands[_NCOMS][3] = {
 	"BR",		/* BReak 			*/
@@ -269,6 +269,8 @@ void do_br(BYTE n);
 void do_pp(BYTE n);
 void do_se(BYTE n);
 void do_cl(void);
+void do_ct(BYTE n);
+void do_cd(BYTE n);
 void do_vr(void);
 void do_rm(BYTE n);
 void do_hh(void);

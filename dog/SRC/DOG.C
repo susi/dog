@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-Contact autor: internet: dog@users.sourceforge.net
+Contact autor: internet: wolf_bmb@hotmail.com
                          http://www.hut.fi/~hbergenh/DOG/
 
 History
@@ -121,6 +121,7 @@ History
            Time and date functions are now hanled by CLK.
 08.12.99 - CLK renamed to DT for Day and Time.
 18.03.00 - Split DOG.C int individual files. - WB           
+25.03.00 - added code for do_ct() - WB
 */
 
 #include "dog.h"
@@ -1110,7 +1111,7 @@ fprintf(stderr,"\n");
             break;
         
         case C_CT :
-            
+            do_ct(na);
             break;
 
         case C_EH :
