@@ -248,6 +248,7 @@ WORD i22_s, i22_o;
 WORD i23_s, i23_o; /* variables to store old ctrl-c handler*/
 WORD i2e_s, i2e_o;
 WORD i24_s, i24_o;
+WORD id0_s, id0_o; /* the old handler for the D0GFunc */
 BYTE IN,OUT,sin,sout;
 BYTE REDIRECTED_OUT, REDIRECTED_IN;
 

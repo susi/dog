@@ -82,9 +82,19 @@ void set_int(void)
 		asm dw 0200h
 		asm CritErr:
  		asm iret
-		asm DOG2eFunc:
-	asm MOV ax,DOG_VER
-		asm iret
+		
+}
+
+void D0GFunc(void)
+{
+	asm D0GFunc:       ;
+	asm cmp al,01h     ;
+	asm jz D0G_1       ; /* Function 0x01 */
+	asm jmp D0G_naf    ; /* not our function ignore.. */
+	D0G_1:         ;
+	asm MOV ax,DOG_VER ; /* return the version of DOG loaded */
+	D0G_naf:       ;
+	asm iret           ;
  
 }
 

@@ -368,7 +368,7 @@ printf("s(%Fp)->%Fc d(%Fp)->%Fc\n",s,*s,d,*d);
                     get_int();
                     set_int();
 
-                    /* make int 2e point to DOG2eFunc */
+                    /* make int 2e point to D0GFunc */
                     
                         /* save */
                     asm MOV ax,352eh
@@ -377,11 +377,12 @@ printf("s(%Fp)->%Fc d(%Fp)->%Fc\n",s,*s,d,*d);
                     asm INT 21h
                         /* set */
                     asm MOV ax,252eh
-                    asm MOV dx,offset DOG2eFunc
+                    asm MOV dx,offset D0GFunc
                     asm push cs
                     asm pop es
                     asm INT 21h
-                        /* point int 22 termination address at DOG loop*/
+
+								    /* point int 22 termination address at DOG loop*/
                     asm MOV ax,2522h
                     asm MOV dx,offset DOG_loop
                     asm MOV i22_o,dx
@@ -868,6 +869,20 @@ int main(int nargs, char *argv[])
         exit(1);
     }
 
+	/* make int D0 point to D0GFunc */
+	
+	/* save */
+  	asm MOV ax,35d0h
+		asm MOV id0_o,bx
+		asm MOV id0_s,es
+		asm INT 21h
+		/* set */
+		asm MOV ax,25d0h
+		asm MOV dx,offset D0GFunc
+		asm push cs
+		asm pop es
+		asm INT 21h
+		
 
     if (eh == 0) {
         printf("DOG - Dog Operating Ground Version %u.%u.%02x\n",DOG_ma,DOG_mi,DOG_re);
