@@ -1,6 +1,6 @@
 @echo off
 rem makedog.BAT   - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
-rem 
+rem
 rem Copyright (C) 1999,2000 Wolf Bergenheim
 
 rem This program is free software; you can redistribute it and/or
@@ -19,10 +19,11 @@ rem Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 rem Developers:
 rem Wolf Bergenheim (WB)
+
 echo Calling compiler / assembler / linker
-call ..\bin\cc dog.c
+for %%f in ( *.c ) do call ..\..\bin\cc.bat %%f
 echo cleaning...
-move dog.com ..\bin
-del dog.obj
+for %%f in ( *.com ) do move %1.com ..\..\bin
+del *.obj
 echo done.
 echo The binary is located in ..\bin
