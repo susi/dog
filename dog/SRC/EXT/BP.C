@@ -23,7 +23,7 @@ Wolf Bergenheim (WB)
 
 History
 15.08.00 - Extracted from BAT.C, changed t & f to beWORD instead of BYTE - WB
-
+2002-11-26 - Improved help text. - WB
 */
 
 #include "ext.h"
@@ -70,10 +70,13 @@ printf("do_bp:arg[%d]=(%s)\n",b,arg[b]);
 					case 'h':
 					case 'H':
 					case '?':
-						printf("usage: bp [frec time]\n");
-						return 1;
+					 fputs("Usage: BP [-h | -H | -?] [FREQ [TIME]]\n\nBeep with frequency FREQ for a period of TIME milliseconds\n\n", stderr);
+					 fputs("BP is part of DOG (http://dog.sf.net/)\n", stderr);
+					 return 0;
 					default :
-						printf("Incorrect switch %s\n",arg[1]);
+					 printf("Incorrect switch %s\n",arg[1]);
+					 fputs("Usage: BP [FREQ [TIME]]\n\nBeep with frequency FREQ for a period of TIME milliseconds\n\n", stderr);
+					 fputs("BP is part of DOG (http://dog.sf.net/)\n", stderr);
 				 }
 			}
 			else {
