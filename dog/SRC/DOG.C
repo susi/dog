@@ -136,7 +136,16 @@ History
 2001-07-18 - Added variable subtitution to the commandline. $name is replaced with the value of the env.var name. 
              ${0-9} is the parameter number ${0-9} of the PREVIOUS command. -WB
 2001-07-23 - Changed the Variable char to % and the prompt char to $ for compatibility. -WB
-2002-02-21 - Added support for dod.dog if shell is permanent -WB
+2002-02-21 - Added support for dog.dog if shell is permanent - WB
+2002-02-25 -   Fixed controlC to return with retf instead of iret.
+             Made int 24 function return with al=3 (FAIL) - WB
+             NOTE: FreeDOS behaves diffrently from MSDOS in findfirst. 
+						 If searching for dog.dog.COM FD will return file found: dog.dog
+						 if such a file exists, while MSDOS will not. This behavour
+						 destroys the do_exe() if both file.dog and file.com exist. It
+						 results in file.dog being loaded as if it is a .com program
+						 ==> CRASH.
+2002-02-26 - commands beginning with # are ignored - WB						 
 */
 
 #include "dog.h"
@@ -153,10 +162,11 @@ BYTE initialize(int nargs, char *args[])
   BYTE far *ep;
   WORD w,nenvsz,nenvseg,eoesz,o;
   
-  for(i=0;i<_NCOMS;i++) { /* TEPORARY ONLY!!! */
+/*
+ for(i=0;i<_NCOMS;i++) { /* TEMPORARY ONLY!!! * /
     command_help[i] = 0;
   }    
-  
+*/ 
   Xitable = 1;
   
   printf("PSP = %x PPID = %x\n",_psp,peek(_psp,PPID_OFS));
@@ -985,7 +995,7 @@ int main(int nargs, char *argv[])
   }
   
   if((flags & FLAG_P) == FLAG_P) {
-    arg[0] = "dog.dog";
+    arg[0] = "dog"; /* for now... so it works in FreeDOS*/
     do_command(1);
   }
   
@@ -1337,7 +1347,7 @@ void do_command( BYTE na)
         do_cd(2);
         return;
       }
-      else if((arg[0][0] =='*') || (arg[0][0]=='?'))
+      else if((arg[0][0] =='*') || (arg[0][0]=='?') || (arg[0][0] =='#'))
       return;
       else {
         do_exe(na);
@@ -1424,14 +1434,14 @@ void do_exe(BYTE n)
   /*First try to exec arg[0]*/
   strcpy(prog,arg[0]);
 #ifdef exe_debug
-  printf("do_exe:1360:prog=%s\n",prog);
+  printf("do_exe:0:prog=%s\n",prog);
 #endif
   i = findfirst(prog,fb,0x37); /*attrib = 00100111 */
   if (i == 0) {
 #ifdef exe_debug
-    printf("do_exe:1363:prog=%s\n",prog);
-    printf("do_exe:1364:%s a directory\n",((fb->ff_attrib & FA_DIREC) == FA_DIREC)?"Is":"Isn't");
-    printf("do_exe:1365:ff_attrib = 0x%x\n",fb->ff_attrib);
+    printf("do_exe:1:prog=%s\n",prog);
+    printf("do_exe:2:%s a directory\n",((fb->ff_attrib & FA_DIREC) == FA_DIREC)?"Is":"Isn't");
+    printf("do_exe:3:ff_attrib = 0x%x\n",fb->ff_attrib);
 #endif
     if((fb->ff_attrib & FA_DIREC) == FA_DIREC) {
       arg[1] = prog;
@@ -1445,16 +1455,15 @@ void do_exe(BYTE n)
       if (strstr(fb->ff_name,".EXE") == NULL) {
         if (strstr(fb->ff_name,".DOG") == NULL) {
 #ifdef exe_debug
-          printf("do_exe:1379:ff_name = %s\n",fb->ff_name);
+          printf("do_exe:4:ff_name = %s\n",fb->ff_name);
 #endif
-          
           exec_f = NON;
         }
         else {
           exec_f = DOG;
           strcpy(dog,prog);
 #ifdef exe_debug
-          printf("do_exe:1388:ff_name = %s\n",fb->ff_name);
+          printf("do_exe:5:ff_name = %s\n",fb->ff_name);
 #endif
         }
       }
@@ -1462,7 +1471,7 @@ void do_exe(BYTE n)
         exec_f = EXE;
         strcpy(exe,prog);
 #ifdef exe_debug
-        printf("do_exe:1396:ff_name = %s\n",fb->ff_name);
+        printf("do_exe:6:ff_name = %s\n",fb->ff_name);
 #endif
       }
     }
@@ -1470,7 +1479,7 @@ void do_exe(BYTE n)
       exec_f = COM;
       strcpy(com,prog);
 #ifdef exe_debug
-      printf("do_exe:1404:ff_name = %s\n",fb->ff_name);
+      printf("do_exe:7:ff_name = %s\n",fb->ff_name);
 #endif
     }
     
@@ -1492,16 +1501,17 @@ void do_exe(BYTE n)
   strcpy(envi,p);
     free(p);
 #ifdef exe_debug
-  printf("do_exe:PATH=%s\n",envi);
+  printf("do_exe:8:PATH=%s\n",envi);
 #endif     
   for(cpath=strtok(envi,";");;cpath=strtok(NULL,";")) {
     if(cpath == NULL) break;
 #ifdef exe_debug
-    printf("do_exe:dir=%s\n",cpath);
+    printf("do_exe:9:dir=%s\n",cpath);
 #endif
     strcpy(file,cpath);
-    if(file[strlen(file)-1] != '\\')
-    strcat(file,"\\");
+    if(file[strlen(file)-1] != '\\') {
+			strcat(file,"\\");
+		}
     strcat(file,arg[0]);
     do_exe_enp:
     strcpy(com,file);
@@ -1511,35 +1521,36 @@ void do_exe(BYTE n)
     strcat(exe,".EXE");
     strcat(dog,".DOG");
 #ifdef exe_debug
-    printf("do_exe:file=%s\n",file);
-    printf("do_exe:com=%s\n",com);
-    printf("do_exe:exe=%s\n",exe);
-    printf("do_exe:dog=%s\n",dog);
+    printf("do_exe:10:file=%s\n",file);
+    printf("do_exe:11:com=%s\n",com);
+    printf("do_exe:12:exe=%s\n",exe);
+    printf("do_exe:13:dog=%s\n",dog);
 #endif
     if(findfirst(com,fb,0x27) == 0) {
 #ifdef exe_debug
-      printf("\ndo_exe:c:file=%s\n",fb->ff_name);
+			printf("do_exe:11:com=%s\n",com);
+      printf("\ndo_exe:14:file=%s\n",fb->ff_name);
 #endif
       exec_f = COM;
       break;
     }
     else if (findfirst(exe,fb,0x27) == 0) {
 #ifdef exe_debug
-      printf("\ndo_exe:e:file=%s\n",fb->ff_name);
+      printf("\ndo_exe:15:file=%s\n",fb->ff_name);
 #endif
       exec_f = EXE;
       break;
     }
     else if (findfirst(dog,fb,0x27) == 0) {
 #ifdef exe_debug
-      printf("\ndo_exe:d:file=%s\n",fb->ff_name);
+      printf("\ndo_exe:16:file=%s\n",fb->ff_name);
 #endif
       exec_f = DOG;
       break;
     }
     else if(findfirst(file,fb,0x27) == 0) {
 #ifdef exe_debug
-      printf("\ndo_exe:.:file=%s\n",fb->ff_name);
+      printf("\ndo_exe:17:file=%s\n",fb->ff_name);
 #endif
       if(strstr(fb->ff_name,".COM") == NULL) {
         if (strstr(fb->ff_name,".EXE") == NULL) {
@@ -1568,7 +1579,7 @@ void do_exe(BYTE n)
     }
     
 #ifdef exe_debug
-    printf("do_exe:exec_f = %u\n",exec_f);
+    printf("do_exe:18:exec_f = %u\n",exec_f);
 #endif
     
   }
@@ -1576,11 +1587,11 @@ void do_exe(BYTE n)
   exec_now:
   
 #ifdef exe_debug
-  printf("do_exe::exec_f = %u\n",exec_f);
-  printf("do_exe:file=%s\n",file);
-  printf("do_exe:com=%s\n",com);
-  printf("do_exe:exe=%s\n",exe);
-  printf("do_exe:dog=%s\n",dog);
+  printf("do_exe:19:exec_f = %u\n",exec_f);
+  printf("do_exe:20:file=%s\n",file);
+  printf("do_exe:21:com=%s\n",com);
+  printf("do_exe:22:exe=%s\n",exe);
+  printf("do_exe:23:dog=%s\n",dog);
 #endif
   
   switch(exec_f) {
@@ -1590,19 +1601,20 @@ void do_exe(BYTE n)
     return;
    case COM:
 #ifdef exe_debug
-    printf("do_exe:found %s in %s\n",fb->ff_name,cpath);
+    printf("do_exe:24:found %s in %s\n",fb->ff_name,cpath);
 #endif
     errorlevel=my_exe(trueName(com,trunam),s);
     break;
    case EXE:
 #ifdef exe_debug
-    printf("do_exe:found %s in %s -> %s\n",fb->ff_name,cpath,exe);
+    printf("do_exe:25:found %s in %s -> %s\n",fb->ff_name,cpath,exe);
 #endif
     errorlevel=my_exe(trueName(exe,trunam),s);
     break;
    case DOG:
 #ifdef exe_debug
-    printf("do_exe:found %s in %s\n",fb->ff_name,cpath);
+    printf("do_exe:26:found %s in %s ->%s\n",fb->ff_name,cpath,dog);
+		printf("do_exe:27:bf->args[i] = %s\n",bf->args);
 #endif
     bf->na = n;
     bf->line = 0;
@@ -1611,9 +1623,15 @@ void do_exe(BYTE n)
       if(arg[i] != 0) {
         bf->args[i] = (bf->cline) + (arg[i] - comline);
 #ifdef bat_debug
-        printf("do_exe::bf->args[%u](%x) =  (bf->cline(%x)) + (arg[%u](%x) - comline(%x))\n",i,bf->args[i],bf->cline,i,arg[i], comline);
+        printf("do_exe:28:bf->args[%u](%x) =  (bf->cline(%x)) + (arg[%u](%x) - comline(%x))\n",i,bf->args[i],bf->cline,i,arg[i], comline);
+				printf("do_exe:29:bf->args[i] = %s\n",bf->args);
 #endif
       }
+#ifdef bat_debug
+			else {
+        printf("do_exe:30:arg[%u] == 0",i);
+			}
+#endif
     }
     d = getcur(path) + 'A';
     sprintf(bf->name,"%c:\\%s\\%s",d,path,dog);
