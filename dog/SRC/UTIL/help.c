@@ -1,7 +1,6 @@
 /* DOG Documentation */
 
-#include <stdio.h>
-#include <string.h>
+#include "util.h"
 /*
 Command line Syntax
 DOG [-P|-E envsz|-C command line] 
@@ -12,7 +11,7 @@ Parameters:
 -C command line - Executes the command line and exits. 
 */
 
-//#define no_commands 20
+/*#define no_commands 20 */
 
 char br[300]="\n\nSyntax: BR [ON|OFF]\n\
 Parameters:\n\
@@ -47,15 +46,15 @@ Parameters:\n\
 text - anything you want to type out from a DOG file.\n\
 Use these special characters to format the text.\n\
 \n\
-%% - the % sign.\n\
-%_ - space\n\
-%b - vertical bar ( ¦ )\n\
-%e - The ESC character (ASCII 27 = 1b in hex)\n\
-%l - Left angle ( < )\n\
-%g - Right angle ( > )\n\
-%n - New line\n\
-%r - Carriage return\n\
-%t - Tabulator\n\
+$$ - the $ sign.\n\
+$_ - space\n\
+$b - vertical bar ( ¦ )\n\
+$e - The ESC character (ASCII 27 = 1b in hex)\n\
+$l - Left angle ( < )\n\
+$g - Right angle ( > )\n\
+$n - New line\n\
+$r - Carriage return\n\
+$t - Tabulator\n\
 Effect: Print a (formatted) string to stdio (normally the screen). EH by itself wil put a new line.\n\n";
 
 char hh[400]="\n\nSyntax: HH\n\
@@ -100,17 +99,17 @@ Parameters:\n\
 env_var - the name of the environment variable. The name is UPPERCASED Predefines ones are:\n\
 PATH - A ; separated list of directories that are searched in to find a program.\n\
 PROMPT - The string may consist of normal text and these special characters\n\
-%% - the % sign.\n\
-%_ - space\n\
-%b - vertical bar ( ¦ )\n\
-%e - The ESC character (ASCII 27 = 1b in hex)\n\
-%l - Left angle ( < )\n\
-%g - Right angle ( > )\n\
-%n - New line\n\
-%r - Carriage return\n\
-%t - Tabulator\n\
-%p - Current drive and path\n\
-%c - Current time.\n\
+$$ - the $ sign.\n\
+$_ - space\n\
+$b - vertical bar ( ¦ )\n\
+$e - The ESC character (ASCII 27 = 1b in hex)\n\
+$l - Left angle ( < )\n\
+$g - Right angle ( > )\n\
+$n - New line\n\
+$r - Carriage return\n\
+$t - Tabulator\n\
+$p - Current drive and path\n\
+$c - Current time.\n\
 COMSPEC - Path to DOG\n\
 string - The value that env_var should have.\n\
 Effect: Sets the specified env_var to string in the environment. Without arguments the command prints all env_vars to the screen.\n\n";
