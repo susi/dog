@@ -108,7 +108,8 @@ int get_sw(int nargs, char *arg[])
             return NEITHER;
         case 'D':
             return DATE;
-        case 'S':
+        case 'A':
+	case 'S':
             return BOTH;
         case 'T':
             return TIME;
