@@ -19,10 +19,14 @@ rem Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 rem Developers:
 rem Wolf Bergenheim (WB)
+
 echo Calling compiler / assembler / linker
 call ..\bin\cc %1 %2 %3 %4 %5 %6 %7 %8 %9 dog.c
 echo cleaning...
-move dog.com ..\bin
 del dog.obj
+echo moving binary to ..\bin
+if exist ..\bin\dog.com del ..\bin\dog.com >nul
+move dog.com ..\bin >nul
 echo done.
 echo The binary is located in ..\bin
+:end

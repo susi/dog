@@ -24,7 +24,7 @@ if (%CC%) == () goto define
 goto start
 :define
 rem
-set CC=C:\TURBOC\TCC
+set CC=C:\TC\TCC
 set SET=1
 :start
 if not exist %CC%.exe goto cc_nf
@@ -35,7 +35,7 @@ goto end
 echo Can not find cc (%CC%)
 echo set compiler name (without extension) to variable CC
 echo e.g.:
-echo set cc=C:\TURBOC\TCC
+echo set cc=C:\TC\TCC
 goto end
 :use
 echo Usage: %0 PROGRAM.C
