@@ -1,7 +1,7 @@
 /*
 DOG.C  -  Alternate command processor for (currently) MS-DOS ver 3.30
 
-Copyright (C) 1999  Wolf Bergenheim
+Copyright (C) 1999,2000 Wolf Bergenheim
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -139,7 +139,30 @@ BYTE initialize(int nargs, char *args[])
 {
 
     BYTE i,j,k,*p,*q,line[200]={0},sw_P=0,rebuild=0;
-    WORD w;
+    BYTE far *s;
+    BYTE far *d;
+    BYTE far *ep;
+    WORD w,nenvsz,nenvseg,eoesz;
+
+
+    Xitable = 1;
+
+printf("PSP = %x PPID = %x\n",_psp,peek(_psp,PPID_OFS));
+
+    /* save STDIN STDOUT */
+    IN = dup(fileno(stdin));
+    OUT = dup(fileno(stdout));
+
+    D = getcur(P) + 'A';
+
+    bf = malloc(sizeof(struct bfile));
+    bf->prev = NULL;
+    bf->in = 0;
+    bf->nest = 0;
+
+    drvs = 0;
+
+    /* get the segment of the environment from the PSP*/
     envseg = peek(_psp,ENVSEG_OFS);
     _env = MK_FP(envseg,0);    
     envsz = peek(envseg-1,3) << 4; /*get size of block allocated from MCB*/
@@ -149,9 +172,6 @@ printf("nargs=%u\n",nargs);
     if(nargs == 1) {
         return 0;
     }
-
-    /* get the segment of the environment from the PSP*/
-    envseg = peek(_psp,ENVSEG_OFS);
 
     /* make the commandline to one string without spaces */
     for(i=2,strcpy(line,args[1]);i<nargs;i++)
@@ -186,65 +206,98 @@ printf("nargs=%u\n",nargs);
                     return j;
 
                 case 'E': /* set the size of the environment */
-                    rebuild = 1; /* the environment will be 
-                                    rebuilt from scratch */
-                    w = envsz;
-                    envsz=0;
+
+                    nenvsz=0;
                     /* Accept all strings beginning with -E */
                     while((!isdigit(*p))&&(*p!='\0')&&(*p!='-')) p++;
-                    while(isdigit(*p)) envsz=envsz*10+(*p++)-'0';
-                    envsz /= 16;
-                    if(envsz < 10) envsz=10;
-                    if(envsz > 800) envsz=800;
-                    asm {
-                        mov AH,4ah
-                        mov BX,envsz
-                        mov DX,envseg
-                        mov ES,DX
-                        int 21h
-                        jnc env_ok
-                    }
-                    env_not_ok:
-                    asm {
-                        sub ax,07h /*errors 7,8,9 possible*/
-                        jz env_block_dest
-                        dec ax
-                        jz out_of_memory
-                        jmp invalid_mem_block
-                    }
+                    while(isdigit(*p)) nenvsz=nenvsz*10+(*p++)-'0';
                     
-                    env_block_dest:
-                    fprintf(stderr,"Environment block destroyed!\nBuilding new.\n");
-                    env_rebuild:
-                    asm {
-                        mov ah,48h
-                        mov bx,envsz
-                        int 21h
-                        jc env_not_ok
-                        mov envseg,ax
-                    }
-                    poke(_psp,ENVSEG_OFS,envseg);
-                    env_ok:
-                    break;
-/* probably never happens... remove? */
-                    invalid_mem_block:
-                    fprintf(stderr,"Invalid Environment!\nBuilding new.\n");
-                    asm {
-                        jmp env_rebuild
-                    }
+                    nenvsz >>= 4; /* paragraphs */
+                    if(nenvsz < 10) nenvsz=10;
+                    if(nenvsz > 800) nenvsz=800;
 
-                    out_of_memory:
-                    fprintf(stderr,"Environment block too small!\nBuilding new.\n");
-                    asm {
-                        mov ah,49h
-                        mov dx,envseg
-                        mov es,dx
-                        int 21h
-                        mov ah,1
-                        mov rebuild,ah
-                        jmp env_rebuild
+                    if((nenvsz << 4) < envsz) {
+                        asm {
+                            mov AH,4ah      ;/*resize mem block BX=newsz ES=seg */
+                            mov BX,nenvsz
+                            mov DX,envseg
+                            mov ES,DX
+                            int 21h
+                            jnc e_env_ok
+                        }
+                        e_env_not_ok:
+                        asm {
+                            sub ax,07h /*errors 7,8,9 possible*/
+                            jz  e_block_dest
+                            dec ax
+                            jz  e_no_mem
+                            jmp e_inv_mem
+                        }
+                        /* probably never happens... remove? */
+                        e_block_dest:
+                        fprintf(stderr,"Environment block destroyed!\nBuilding new.\n");
+                        e_inv_mem:
+                        fprintf(stderr,"Invalid Environment!\nBuilding new.\n");
+                        e_no_mem:
+                        fprintf(stderr,"Environment block too small!\nBuilding new.\n");
+                        asm {
+                            mov ah,49h
+                            mov dx,envseg
+                            mov es,dx
+                            int 21h
+                        }
+                        rebuild = 1;
+    
+                        break;
+                        e_env_ok:
+                        
+                        nenvsz <<= 4; /* bytes */
+                        eoesz = strlen(args[0]) + 4;
+                        ep = MK_FP(envseg,0); /* point to beg of env*/
+                        for(w = 0;(eoesz+w) < nenvsz;w++) {
+                            if(peek(envseg,w) == 0){
+                                ep = MK_FP(envseg,w); /* save pos */
+                            }
+                        }
+                        *(++ep) = 0;
+                        *(++ep) = 1;
+                        *(++ep) = 0;
+                        q=args[0]; ep++;
+                        while(*q != 0)
+                            *(ep++)=*(q++);                        
+                        *ep = 0;
+
+                    }
+                    else {
+                        asm {
+                            mov ah,48h
+                            mov bx,nenvsz
+                            int 21h
+                            jc  l_e_not_ok
+                            mov nenvseg,ax
+                        }
+                        s = MK_FP(envseg,0);
+                        d = MK_FP(nenvseg,0);
+
+                        _fmemcpy(s,d,envsz);
+
+                        asm {
+                            mov ah,49h      ;/*free old env*/
+                            mov dx,envseg
+                            mov es,dx
+                            int 21h
+                        }
+                        
+                        envseg = nenvseg;
+                        poke(_psp,ENVSEG_OFS,envseg);
+
                     }
                     break;
+                    
+                    l_e_not_ok:
+                    goto e_env_not_ok;
+
+
                 case 'P':/* make a permanent shell */
                     sw_P = 1;
                     rebuild = 1;
@@ -252,9 +305,11 @@ printf("nargs=%u\n",nargs);
                     /* Accept all strings beginning with -P */
                     while((!isdigit(*p))&&(*p!='\0')&&(*p!='-')) p++;
                     while(isdigit(*p)) envsz=envsz*10+(*p++)-'0';
+                    
                     envsz /= 16; /*paragraphs*/
                     if(envsz < 10) envsz=10;
                     if(envsz > 800) envsz=800;
+                    
                     p_env_retry:
                     asm {
                         mov bx,envsz
@@ -274,6 +329,10 @@ printf("nargs=%u\n",nargs);
                         mov envseg,ax
                     }
                     poke(_psp,ENVSEG_OFS,envseg);
+
+                    get_int();
+                    set_int();
+
                     /* make int 2e point to DOGVerFunc */
                     asm {
                         /* save */
@@ -317,7 +376,8 @@ printf("nargs=%u\n",nargs);
             p++;
     }
     _env = MK_FP(envseg,0);
-    envsz <<= 4; 
+    envsz = peek(envseg-1,3) << 4; /*get size of block allocated from MCB*/
+
     if (rebuild==1) {
         if((p=malloc(envsz))!=NULL) {
             q=p;
@@ -325,7 +385,7 @@ printf("nargs=%u\n",nargs);
             sprintf(p,"COMSPEC=%s",args[0]);
             i += strlen(p)+1;
             p += i; /*point to after terminating 0 */
-            strcpy(p,"PATH=C:\\DOS;C:\\DOG\\UTIL;C:\\;..");
+            strcpy(p,"PATH=C:\\DOS;C:\\DOG;C:\\;..");
             i += strlen(p)+1;
             p += 31;
             strcpy(p,"PROMPT=");
@@ -339,7 +399,7 @@ printf("nargs=%u\n",nargs);
             i += strlen(p)+1;
             p += i; /*point to after terminating 0 */
 
-            for(j=0;j<i;j++) {
+            for(j=0;j<i;j++) { /* copy it to the env block */
                 *(_env+j) = *(q+j);
 #ifdef env_debug
                 if(*(q+j) != '\0')
@@ -357,6 +417,7 @@ printf("nargs=%u\n",nargs);
     return 0;
 }
 
+        
 
 /**************************************************************************/
 
@@ -903,45 +964,17 @@ int main(int nargs, char *argv[])
 {
     BYTE i,na,ch;
 
-    Xitable = 1;
-
-printf("PSP = %x PPID = %x\n",_psp,peek(_psp,PPID_OFS));
-
+    na = initialize(nargs, argv);
 
     if((_osmajor < 3) && (_osminor < 30)) {
         printf("Sorry your DOS is too lame.\nGet at least version 3.30\n");
         exit(1);
     }
 
-    /* save STDIN STDOUT */
-    IN = dup(fileno(stdin));
-    OUT = dup(fileno(stdout));
-
-/*
-  set own int 23h (Ctrl-C) handler/
-    get_vector(0x23,&cc_s,&cc_o);
-    set_vector(0x23,get_cs(), &ctrlc);
-*/
-#if 0
-    get_int();
-#endif
-
-    strcpy(prompt,_PROMPT);
-    D = getcur(P) + 'A';
-    na = initialize(nargs, argv);
-
-    bf = malloc(sizeof(struct bfile));
-    bf->prev = NULL;
-    bf->in = 0;
-    bf->nest = 0;
-
-
-    drvs = 0;
-
 
     if (eh == 0) {
         printf("DOG Ä Dog Operating Ground Version %u.%02u\n",DOG_ma,DOG_mi);
-        printf("       Copyright Wolf Bergenheim 1997-2007\n\n");
+        printf("      Copyright (C) Wolf Bergenheim 1997-2000\n\n");
         printf("Type HH for Help\n\n");
     }
 
