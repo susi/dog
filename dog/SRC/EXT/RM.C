@@ -31,6 +31,9 @@ History
 #define FLAG_UNSET 0
 #define FLAG_SET 1
 
+#define MODE_RM 0
+#define MODE_RT 1
+
 void rm_dir(BYTE *dir);
 void rm_file(BYTE *patt);
 void rm_list(BYTE *list);
@@ -239,10 +242,12 @@ void rm_list(BYTE *list)
 	
 int main(BYTE n,BYTE *arg[])
 {
-  BYTE r,f,i,*p,fn[129]={0},dir[80];
+  BYTE r,f,i,j,*p,fn[129]={0},dir[80];
+  BYTE mode = MODE_RM;
   
   if(n > 1) {
-	if(strncmp(arg[0],"deltree")==0) {
+	if(strstr(arg[0],"RT.COM")!=NULL) {
+	  mode = MODE_RT;
 	  flag_r = FLAG_SET;
 	}
 	
@@ -252,28 +257,37 @@ int main(BYTE n,BYTE *arg[])
 	  printf("flags: arg = %s\n",arg[i]);
 #endif
 	  if (arg[i][0] == '-') {
-		switch(arg[i][1]) {
-		 case 'i':
-		  flag_i = FLAG_SET;
-		  break;
-		 case 'h':
-		  printf("Usage: RM [OPTION]... FILE...\n\nRemove the FILE(s).\n\n");
-		  printf("The OPTIONS are:\n\t-i: interactive mode: prompt (Y/N) for each file\n");
-		  printf("\t-v: verbose: print filename of each removed file\n");
-		  printf("\t-r: recurse sub-directories. Removes all files in subdirs too\n");
-		  printf("\t     if the program is executed as deltree -r is implicit");
-		  printf("\t-h: display this help and exit\n");
-		  printf("\nFILE is either a filename OR a filename preceeded by '@',\n"
-				 " in which case the file is opened and read, treating every\n"
-				 " line as a filename to remove.\n");
-		  printf("\nRM is part of DOG (http://dog.sf.net/)\n");
-		  return 0;
-		 case 'r':
-		  flag_r = FLAG_SET;
-		  break;
-		 case 'v':
-		  flag_v = FLAG_SET;
-		  break;
+		for(j=1;arg[i][j]!='\0';j++) {
+		  switch(arg[i][j]) {
+		   case 'i':
+			flag_i = FLAG_SET;
+			break;
+		   case 'h':
+			if(mode == MODE_RM)
+			  printf("Usage: RM [OPTION]... FILE...\n\nRemove the FILE(s).\n\n");
+			else
+			  printf("Usage: RT [OPTION]... DIRECTORY...\n\nRemove the DIRECTORY(s) with all subdirectories and files.\n\n");
+			printf("The OPTIONS are:\n\t-i: interactive mode: prompt (Y/N) for each file or directory\n");
+			printf("\t-v: verbose: print filename of each removed file\n");
+			if(mode == MODE_RM)
+			  printf("\t-r: recurse sub-directories. Removes all files in subdirsrctories too\n");
+			printf("\t     if the program is executed as deltree -r is implicit");
+			printf("\t-h: display this help and exit\n");
+			if(mode == MODE_RM)
+			  printf("\nFILE is either a filename OR a filename preceeded by '@',\n");
+			else
+			  printf("\nDIRECTORY is either a directory OR a filename preceeded by '@',\n");
+			printf(" in which case the file is opened and read, treating every\n"
+				   " line as a file/directory to remove.\n");
+			printf("\nRM is part of DOG (http://dog.sf.net/)\n");
+			return 0;
+		   case 'r':
+			flag_r = FLAG_SET;
+			break;
+		   case 'v':
+			flag_v = FLAG_SET;
+			break;
+		  }
 		}
 	  }
 	}
