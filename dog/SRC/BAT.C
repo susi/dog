@@ -50,32 +50,35 @@ BYTE batch[_BAT_COMS][3] = {
 void parse_vars(BYTE *s,BYTE *t)
 {
 
-	BYTE *p,l,*e,i;
+  BYTE *p,l,*e,i,j,ename[80],eval[127];
+  
+  *t = 0;
+  l = strlen(s);
 
-	*t = 0;
-	l = strlen(s);
+  e = t;
 
-	e = t;
-
-	for(i=0;i<l;i++) {
-		if(s[i] == '$') {
-			if(isdigit(s[++i])) {
-				strcat(t,bf->args[s[i] -'0']);
+  for(i=0;i<l;i++) {
+    if(s[i] == '$') {
+      if(isdigit(s[++i])) {
+	strcat(t,bf->args[s[i] -'0']);
 #ifdef parse_debug
 printf("parse_vars:0:t=(%s)\n",t);
 #endif
-				e += strlen(bf->args[s[i] -'0']);
-			}
-			else {
-				*e = s[i];
-				*(++e) = '\0';
-			}
-		}
-		else {
-		    *e = s[i];
-		    *(++e) = '\0';
-		}
+	e += strlen(bf->args[s[i] -'0']);
+      }
+      else {
+	for(j=0;!isspace(s[i]);j++,i++) {
+	  ename[j] = s[i];
 	}
+	strcat(t,getevar(ename,eval)); /* replace $varname with value*/
+	e += strlen(eval);
+      }
+    }
+    else {
+      *e = s[i];
+      *(++e) = '\0';
+    }
+  }
 }
 /***************************************************************************/
 
