@@ -66,11 +66,6 @@ int main(void)
 
 	/* check for DOG int d0 */
 
-	asm nop
-	asm nop
-	asm nop
-	asm nop
-	asm nop
 	asm MOV ax,35d0h
 	asm int 21h
 	asm push es
