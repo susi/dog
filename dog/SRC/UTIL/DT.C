@@ -1,8 +1,9 @@
 /*
-DT.C - version 1.0
+DT.C - Day and Time - version 1.2
     Get and/or set date and time.
+    Correct date format anywhere.
 
-Copyright (C) 2000  Wolf Bergenheim
+Copyright (C) 1999,2000 Wolf Bergenheim
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -21,8 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 This program is part of DOG - The DOG Operating Ground
 
 History
-
+Based on CLK skeleton by Eugene Wong
 30.11.99 - Created by Wolf Bergenheim
+08.12.99 - Made DT check current CountryCode and use the CC-block to show time and date correctly
 12.03.00 - Added DOSCC struct to fix program -WB
 
 */
