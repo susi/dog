@@ -1,0 +1,10 @@
+Fixes/changes:
+Bypassed FreeDOS bug witth findfirst.
+Fixed processing of varname in commandline.
+
+New features:
+prompt: new meta $e - prints errorlevel
+-P will execute dog in the current directory (ie root on boot)
+   That is why it is suggested that DOG.COM doesn't exist there.
+It is possible to use %envname% in the commandline, and in dog-files, and in
+prompt.
