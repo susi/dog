@@ -1,6 +1,6 @@
 /*
 
-.C   - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
+HH.C   - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
 
 Copyright (C) 1999,2000 Wolf Bergenheim
 
@@ -23,5 +23,17 @@ Wolf Bergenheim (WB)
 
 History
 18.03.00 - Extracted from DOG.C - WB
-
+06.04.00 - Started - WB
 */
+
+void do_hh(BYTE n)
+{
+    BYTE i;
+
+    if(n == 1) {
+        printf("The commands are:\n");
+        for(i=0;i<_NCOMS;i++) {
+            printf("%s %s\n",commands[i],command_des[i]);
+        }
+    }
+}

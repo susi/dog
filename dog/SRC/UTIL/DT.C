@@ -75,17 +75,23 @@ int main(int nargs, char *arg[])
     int set;
     if(nargs == 1) {
         put_dt();
+        printf(" ");
         put_tm();
+        printf("\n");
     }
     else {
         set = get_sw(nargs,arg);
         if((set & DATE) == DATE){
             put_dt();
+            printf("\n");
             set_dt();
+            printf("\n");
         }
         if((set & TIME) == TIME){
             put_tm();
+            printf("\n");
             set_tm();
+            printf("\n");
         }
     }
     return 0;
@@ -126,13 +132,13 @@ void put_dt(void)
 
     switch(ccb.dtf) {
         case 0:
-            printf("%s %02d%s%02d%s%d\n",Day[wk],mo,ccb.dts,dy,ccb.dts,yy);
+            printf("%s %02d%s%02d%s%d",Day[wk],mo,ccb.dts,dy,ccb.dts,yy);
             break;
         case 1:
-            printf("%s %02d%s%02d%s%d\n",Day[wk],dy,ccb.dts,mo,ccb.dts,yy);
+            printf("%s %02d%s%02d%s%d",Day[wk],dy,ccb.dts,mo,ccb.dts,yy);
             break;
         case 2:
-            printf("%s %d%s%02d%s%02d\n",Day[wk],yy,ccb.dts,mo,ccb.dts,dy);
+            printf("%s %d%s%02d%s%02d",Day[wk],yy,ccb.dts,mo,ccb.dts,dy);
             break;
     }
     return;
@@ -146,7 +152,7 @@ void put_tm(void)
         MOV h,CH
         MOV mi,CL
         MOV s,DH
-        MOV _ms,DL
+        MOV ms,DL
         MOV DX, offset ccb
         MOV AX,3800h
         INT 21h         ;/*get country info.*/
@@ -155,10 +161,10 @@ void put_tm(void)
 
     if((ccb.tf&1) == 0) {
         if(h==0) h = 12;
-        printf("%02d%s%02d%s%02d%c%02d%s\n",(h>12)?h-12:h,ccb.tms,mi,ccb.tms,s,(ccb.dtf==0)?'.':',',ms,(h>12)?Time[1]:Time[0]);
+        printf("%02d%s%02d%s%02d%c%02d%s",(h>12)?h-12:h,ccb.tms,mi,ccb.tms,s,(ccb.dtf==0)?'.':',',ms,(h>12)?Time[1]:Time[0]);
     }
     else
-        printf("%02d%s%02d%s%02d%c%02d\n",h,ccb.tms,mi,ccb.tms,s,(ccb.dtf==0)?'.':',',ms);
+        printf("%02d%s%02d%s%02d%c%02d",h,ccb.tms,mi,ccb.tms,s,(ccb.dtf==0)?'.':',',ms);
 
     return;
 }
@@ -309,8 +315,7 @@ BYTE parse_tm(void)
         MOV DH,s
         MOV dL,ms
         INT 21h         ;/*set time*/
-        
-OV i,AL
+        MOV i,AL
     }
     return i;
 }

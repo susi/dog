@@ -25,12 +25,13 @@ TODO: Fix recoginion of DR-DOS
 
 History
 18.03.00 - Extracted from DOG.C - WB
+06.04.99 - Added DR-DOS detection.
 
 **************************************************************************/
 
 void do_vr(void)
 {
-    WORD w;
+    WORD w,DR_vr;
     BYTE b,DOS_ma=3,DOS_mi=30,DOS_OEM=0xFD;
 
     asm {
@@ -47,6 +48,8 @@ void do_vr(void)
             printf("DOS version %u.%u\nDOG version %u.%u",DOS_ma,DOS_mi,DOG_ma,DOG_mi);
             break;
         case 5 :
+        case 6 :
+        case 7 :
             asm{
                 mov ax,3306h
                 int 21h
@@ -54,15 +57,25 @@ void do_vr(void)
                 je vr_NT
                 jmp vr_DOS
             }
-            vr_NT:
+        vr_NT:
             printf("DOS Command Prompt under Windows NT\nDog version %u.%u\n",DOG_ma,DOG_mi);
             break;
-        case 6 :
-        case 7 :
         vr_DOS:
             switch(DOS_OEM) {
                 case  0x00:
                     if((DOS_mi ==0) && (DOS_ma==6)) DOS_mi = 1;
+                    asm {
+                        mov ax, 4452h
+                        stc
+                        int 21h
+                        jc vr_PC
+                        cmp ax, 4452h
+                        je vr_PC
+                        mov ax,DR_vr
+                    }
+                    printf("DR-DOS Product 0x%x\nDog version %u.%u\n",DR_vr,DOG_ma,DOG_mi);
+                    break;
+                    vr_PC:
                     printf("PC-DOS version %u.%u\nDog version %u.%u\n",DOS_ma,DOS_mi,DOG_ma,DOG_mi);
                     break;
                 case  0xEE:

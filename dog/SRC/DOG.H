@@ -158,27 +158,46 @@ BYTE DOG_ma = DOG_MA, DOG_mi = DOG_MI;
 BYTE Xit = 0, Xitable = 1, eh = 0, D=0, P[MAXDIR]; 
 BYTE comline[200]= {0}, *com = comline, *arg[_NARGS], history[50][200], *prompt;
 BYTE commands[_NCOMS][3] = {
-	"BR",		/* BReak 			*/
-	"CC",		/* Change Codepage 	*/
-	"CD",		/* Change Directory */
-	"CL",		/* CLear screen		*/
-	"CP",		/* CoPy				*/
-	"CT",		/* Change Terminal	*/
-/*      "DT",              DaTe    handled by CLK       */
-	"EH",		/* EcHo				*/
-	"HH",		/* Help				*/
-	"LS",		/* LiSt files		*/
-	"MD",		/* Make Directory	*/
-	"NN",		/* New Name (rename)*/
-	"RD",		/* Remove Directory	*/
-	"RM",		/* ReMove files		*/
-	"SE",		/* Set to Environment */
-	"SZ",		/* SiZe of files in dir */
-/*      "TM",              TiMe    handled by CLK       */
-	"TP",		/* TyPe				*/
-	"VF",		/* VerFy			*/
-	"VR",		/* VeRsion			*/
-	"XX"};		/* eXit				*/
+	"BR",
+	"CC",
+	"CD",
+	"CL",
+	"CP",
+	"CT",
+	"EH",
+	"HH",
+	"LS",
+	"MD",
+	"NN",
+	"RD",
+	"RM",
+	"SE",
+	"SZ",
+	"TP",
+	"VF",
+	"VR",
+	"XX"};
+
+BYTE command_des[_NCOMS][21] = {
+	"BReak               ",
+	"Change Codepage     ",
+	"Change Directory    ",
+	"CLear screen        ",
+	"CoPy                ",
+	"Change Terminal     ",
+	"EcHo                ",
+	"Help                ",
+	"LiSt files          ",
+	"Make Directory      ",
+	"New Name (rename)   ",
+	"Remove Directory    ",
+	"ReMove files        ",
+	"Set to Environment  ",
+	"SiZe of files in dir",
+	"TyPe                ",
+	"VerFy               ",
+	"VeRsion             ",
+	"eXit                "};
 
 #define	C_BR 0
 #define	C_CC 1
@@ -273,7 +292,7 @@ void do_ct(BYTE n);
 void do_cd(BYTE n);
 void do_vr(void);
 void do_rm(BYTE n);
-void do_hh(void);
+void do_hh(BYTE n);
 void do_sz(BYTE n);
 void do_eh(BYTE n);
 void do_cd(BYTE n);

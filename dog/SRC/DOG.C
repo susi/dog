@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-Contact autor: internet: dog@users.sourceforge.net
+Contact author: internet: dog@users.sourceforge.net
                          http://www.hut.fi/~hbergenh/DOG/
 			 
 Developers:
@@ -128,6 +128,7 @@ History
 25.03.00 - added code for do_ct() - WB
 02.04.00 - fixed printprompt so that month will be displayed properly and
            changed its variable names to be more consistent with dt.c - EW
+
 */
 
 #include "dog.h"
@@ -142,6 +143,8 @@ BYTE initialize(int nargs, char *args[])
     envseg = peek(_psp,ENVSEG_OFS);
     _env = MK_FP(envseg,0);    
     envsz = peek(envseg-1,3) << 4; /*get size of block allocated from MCB*/
+
+printf("nargs=%u\n",nargs);
 
     if(nargs == 1) {
         return 0;
@@ -161,11 +164,10 @@ BYTE initialize(int nargs, char *args[])
             switch(*(++p)) {
                 case 'C': /* execute one command, then exit */
                     /* can't execute just one command on a permanent shell*/
-                    if(sw_P == 1) { 
-                        puts("Incompatible switches.");
-                        puts("You are stuck in this shell, sorry.");
-                        return 0;
-                    }
+                    if(sw_P == 1)
+                        Xit = 3;
+                    else
+                        Xit = 2;
                     /* copy the arg vectors to the command */
                     for(i=1;i<nargs;i++) {
                         if(strnicmp(args[i],"-C",2)==0){
@@ -181,7 +183,6 @@ BYTE initialize(int nargs, char *args[])
                         arg[j] = args[i];
                     }
                     Xitable = eh = 1;
-                    Xit = 111;
                     return j;
 
                 case 'E': /* set the size of the environment */
@@ -764,6 +765,7 @@ BYTE getcur(BYTE *p)
 
 /****************************************************************************/
 
+
 void printprompt(void)
 {
     WORD yr;
@@ -887,7 +889,6 @@ void printprompt(void)
 
 
 
-
 /**************************************
 ***************************************
 **                                   **
@@ -909,7 +910,7 @@ printf("PSP = %x PPID = %x\n",_psp,peek(_psp,PPID_OFS));
 
     if((_osmajor < 3) && (_osminor < 30)) {
         printf("Sorry your DOS is too lame.\nGet at least version 3.30\n");
-        exit((_osmajor<<8)+_osminor);
+        exit(1);
     }
 
     /* save STDIN STDOUT */
@@ -921,7 +922,9 @@ printf("PSP = %x PPID = %x\n",_psp,peek(_psp,PPID_OFS));
     get_vector(0x23,&cc_s,&cc_o);
     set_vector(0x23,get_cs(), &ctrlc);
 */
+#if 0
     get_int();
+#endif
 
     strcpy(prompt,_PROMPT);
     D = getcur(P) + 'A';
@@ -937,12 +940,9 @@ printf("PSP = %x PPID = %x\n",_psp,peek(_psp,PPID_OFS));
 
 
     if (eh == 0) {
-        printf("ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿\n");
-        printf("³DOG Ä Dog Operating Ground Version %u.%02u           ³\n",DOG_ma,DOG_mi);
-        printf("³       Copyright Wolf Bergenheim 1997-2007        ³\n");
-        printf("³                                                  ³\n");
-        printf("³Type HH for Help                                  ³\n");
-        printf("ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ\n\n");
+        printf("DOG Ä Dog Operating Ground Version %u.%02u\n",DOG_ma,DOG_mi);
+        printf("       Copyright Wolf Bergenheim 1997-2007\n\n");
+        printf("Type HH for Help\n\n");
     }
 
 /*******************************.D.O.G. .L.O.O.P****************************/
@@ -1036,7 +1036,13 @@ fprintf(stderr,"main:1:bf:%x  bf->in=%d\n",&(*bf),bf->nest);             /**/
             /* printf("\n"); */                                          /**/
                                                                          /**/
         }                                                                /**/
-        else if(Xit==111) {                                              /**/
+        else if(Xit==2) {                                                /**/
+            do_command(na);                                              /**/
+            Xit = 0;                                                     /**/
+            eh = 0;                                                      /**/
+        }                                                                /**/
+                                                                         /**/
+        else if(Xit==3) {                                                /**/
             do_command(na);                                              /**/
             Xit = 1;                                                     /**/
         }                                                                /**/
@@ -1045,13 +1051,16 @@ fprintf(stderr,"main:1:bf:%x  bf->in=%d\n",&(*bf),bf->nest);             /**/
 fprintf(stderr,"main:7:xit = %u\n",Xit);                                 /**/
 #endif                                                                   /**/
                                                                          /**/
-        if(Xit ==1 && Xitable==1) return;                                /**/
+        if(Xit ==1 && Xitable==1) break;                                 /**/
 #ifdef debug                                                             /**/
     fprintf(stderr,"Xit: %d\tXitable: %d\n",Xit,Xitable);                /**/
 #endif                                                                   /**/
     }                                                                    /**/
                                                                          /**/
 /*******************************.D.O.G. .L.O.O.P****************************/
+
+    return 0;
+
 }
 
 /*****************************
@@ -1125,11 +1134,7 @@ fprintf(stderr,"\n");
             break;
         
         case C_HH :
-            printf("The commands are:\n");
-              for(i=0;i<_NCOMS;i++) {
-                  printf("%s ",commands[i]);
-            }
-            printf("\n");
+            do_hh(na);
             break;
         
         case C_LS :
