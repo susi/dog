@@ -28,7 +28,7 @@ History
 
 #include "ext.h"
 
-void main(BYTE n,BYTE *arg[])
+int main(BYTE n,BYTE *arg[])
 {
     BYTE r,f,i,*p,fn[129]={0},dir[80];
     struct ffblk *fb;

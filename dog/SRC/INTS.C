@@ -85,7 +85,7 @@ void set_int(void)
 		
 }
 
-void D0GFunc(void)
+void DOGFunc(void)
 {
 	asm D0GFunc:       ;
 	asm cmp al,01h     ;
@@ -94,6 +94,7 @@ void D0GFunc(void)
 	D0G_1:         ;
 	asm MOV ax,DOG_VER ; /* return the version of DOG loaded */
 	D0G_naf:       ;
+
 	asm iret           ;
  
 }
