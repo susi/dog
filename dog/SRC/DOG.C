@@ -163,6 +163,13 @@ History
              will use the dir supplied to the function. -WB
 2002-04-27 - Fixed -C switch. For some reason the code for the -C switch 
              had dropped away. -WB
+2002-04-29 - Fixed yet another bug. There is a bug in the Borland C++ 1.01
+             fopen function, that caused dog do fail in opening the same
+						 file for redirect after the fifteenth time. Weird. Anyways I
+						 rewrote the pipe stuff to use open() intead of fopen(), now all
+						 is good again. Also changed aevarreplace to be executed before
+						 any fileredirects are checked so that it is possible to use env
+						 vars in specifying location of files.
 */
 
 #include "dog.h"
@@ -442,12 +449,6 @@ BYTE parsecom(BYTE * line,BYTE ll)
 #ifdef parse_debug
   printf("parsecom:0-2: line(%s)\n",line);
 #endif
-  ll = strlen(line);
-  evarreplace(line,ll);
-  ll = strlen(line);
-#ifdef parse_debug
-  printf("parsecom:0-3: line(%s) ll=%d\n",line,ll);
-#endif
 
   i=0;
   while((j<_NARGS) && (i<ll)) {
@@ -489,7 +490,16 @@ BYTE getcom(BYTE *com)
   
   ln = getln(com, 200);
   
-  if(redir(com)==0) {
+#ifdef parse_debug
+  printf("getcom:0-1: com(%s) ln=%d\n",com,ln);
+#endif
+  evarreplace(com,ln);
+  ln = strlen(com);
+#ifdef parse_debug
+  printf("getcom:0-2: com(%s) ln=%d\n",com,ln);
+#endif
+  
+	if(redir(com)==0) {
     com[0] = 0;
     arg[0] = com;
     return 0;
@@ -603,9 +613,9 @@ BYTE redir(BYTE *c)
 #endif
     if(*p == '>') {
       *p = '\0';
-      strcpy(fout.opt,"w");
+			fout.fo = O_CREAT|O_TRUNC|O_WRONLY|O_TEXT;
       if((*(++p)) == '>') {
-        strcat(fout.opt,"a");
+				fout.fo = O_CREAT|O_APPEND|O_WRONLY|O_TEXT;
         *p = ' '; /*erase the >*/
       }
       
@@ -631,7 +641,7 @@ BYTE redir(BYTE *c)
     
     else if(*p == '<') {
       *p = '\0';
-			strcpy(fin.opt,"r");
+			fin.fo = O_RDONLY|O_TEXT;
       
       /* skip spaces and tabs*/
       while(isspace(*(p++))) ;
@@ -716,26 +726,28 @@ BYTE redir(BYTE *c)
 #ifdef debug
     printf("redir:8:c(%s) fout.name(%s)\n",c,fout.name);
 #endif
-    if((fout.fp = fopen(fout.name,fout.opt)) == NULL) {
-      fprintf(stderr,"Unable to redirect output to file %s.\n",fout.name);
+		if((fout.fh = open(fout.name,fout.fo)) == 0xFFFF) {
+			fprintf(stderr,"Unable to redirect output to file %s.\n",fout.name);
+      perror("Error is");
       fout.redirect=0;
       return 0;
     }
     
-    dup2(fileno(fout.fp),fileno(stdout));
+    dup2(fout.fh,fileno(stdout));
   }
   
   if(fin.redirect) {
 #ifdef debug
     printf("redir:9:c(%s) fin.name(%s)\n",c,fin.name);
 #endif
-    if((fin.fp = fopen(fin.name,fin.opt)) == NULL) {
+    if((fin.fh = open(fin.name,fin.fo)) == 0xFFFF) {
       fprintf(stderr,"Unable to redirect input from file %s.\n",fin.name);
+      perror("Error is");
 			fin.redirect=0;
       return 0;
     }
     
-    dup2(fileno(fin.fp),fileno(stdin));
+    dup2(fin.fh,fileno(stdin));
   }
   
   return 1;
@@ -990,19 +1002,19 @@ int main(int nargs, char *argv[])
     
     if(fout.redirect) {                                              
 #ifdef debug                                                             
-      fprintf(stderr,"main:0:closing handle %x\n",fileno(fout.fp));            
+      fprintf(stderr,"main:0:closing handle %x\n",fout.fh);            
 #endif                                                                   
       dup2(OUT,fileno(stdout));                                    
-      close(fileno(fout.fp));                                      
+      close(fout.fh);                                      
       fout.redirect = 0;                                           
     }                                                                
     
     if(fin.redirect) {                                               
 #ifdef debug                                                             
-      fprintf(stderr,"main:0:closing handle %x\n",fileno(fin.fp));             
+      fprintf(stderr,"main:0:closing handle %x\n",fin.fh);             
 #endif                                                                   
       dup2(IN,fileno(stdin));                                      
-      close(fileno(fin.fp));                                       
+      close(fin.fh);                                       
       fin.redirect = 0;                                            
     }                                                                
     
