@@ -104,13 +104,46 @@ int main(void)
   asm INT 21h
   asm JC vr_NODR
   asm cmp ax, 4452h
-  asm JE vr_NODR
+  asm JNE vr_ISDR
+  asm JMP vr_NODR
+	vr_ISDR:
 	asm MOV DR_vr,ax
 
-
-	printf("DR-DOS Product 0x%x\n\tProviding DOS %u.%u interface\n%s",DR_vr,DOS_ma,DOS_mi,dogvr);
-  	return 0;
-
+	switch(DR_vr & 0x00ff) {
+	 case 0x41:
+	  printf("DOS Plus 1.2\n\tProviding DOS %u.%u interface\n%s",DOS_ma,DOS_mi,dogvr);
+	  break;
+	 case 0x60:
+	  printf("DOS Plus 2.?\n\tProviding DOS %u.%u interface\n%s",DOS_ma,DOS_mi,dogvr);
+	  break;
+	 case 0x63:
+	  printf("DR-DOS 3.41\n\tProviding DOS %u.%u interface\n%s",DOS_ma,DOS_mi,dogvr);
+	  break;
+	 case 0x64:
+	  printf("DR-DOS 3.42\n\tProviding DOS %u.%u interface\n%s",DOS_ma,DOS_mi,dogvr);
+	  break;
+	 case 0x65:
+	  printf("DR-DOS 5.0\n\tProviding DOS %u.%u interface\n%s",DOS_ma,DOS_mi,dogvr);
+	  break;
+	 case 0x67:
+	  printf("DR-DOS 6.0\n\tProviding DOS %u.%u interface\n%s",DOS_ma,DOS_mi,dogvr);
+	  break;
+	 case 0x70:
+	  printf("PalmDOS 5.0\n\tProviding DOS %u.%u interface\n%s",DOS_ma,DOS_mi,dogvr);
+	  break;
+	 case 0x71:
+	  printf("DR-DOS 6.0 March 1993 \"business update\"\n\tProviding DOS %u.%u interface\n%s",DOS_ma,DOS_mi,dogvr);
+	  break;
+	 case 0x72:
+	  printf("DR-DOS 7.0\n\tProviding DOS %u.%u interface\n%s",DOS_ma,DOS_mi,dogvr);
+	  break;
+	 case 0x73:
+	  printf("OpenDOS 7.02\n\tProviding DOS %u.%u interface\n%s",DOS_ma,DOS_mi,dogvr);
+	  break;
+	 default:
+	  printf("DR-DOS Product 0x%x\n\tProviding DOS %u.%u interface\n%s",DR_vr,DOS_ma,DOS_mi,dogvr);
+	}
+  return 0;
   vr_NODR:
 	switch(DOS_ma) {  /*versions 1,2 & 4 NOT supported */
    case 3 :
