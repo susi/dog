@@ -23,7 +23,8 @@ rem Wolf Bergenheim (WB)
 echo Calling compiler / assembler / linker
 for %%f in ( *.c ) do call ..\..\bin\cc.bat %%f
 echo cleaning...
-for %%f in ( *.com ) do move %1.com ..\..\bin
+for %%f in ( *.com ) do del ..\..\bin\%%f
+move *.com ..\..\bin
 del *.obj
 echo done.
 echo The binary is located in ..\bin
