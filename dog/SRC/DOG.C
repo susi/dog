@@ -984,7 +984,7 @@ int main(int nargs, char *argv[])
     exit(1);
   }
   
-  if(flags && FLAG_P == FLAG_P) {
+  if((flags & FLAG_P) == FLAG_P) {
     arg[0] = "dog.dog";
     do_command(1);
   }
