@@ -128,6 +128,8 @@ History
 25.03.00 - added code for do_ct() - WB
 02.04.00 - fixed printprompt so that month will be displayed properly and
            changed its variable names to be more consistent with dt.c - EW
+13.04.00 - rewrote initialize(). now both XX and SE work. As does the 
+           -E command-line switch - WB
 
 */
 
@@ -142,7 +144,7 @@ BYTE initialize(int nargs, char *args[])
     BYTE far *s;
     BYTE far *d;
     BYTE far *ep;
-    WORD w,nenvsz,nenvseg,eoesz;
+    WORD w,nenvsz,nenvseg,eoesz,o;
 
 
     Xitable = 1;
@@ -167,7 +169,10 @@ printf("PSP = %x PPID = %x\n",_psp,peek(_psp,PPID_OFS));
     _env = MK_FP(envseg,0);    
     envsz = peek(envseg-1,3) << 4; /*get size of block allocated from MCB*/
 
+#ifdef env_debug
 printf("nargs=%u\n",nargs);
+printf("envsz=%ux\n",envsz);
+#endif
 
     if(nargs == 1) {
         return 0;
@@ -254,11 +259,24 @@ printf("nargs=%u\n",nargs);
                         nenvsz <<= 4; /* bytes */
                         eoesz = strlen(args[0]) + 4;
                         ep = MK_FP(envseg,0); /* point to beg of env*/
+#ifdef env_debug
+printf("ep=%Fp\n",ep);
+#endif
+
                         for(w = 0;(eoesz+w) < nenvsz;w++) {
-                            if(peek(envseg,w) == 0){
-                                ep = MK_FP(envseg,w); /* save pos */
+                            if(*(ep+w) == 0){
+                                o = w; /* save pos */
+#ifdef env_debug
+printf("w=%u; ",w);
+#endif
+
                             }
                         }
+                        ep += o;
+#ifdef env_debug
+printf("ep=%Fp\n",ep);
+#endif
+
                         *(++ep) = 0;
                         *(++ep) = 1;
                         *(++ep) = 0;
@@ -276,10 +294,24 @@ printf("nargs=%u\n",nargs);
                             jc  l_e_not_ok
                             mov nenvseg,ax
                         }
+
+                        goto l_e_ok;
+                        l_e_not_ok:
+                        goto e_env_not_ok;
+                        l_e_ok:
+
                         s = MK_FP(envseg,0);
                         d = MK_FP(nenvseg,0);
 
-                        _fmemcpy(s,d,envsz);
+#ifdef env_debug
+printf("envseg=%x envsz=%x\n",envseg,envsz);
+#endif
+                        for(w=0;w<envsz;w++) {
+                            *(d++) = *(s++);
+#ifdef env_debug
+printf("s(%Fp)->%Fc d(%Fp)->%Fc\n",s,*s,d,*d);
+#endif
+                        }
 
                         asm {
                             mov ah,49h      ;/*free old env*/
@@ -287,16 +319,13 @@ printf("nargs=%u\n",nargs);
                             mov es,dx
                             int 21h
                         }
-                        
+                        envsz = nenvsz;
                         envseg = nenvseg;
                         poke(_psp,ENVSEG_OFS,envseg);
 
                     }
                     break;
                     
-                    l_e_not_ok:
-                    goto e_env_not_ok;
-
 
                 case 'P':/* make a permanent shell */
                     sw_P = 1;
