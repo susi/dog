@@ -132,8 +132,9 @@ History
            -E command-line switch - WB
 01.08.00 - rewrote (allmost completely) do_exe to handle the PATH variable. -WB
 15.08.00 - Moved BP (Beep) to a normal command out of bat.c - WB
-2001-07-17 - Changed the version to be of format X.Y.Z
-  
+2001-07-17 - Changed the version to be of format X.Y.Z - WB
+2001-07-18 - Added variable subtitution to the commandline. $name is replaced with the value of the env.var name. 
+             ${0-9} is the parameter number ${0-9} of the PREVIOUS command. -WB
 */
 
 #include "dog.h"
@@ -211,7 +212,7 @@ printf("envsz=%ux\n",envsz);
                         }
                     }
 
-                    for(j=0;i<nargs;i++,j++) {
+                    for(j=0;i<args;i++,j++) {
                         arg[j] = args[i];
                     }
                     Xitable = eh = 1;
@@ -486,28 +487,56 @@ fprintf(stderr,"getln:2: i:%d s:!%s!\n",i,s);
 /**************************************************************************/
 BYTE parsecom(BYTE * line,BYTE ll)
 {
-    BYTE i=0,j=0;
-
-#ifdef debug
+	BYTE i=0,j=0,k=0;
+	BYTE ename[80],eval[80];
+	BYTE *p;
+	
+#ifdef parse_debug
     printf("parsecom:0: line(%s)\n",line);
 #endif
-
-    while((j<20) && (i<ll)) {
-        while((isspace(line[i]) || (line[i] == '\0') )&& (i<ll))
-            line[i++] = '\0';
-
-        if(i<ll)
-            arg[j++] = &line[i];
-
-        while(!isspace(line[i]) && (i<ll))
-            i++;
-    }
-
-#ifdef debug
-    printf("parsecom:3: j=%d line: !%s! arg(",j,line);
-    for(i=0;i<j;i++)
-        printf("%s|",arg[i]);
-    printf(")\n");
+	
+	while((j<_NARGS) && (i<ll)) {
+		while((isspace(line[i]) || (line[i] == '\0') )&& (i<ll))
+			line[i++] = '\0';
+		
+		if(i<ll) {
+			if(line[i] == '$') {
+				if(isdigit(line[++i])) {
+					arg[j] = varg[line[i++] -'0'];
+					j++;
+#ifdef parse_debug
+					printf("parsecom:1:arg[%u]=(%s)\n",j-1,arg[j-1]);
+#endif
+				}
+				else {
+					for(k=0;!isspace(line[i]) && (i<ll);k++,i++) {
+						ename[k] = line[i];
+#ifdef parse_debug
+					printf("parsecom:2.0:ename[%u]=(%c);line[%u]=(%c)\n",k,ename[k],i,line[i]);
+#endif
+					}
+					ename[k]= '\0';
+					getevar(ename,varg[j]); /* replace $varname with value*/
+					arg[j] = varg[j];
+					j++;
+#ifdef parse_debug
+					printf("parsecom:2.1:arg[%u]=(%s) varg[%u]=%s ename=(%s)\n",j-1,arg[j-1],j-1,varg[j-1],ename);
+#endif
+				}
+			}
+			else {
+				arg[j++] = &line[i];
+			}
+		}
+	
+		while(!isspace(line[i]) && (i<ll))
+			i++;
+	}
+#ifdef parse_debug
+    printf("parsecom:3: j=%d line: !%s! arg(varg):",j,line);
+    for(i=0;i<20;i++)
+        printf("\t%s(%s)\n",arg[i],varg[i]);
+    printf("\n");
 #endif
 
     return j;
@@ -733,10 +762,14 @@ void printprompt(void)
     prompt = malloc(200);
 
     if((prompt = getevar("PROMPT",prompt)) != NULL)
-        k = strlen(prompt);
+	  k = strlen(prompt);
     else 
         k = 0;
        
+#ifdef debug
+		printf("prompt= (%s)\n",prompt);
+#endif
+
 /*  0x01 = path
     0x02 = date
     0x03 = time
@@ -954,9 +987,12 @@ fprintf(stderr,"Ctrl Break found!\n");                                   /**/
 #ifdef bat_debug                                                         /**/
 fprintf(stderr,"main:1:bf:%x  bf->in=%d\n",&(*bf),bf->nest);             /**/
 #endif                                                                   /**/
-            for(i=0;i<_NARGS;i++)                                        /**/
-                arg[i] = NULL;                                           /**/
-                                                                         /**/
+            for(i=0;i<_NARGS;i++) {                                      /**/
+							if (varg[i] != 0)                                          /**/
+								strcpy(varg[i],arg[i]);                                  /**/
+							else                                                       /**/
+								arg[i] = NULL;                                           /**/
+						}                                                            /**/
             if (bf->in) {                                                /**/
                 do_bat();                                                /**/
             }                                                            /**/

@@ -170,7 +170,7 @@ C:\DOG>_
 /* Define Global Variables */
 BYTE DOG_ma = DOG_MA, DOG_mi = DOG_MI, DOG_re = DOG_RE;
 BYTE Xit = 0, Xitable = 1, eh = 0, D=0, P[MAXDIR]; 
-BYTE comline[200]= {0}, *com = comline, *arg[_NARGS], history[50][200], *prompt;
+BYTE comline[200]= {0}, *com = comline, *arg[_NARGS], varg[_NARGS][200], *prompt;
 BYTE commands[_NCOMS][3] = {
     "BP",
 	"BR",

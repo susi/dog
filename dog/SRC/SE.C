@@ -85,7 +85,7 @@ BYTE *getevar(BYTE *varname, BYTE *value)
                 /* restore _env */
                 *q='\0';
                 _env=MK_FP(envseg,0);
-                return value;
+							return value;
             }
             else { /* no match in _env to next */
                 while(*(_env++) != '\0');
