@@ -163,13 +163,12 @@ History
              will use the dir supplied to the function. -WB
 2002-04-27 - Fixed -C switch. For some reason the code for the -C switch 
              had dropped away. -WB
-2002-04-29 - Fixed yet another bug. There is a bug in the Borland C++ 1.01
-             fopen function, that caused dog do fail in opening the same
-						 file for redirect after the fifteenth time. Weird. Anyways I
-						 rewrote the pipe stuff to use open() intead of fopen(), now all
-						 is good again. Also changed aevarreplace to be executed before
-						 any fileredirects are checked so that it is possible to use env
-						 vars in specifying location of files.
+2002-05-12 - Changed the do_exe() to execute any .COM .EXE .DOG file even if
+             a directory with the same name exists
+             e.g.: FOO.COM and a directory FOO exists; if you type foo, then
+             FOO.COM is executed, if you want the dir FOO you type FOO. -WB
+2002-05-15 - Fixed that upon return we restore the D0 function
+
 */
 
 #include "dog.h"
@@ -322,9 +321,9 @@ BYTE initialize(int nargs, char *args[])
           
           /* save */
           asm MOV ax,352eh
+          asm INT 21h
           asm MOV i2e_o,bx
           asm MOV i2e_s,es
-          asm INT 21h
           /* set */
           asm MOV ax,252eh
           asm MOV dx,offset D0GFunc
@@ -449,6 +448,12 @@ BYTE parsecom(BYTE * line,BYTE ll)
 #ifdef parse_debug
   printf("parsecom:0-2: line(%s)\n",line);
 #endif
+  ll = strlen(line);
+  evarreplace(line,ll);
+  ll = strlen(line);
+#ifdef parse_debug
+  printf("parsecom:0-3: line(%s) ll=%d\n",line,ll);
+#endif
 
   i=0;
   while((j<_NARGS) && (i<ll)) {
@@ -490,16 +495,7 @@ BYTE getcom(BYTE *com)
   
   ln = getln(com, 200);
   
-#ifdef parse_debug
-  printf("getcom:0-1: com(%s) ln=%d\n",com,ln);
-#endif
-  evarreplace(com,ln);
-  ln = strlen(com);
-#ifdef parse_debug
-  printf("getcom:0-2: com(%s) ln=%d\n",com,ln);
-#endif
-  
-	if(redir(com)==0) {
+  if(redir(com)==0) {
     com[0] = 0;
     arg[0] = com;
     return 0;
@@ -613,9 +609,9 @@ BYTE redir(BYTE *c)
 #endif
     if(*p == '>') {
       *p = '\0';
-			fout.fo = O_CREAT|O_TRUNC|O_WRONLY|O_TEXT;
+      strcpy(fout.opt,"w");
       if((*(++p)) == '>') {
-				fout.fo = O_CREAT|O_APPEND|O_WRONLY|O_TEXT;
+        strcat(fout.opt,"a");
         *p = ' '; /*erase the >*/
       }
       
@@ -641,7 +637,7 @@ BYTE redir(BYTE *c)
     
     else if(*p == '<') {
       *p = '\0';
-			fin.fo = O_RDONLY|O_TEXT;
+			strcpy(fin.opt,"r");
       
       /* skip spaces and tabs*/
       while(isspace(*(p++))) ;
@@ -726,28 +722,26 @@ BYTE redir(BYTE *c)
 #ifdef debug
     printf("redir:8:c(%s) fout.name(%s)\n",c,fout.name);
 #endif
-		if((fout.fh = open(fout.name,fout.fo)) == 0xFFFF) {
-			fprintf(stderr,"Unable to redirect output to file %s.\n",fout.name);
-      perror("Error is");
+    if((fout.fp = fopen(fout.name,fout.opt)) == NULL) {
+      fprintf(stderr,"Unable to redirect output to file %s.\n",fout.name);
       fout.redirect=0;
       return 0;
     }
     
-    dup2(fout.fh,fileno(stdout));
+    dup2(fileno(fout.fp),fileno(stdout));
   }
   
   if(fin.redirect) {
 #ifdef debug
     printf("redir:9:c(%s) fin.name(%s)\n",c,fin.name);
 #endif
-    if((fin.fh = open(fin.name,fin.fo)) == 0xFFFF) {
+    if((fin.fp = fopen(fin.name,fin.opt)) == NULL) {
       fprintf(stderr,"Unable to redirect input from file %s.\n",fin.name);
-      perror("Error is");
 			fin.redirect=0;
       return 0;
     }
     
-    dup2(fin.fh,fileno(stdin));
+    dup2(fileno(fin.fp),fileno(stdin));
   }
   
   return 1;
@@ -971,14 +965,17 @@ int main(int nargs, char *argv[])
   
   /* save */
   asm MOV ax,35d0h
+  asm INT 21h
   asm MOV id0_o,bx
   asm MOV id0_s,es
-  asm INT 21h
-  /* set */
+
+#ifdef xx_debug
+  printf("D0G = %04X:%04X\n",id0_s,id0_o);
+#ifdef xx_debug
+    
+    /* set */
   asm MOV ax,25d0h
   asm MOV dx,offset D0GFunc
-  asm push cs
-  asm pop es
   asm INT 21h
 
   if((flags & FLAG_P) == FLAG_P) {
@@ -1002,19 +999,19 @@ int main(int nargs, char *argv[])
     
     if(fout.redirect) {                                              
 #ifdef debug                                                             
-      fprintf(stderr,"main:0:closing handle %x\n",fout.fh);            
+      fprintf(stderr,"main:0:closing handle %x\n",fileno(fout.fp));            
 #endif                                                                   
       dup2(OUT,fileno(stdout));                                    
-      close(fout.fh);                                      
+      close(fileno(fout.fp));                                      
       fout.redirect = 0;                                           
     }                                                                
     
     if(fin.redirect) {                                               
 #ifdef debug                                                             
-      fprintf(stderr,"main:0:closing handle %x\n",fin.fh);             
+      fprintf(stderr,"main:0:closing handle %x\n",fileno(fin.fp));             
 #endif                                                                   
       dup2(IN,fileno(stdin));                                      
-      close(fin.fh);                                       
+      close(fileno(fin.fp));                                       
       fin.redirect = 0;                                            
     }                                                                
     
@@ -1167,14 +1164,30 @@ int main(int nargs, char *argv[])
   
   /*******************************.D.O.G. .L.O.O.P****************************/
 
+#ifdef xx_debug
+  printf("D0G = %04X:%04X\n",id0_s,id0_o);
+#ifdef xx_debug
+  
   /* restore */
   asm MOV ax,25d0h
-  asm MOV dx,id0_s
-  asm PUSH dx
-  asm pop es
   asm MOV dx,id0_o
+  asm push ds
+  asm mov ds,id0_s
   asm INT 21h
-  
+  asm pop ds
+
+#ifdef xx_debug
+  asm MOV ax,35d0h
+  asm INT 21h
+  asm MOV id0_o,bx
+  asm MOV id0_s,es
+
+  printf("D0G = %04X:%04X\n",id0_s,id0_o);
+  asm mov id0_o, offset D0GFunc 
+  asm mov id0_s, cs
+  printf("D0G = %04X:%04X\n",id0_s,id0_o);
+#endif
+
   return 0;
   
 }
@@ -1337,11 +1350,13 @@ void do_command( BYTE na)
 void do_exe(BYTE n)
 {
   
-  BYTE d,i,ic,ie,id,*p,*q,*r,*cpath,envi[255],file[128],exec_f;
+  BYTE d,i,ic,ie,id,*p,*q,*r,*cpath,envi[255],file[128],exec_f, xd;
   BYTE s[200], com[80],exe[80],dog[80],path[60],trunam[128],prog[120];
   struct ffblk *fb;
 
 	exec_f = NON;
+  
+  xd = 0;
   
   for (i=0;i<200;i++) {
     s[i] = '\0';
@@ -1373,11 +1388,7 @@ void do_exe(BYTE n)
     printf("do_exe:3:ff_attrib = 0x%x\n",fb->ff_attrib);
 #endif
     if((fb->ff_attrib & FA_DIREC) == FA_DIREC) {
-      arg[1] = prog;
-      arg[0] = commands[C_CD];
-      do_cd(2);
-      free(fb);
-      return;
+      xd = 1;
     }
     
     if(strstr(fb->ff_name,".COM") == NULL) {
@@ -1524,7 +1535,14 @@ void do_exe(BYTE n)
 #endif
   
   switch(exec_f) {
-  case NON:
+   case NON:
+    if (xd == 1) {
+      arg[1] = prog;
+      arg[0] = commands[C_CD];
+      do_cd(2);
+      free(fb);
+      return;
+    }
     printf("%s: Bad command or Filename\n",arg[0]);
     free(fb);
     return;
