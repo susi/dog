@@ -34,16 +34,16 @@ History
 #define MODE_RM 0
 #define MODE_RT 1
 
-void rm_dir(BYTE *dir);
-void rm_file(BYTE *patt);
-void rm_list(BYTE *list);
+BYTE rm_dir(BYTE *dir);
+BYTE rm_file(BYTE *patt);
+BYTE rm_list(BYTE *list);
 
 BYTE flag_i = FLAG_UNSET;
 BYTE flag_v = FLAG_UNSET;
 BYTE flag_r = FLAG_UNSET;
 BYTE flag_h = FLAG_UNSET;
 
-void rm_dir(BYTE *dir)
+BYTE rm_dir(BYTE *dir)
 {
   BYTE path[80];
   strcpy(path,dir);
@@ -51,14 +51,13 @@ void rm_dir(BYTE *dir)
 #ifdef debug
   printf("rm_dir (%d): path=(%s)[%x] dir=(%s)[%x]\n",__LINE__,path,path,dir,dir);
 #endif  
-  rm_file((BYTE *)path);
-  
-  return;
+  return rm_file((BYTE *)path);
+
 }
 
-void rm_file(BYTE *patt)
+BYTE rm_file(BYTE *patt)
 {
-  BYTE r,f,i,ok=1;
+  BYTE r,f,i,ok=1,ret=0;
   BYTE *p;
   BYTE fn[129]={0};
   struct ffblk fb;
@@ -112,7 +111,7 @@ void rm_file(BYTE *patt)
 		if((r == 'y') || (r == 'Y')) {
 		  if((fb.ff_attrib & FA_DIREC) == FA_DIREC) {
 			if(flag_r == FLAG_SET) {
-			  rm_dir(fn);
+			  ret = rm_dir(fn);
 			}
 #ifdef debug	
 			printf("rm_file (%d): fb.ff_name=(%s)[%x],ok=%x\n",__LINE__,fb.ff_name,fb.ff_name,ok);
@@ -126,7 +125,7 @@ void rm_file(BYTE *patt)
 	  else {
 		if((fb.ff_attrib & FA_DIREC) == FA_DIREC) {
 		  if(flag_r == FLAG_SET) {
-			rm_dir(fn);
+			ret = rm_dir(fn);
 		  }
 #ifdef debug			  
 		  printf("rm_file (%d): fb.ff_name=(%s)[%x],ok=%x\n",__LINE__,fb.ff_name,fb.ff_name,ok);
@@ -145,12 +144,14 @@ void rm_file(BYTE *patt)
 		puts(fn);
 	  }
 	}
-	else if(ok == 0xff) {
+	else {
+	  ret = 1;
 	  printf("error [%x] while removing %s ",errno,fn);
 	  perror("");
 	}
   }
   else if((f==255) && (errno==2)) {
+	ret = 1;
 	printf("%s - no such file or directory.\n",patt);
   } 
   
@@ -190,6 +191,7 @@ void rm_file(BYTE *patt)
 	  printf("rm_file (%d): r=(%c)[%x],ok=%x\n",__LINE__,r,r,ok);
 #endif
 	  if((r != 'y') && (r != 'Y'))
+		ret = 1;
 		continue;
 	}
 	
@@ -208,18 +210,20 @@ void rm_file(BYTE *patt)
 	  }
 	}
 	else {
+	  ret = 1;
 	  printf("error while removing %s ",fn);
 	  perror("");
 	}
   }
-  return;
+  return ret;
 }
 
-void rm_list(BYTE *list)
+BYTE rm_list(BYTE *list)
 {
   BYTE fn[129]={0};
   FILE *f;
-
+  BYTE ret=0;
+  
 #ifdef DEBUG  
   fprintf(stderr,"list=(%s)\n",list);
 #endif
@@ -227,23 +231,25 @@ void rm_list(BYTE *list)
   f = fopen(list,"r");
   if(f != NULL) {
 	while(fscanf(f,"%s",&fn)!=EOF){
-	  rm_file(fn);
+	  ret = rm_file(fn);
 	}
 	fclose(f);
   }
   else {
-	fprintf(stderr,"Can not open list-file: %s\n",list);
+	ret = 1;
+	fprintf(stderr,"Can not open list-file: %s - ",list);
 	perror("");
   }
   
-  return;
+  return ret;
   
 }
 	
 int main(BYTE n,BYTE *arg[])
 {
-  BYTE r,f,i,j,*p,fn[129]={0},dir[80];
+  BYTE r,f,i,j,dir[80];
   BYTE mode = MODE_RM;
+  int ret = 0;
   
   if(n > 1) {
 	if(strstr(arg[0],"RT.COM")!=NULL) {
@@ -302,7 +308,7 @@ printf("main for-loop: arg = %s\n",arg[i]);
 		;
 	  }
 	  else {
-		if((p=strstr(arg[i],"*.*"))!=NULL) {
+		if(strstr(arg[i],"*.*")!=NULL) {
 		  printf("Removing %s - Are you sure(Y/N)? ",arg[i]);
 		  /* Get character */
 		  
@@ -316,14 +322,14 @@ printf("main for-loop: arg = %s\n",arg[i]);
 		  if((r != 'y') && (r != 'Y'))
 		  break;
 		}
-		rm_file(arg[i]);
+		ret = rm_file(arg[i]);
 	  }
     }
   }
-  else
-	puts("Invalid number of arguments.");  
+  else {
+	puts("Invalid number of arguments.");
+	ret = 0xff;
+  }
   
-  return 0;
+  return ret;
 }
-
-
