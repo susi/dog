@@ -87,24 +87,27 @@ printf("dir=%s\n",dir);
                     fclose(fp);
                 }
             }
-            else if(r == 3) {
-                fprintf(stderr,"\n****File not found: %s (Invalid path)\n",arg[i]);
-                continue;
-            }
-            else if(r == 4) {
-                fprintf(stderr,"\n****File not found: %s (Too many open files)\n",arg[i]);
-                continue;
-            }
-            else if(r == 18) {
-                fprintf(stderr,"\n****File not found: %s\n",arg[i]);
-                continue;
-            }
-            else {
-                fprintf(stderr,"\n****File not found: %s (Unknown error(%d))\n",arg[i],i);
-                continue;
-            }
+            else if((r == 255) && (errno !=ENMFILE)) {
+								switch(errno) {
+								 case ENOFILE:
+										fprintf(stderr,"\n****File not found: %s\n",arg[i]);
+										break;
+								 case ENOPATH:
+										fprintf(stderr,"\n****File not found: %s (Invalid path)\n",arg[i]);
+										break;
+								 case EMFILE:
+										fprintf(stderr,"\n****File not found: %s (Too many open files)\n",arg[i]);
+										break;
+								 default:
+										fprintf(stderr,"\n****File not found: %s (DOS error (%x))\n",arg[i],errno);
+										break;
+
+								}
+								continue;
+						}
+
             r = findnext(fb);
-            while(r==0) {
+            while(errno != 2) {
                 printf("\n---------------%s---------------\n\n",fb->ff_name);
                 strcpy(dir,savedir);
                 if (dir_flag == 1)
@@ -131,22 +134,31 @@ printf("dir=%s\n",dir);
                 }
                 r = findnext(fb);
             }
-            if(r == 3) {
-                fprintf(stderr,"\n****File not found: %s (Invalid path)\n",fb->ff_name);
-            }
-            else if(r == 4) {
-                fprintf(stderr,"\n****File not found: %s (Too many open files)\n",arg[i]);
-            }
-            else if(r == 18) {
-            }
-            else {
-                fprintf(stderr,"\n****File not found: %s (Unknown error(%d))\n",arg[i],i);
-            }
+
+            if((r == 255) && (errno !=ENOFILE)) {
+								switch(errno) {
+/*								  
+                    case ENOFILE:
+										fprintf(stderr,"\n****File not found: %s\n",arg[i]);
+										break;
+ */
+								 case ENOPATH:
+										fprintf(stderr,"\n****File not found: %s (Invalid path)\n",arg[i]);
+										break;
+								 case EMFILE:
+										fprintf(stderr,"\n****File not found: %s (Too many open files)\n",arg[i]);
+										break;
+								 default:
+										fprintf(stderr,"\n****File not found: %s (DOS error (%x))\n",arg[i],errno);
+										break;
+										
+								}
+						}
+
         }
 
     }
     free(fb);
     return;
 }
-
 

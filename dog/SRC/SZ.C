@@ -36,7 +36,7 @@ void do_sz(BYTE n)
     BYTE b,i,j,str[5];
     WORD max,mbx,mcx,mdx;
     DWORD h,s,d,t;
-
+		
     if (n > 2) {
         puts("Invalid number of arguments.");
         return;
@@ -48,7 +48,9 @@ void do_sz(BYTE n)
     h=0;
 
     fb = malloc(sizeof(struct ffblk));
-
+	
+		asm push AX
+		asm push DX
     asm mov AH,36h
 		asm xor dl,dl
 		asm int 21h
@@ -56,12 +58,14 @@ void do_sz(BYTE n)
 		asm mov mbx,BX
 		asm mov mcx,CX
 		asm MOV mdx,DX
-
+		asm POP DX
+		asm POP AX
+			
     d = (DWORD)max*(DWORD)mbx*(DWORD)mcx; 
     t = (DWORD)max*(DWORD)mcx*(DWORD)mdx;
 
     b = findfirst("*.*",fb,FA_NORMAL|FA_HIDDEN|FA_SYSTEM);
-    if (b!=18) {
+    if (b==0) {
         if (((fb->ff_attrib & FA_HIDDEN) == FA_HIDDEN)){
             h += fb->ff_fsize;
             j++;
@@ -76,8 +80,9 @@ void do_sz(BYTE n)
             i++;
         }
     }
+		
     b = findnext(fb);
-    while (b!=18) {
+    while (b==0) {
         if(cBreak) {
             cBreak = 0;
             return;

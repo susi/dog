@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <alloc.h>
 #include <io.h>
 #include <process.h>
+#include <errno.h>
 
 #define de		bug
 #define list
@@ -73,7 +74,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define EVER ;;
 
 
-#define FNF 18
+#define FNF 2
 
 #define _BS 0x8;
 #define _TAB 0x9;

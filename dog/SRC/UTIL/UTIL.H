@@ -40,6 +40,7 @@ Wolf Bergenheim (WB)
 #define DWORD unsigned long
 
 /* we want to use the ones in dos.h. not in dir.h */
+#if 0
 #define findfirst(A,B,C) _dos_findfirst(A,C,B)
 #define findnext _dos_findnext
 #define ffblk       find_t
@@ -48,11 +49,16 @@ Wolf Bergenheim (WB)
 #define ff_fdate    wr_date
 #define ff_fsize    size 
 #define ff_name	    name
+#endif
 
 #ifdef MK_FP
 #undef MK_FP
 #endif
 #define MK_FP(seg,ofs) ((void far*)(((unsigned long)(seg) << 16) | (ofs)))
+
+#ifndef FA_NORMAL
+#define FA_NORMAL 0x0
+#endif
 
 #define EVER ;;
 

@@ -52,7 +52,7 @@ void do_mv(BYTE n)
 
     b = findfirst(arg[1],fb,0);
 
-    while (b != 18) {
+    while (b == 0) {
 
         strcpy(odir,arg[1]);
         p = odir;
@@ -113,20 +113,20 @@ printf("%s:odir = /%s/ ndir = /%s/\n",__FILE__,odir,ndir);
         printf("%s --> %s\n",on,nn);
         r = newname(on,nn);
 
-        if(r != 0) {
+        if(r == 255) {
             switch(r) {
-                case 02:
-                    printf("%s NOT found.\n",on);
-                    break;
-                case 03:
-                    puts("Path not found.");
-                    break;
-                case 05:
-                    puts("Access denied.");
-                    break;
-                case 11:
-                    puts("Invalid format.");
-                    break;
+						 case ENOFILE:
+								printf("%s NOT found.\n",on);
+								break;
+						 case ENOPATH:
+								puts("Path not found.");
+								break;
+						 case EACCES:
+								puts("Access denied.");
+								break;
+						 case EINVFMT:
+								puts("Invalid format.");
+								break;
             }
         }
 

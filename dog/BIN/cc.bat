@@ -24,16 +24,23 @@ if (%CC%) == () goto define
 goto start
 :define
 rem
-set CC=C:\BORLANDC\BIN\BCC
+set CC=C:\TURBOC\TCC
 set SET=1
 :start
+if not exist %CC%.exe goto cc_nf
 if (%1)==() goto use
-%CC% -B -d -mt -O1 -O- -tDc -Z %1 %2 %3 %4 %5 %6 %7 %8 %9
+%CC% -B -d -mt -O1 -O- -Z -lt %1 %2 %3 %4 %5 %6 %7 %8 %9
+goto end
+:cc_nf
+echo Can not find cc (%CC%)
+echo set compiler name (without extension) to variable CC
+echo e.g.:
+echo set cc=C:\TURBOC\TCC
 goto end
 :use
 echo Usage: %0 PROGRAM.C
 echo Compiles programs to tiny (.COM) mode, and optimizes for smallest size.
-echo set CC to point to your copy of BCC i.e. SET CC=C:\BORLANDC\BIN\BCC
+echo set CC to point to your Borland compiler i.e. SET CC=C:\TURBOC\TCC
 goto end
 :clean
 set CC=

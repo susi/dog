@@ -148,7 +148,7 @@ printf("do_bat:0:bf:%x name=|%s|\n",&(*bf),bf->name);
     if(bf->in == 1) {
 		fba = malloc(sizeof(struct ffblk));
         i=findfirst(bf->name,fba,0);
-        if(i==18) {
+        if((i==255) && (errno==ENOFILE)) {
             fprintf(stderr,"Dogfile %s missing\n",bf->name);
             clearbat();
             bf->nest = 0;

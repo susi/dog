@@ -118,18 +118,17 @@ int get_sw(int nargs, char *arg[])
 
 void put_dt(void)
 {
-    asm{
-        MOV AH,2Ah
-        INT 21h         ;/*get DATE*/
-        MOV wk,AL
-        MOV dy,DL
-        MOV mo,DH
-        MOV yy,CX
-        MOV DX, offset ccb
-        MOV AX,3800h
-        INT 21h         ;/*get country info.*/
-        MOV cc,BX
-    }
+	  asm MOV AH,2Ah
+		asm INT 21h         ;/*get DATE*/
+	  asm MOV wk,AL
+		asm MOV dy,DL
+		asm MOV mo,DH
+		asm MOV yy,CX
+		asm MOV DX, offset ccb
+		asm MOV AX,3800h
+		asm INT 21h         ;/*get country info.*/
+	  asm MOV cc,BX
+
 
     switch(ccb.dtf) {
         case 0:
@@ -147,18 +146,18 @@ void put_dt(void)
 
 void put_tm(void)
 {
-    asm{
-        MOV AH,2Ch
-        INT 21h         ;/*GET TIME*/
-        MOV h,CH
-        MOV mi,CL
-        MOV s,DH
-        MOV ms,DL
-        MOV DX, offset ccb
-        MOV AX,3800h
-        INT 21h         ;/*get country info.*/
-        MOV cc,BX
-    }
+
+  	asm MOV AH,2Ch
+		asm INT 21h         ;/*GET TIME*/
+	  asm MOV h,CH
+		asm MOV mi,CL
+		asm MOV s,DH
+		asm MOV ms,DL
+		asm MOV DX, offset ccb
+		asm MOV AX,3800h
+		asm INT 21h         ;/*get country info.*/
+	  asm MOV cc,BX
+
 
     if((ccb.tf&1) == 0) {
         if(h==0) h = 12;
@@ -274,14 +273,13 @@ BYTE parse_dt(void)
             return 0x0FF;
     }
 
-    asm{
-        MOV AX,2B00h
-        MOV CX,yy
-        MOV DH,mo
-        MOV dL,dy
-        INT 21h
-        MOV i,AL
-    }
+  	asm MOV AX,2B00h
+		asm MOV CX,yy
+		asm MOV DH,mo
+		asm MOV dL,dy
+		asm INT 21h
+		asm MOV i,AL
+
     return i;
 }
 
@@ -309,15 +307,14 @@ BYTE parse_tm(void)
 
     if((h >23) || (mi>60) || (s>60) || (ms>99)) return 0x0FF;
 
-    asm{
-        MOV AX,2D00h
-        MOV CH,h
-        MOV CL,mi
-        MOV DH,s
-        MOV dL,ms
-        INT 21h         ;/*set time*/
-        MOV i,AL
-    }
+	  asm MOV AX,2D00h
+		asm MOV CH,h
+		asm MOV CL,mi
+		asm MOV DH,s
+		asm MOV dL,ms
+		asm INT 21h         ;/*set time*/
+	  asm MOV i,AL
+
     return i;
 }
 

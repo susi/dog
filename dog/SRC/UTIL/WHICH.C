@@ -127,21 +127,20 @@ void check(BYTE *p,BYTE ext)
     if(i==0) {
         printf("%s%c%s",p,c,b.ff_name);
         if(f == FULL) {
-            asm {
-                mov ah,03h
-                xor bx,bx
-                int 10h
-                mov ah,02h
-                cmp dl,40
-                jbe same_row
-                inc dh
-            }
-                same_row:
-            asm {
-                mov dl,40
-                int 10h
+					  asm mov ah,03h
+						asm xor bx,bx
+						asm int 10h
+						asm mov ah,02h
+						asm cmp dl,40
+						asm jbe same_row
+						asm inc dh
+						
+						same_row:
+					
+					  asm mov dl,40
+						asm int 10h
 
-            }
+        
 
             printf("%02d.%02d.%4d",b.ff_fdate & 0x1F,(b.ff_fdate >> 5) & 0x0f,(b.ff_fdate>>9)+1980);
             printf(" %2d.%02d ",b.ff_ftime >> 11, (b.ff_ftime & 0x7e0) >> 5);

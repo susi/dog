@@ -58,7 +58,7 @@ void do_rm(BYTE n)
             
             f=findfirst(arg[i],fb,0);
 
-            if(f!=18) {
+            if(f==0) {
 
                 if(cBreak) {
                     cBreak = 0;
@@ -81,7 +81,7 @@ void do_rm(BYTE n)
                     puts(fn);
                 }
             }
-            else if(f==18) {
+            else if((f==255) && (errno==2)) {
                 printf("%s NOT found.\n",arg[i]);
             }
             r=findnext(fb);
