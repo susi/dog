@@ -1,6 +1,6 @@
 /*
 
-BR.C - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
+BR.C - DOG - Alternate command processor for freeDOS
 
 Copyright (C) 1999,2000 Wolf Bergenheim
 
@@ -72,7 +72,7 @@ int main(BYTE n, BYTE *arg[])
 
 BYTE cbreak(BYTE s)
 {
-    
+
     asm MOV AH,33h
     asm MOV AL,s
     asm CMP AL,0FFh

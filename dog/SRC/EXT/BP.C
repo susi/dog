@@ -1,6 +1,6 @@
 /*
 
-BP.C   - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
+BP.C   - DOG - Alternate command processor for freeDOS
 
 Copyright (C) 1999,2000 Wolf Bergenheim
 
@@ -37,11 +37,11 @@ void do_bp(void);
 int main(int nargs, char *args[])
 {
 	BYTE r;
-	
+
 	r = init(nargs, args);
 	if (r == 0)
 		do_bp();
-	
+
 	return r;
 }
 
@@ -95,7 +95,7 @@ printf("do_bp:arg[%d]=(%s)\n",b,arg[b]);
 
 void do_bp(void)
 {
-	
+
 #ifdef bp_debug
 	printf("tone: %uHz %ums\n",f,t);
 #endif
@@ -104,12 +104,12 @@ void do_bp(void)
 	 else if(f == 0) {
 			delay(t);
 	 }
-	 else { 
+	 else {
 			sound(f);
 			delay(t);
 			nosound();
 	  }
-	 
+
 	return;
 }
 

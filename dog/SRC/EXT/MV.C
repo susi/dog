@@ -1,6 +1,6 @@
 /*
 
-MV.C - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
+MV.C - DOG - Alternate command processor for freeDOS
 
 Copyright (C) 1999,2000 Wolf Bergenheim
 
@@ -27,6 +27,8 @@ History
 18.03.00 - Extracted from DOG.C - WB
 20.10.00 - Renamed nn to mv (It should havee been named mv from the beginning)
            Fixed do_mv. - WB
+03.01.02 - Fixed bug that prevented moving to/from root directory (same as in
+            rm.c) - WB
 
 **************************************************************************/
 
@@ -37,101 +39,109 @@ BYTE *trueName(BYTE *name,BYTE *tn);
 
 int main(BYTE n, BYTE *arg[])
 {
-    BYTE *p, b, ndir[129], odir[129], nn[129]={0},on[129]={0},tn[12]={0};
+	BYTE *p, b, ndir[129], odir[129], nn[129]={0},on[129]={0},tn[12]={0};
 #ifdef MV_WILD
-    BYTE fn[129]={0}, wild=0;
+	BYTE fn[129]={0}, wild=0;
 #endif
-    WORD r;
-    struct ffblk ffb,*fb=&ffb;
+	WORD r;
+	struct ffblk ffb,*fb=&ffb;
 
-    if(n != 3) {
-        puts("Invalid number of arguments.");
-        return 0xff;
-    }
+	if(n != 3) {
+		puts("Invalid number of arguments.");
+		return 0xff;
+	}
 
-    b = findfirst(arg[1],fb,0);
+	b = findfirst(arg[1],fb,0);
 
-    while (b == 0) {
+	while (b == 0) {
 
-        strcpy(odir,arg[1]);
-        p = odir;
+		strcpy(odir,arg[1]);
+		p = odir;
 
-        /* separate path from filename */
-        for(p+=strlen(odir)+1;(*p!='\\') && (p > odir);p--);
+		/* separate path from filename */
+		for(p+=strlen(odir)+1;(*p!='\\') && (p > odir);p--);
 #ifdef debug_mv
 printf("%s:odir=(%p)%s,p=(%p)%s\n",__FILE__,odir,odir,p,p);
 #endif
-        if (p>odir) {
-            *(++p) = '\0';
-        }
-        else
-            strcpy(odir,"");
+		if (p>odir) {
+			*(++p) = '\0';
+		}
+		else {
+      if (odir[0] == '\\' )
+			  strcpy(odir,"\\");
+      else
+			  strcpy(odir,"");
+    }
 
-        strcpy(ndir,arg[2]);
-        p = ndir;
+		strcpy(ndir,arg[2]);
+		p = ndir;
 
-        /* separate path from filename */
-        for(p+=strlen(ndir)+1;(*p!='\\') && (p > ndir);p--);
-        strcpy(tn,p);
+		/* separate path from filename */
+		for(p+=strlen(ndir)+1;(*p!='\\') && (p > ndir);p--);
+		strcpy(tn,p);
 #ifdef debug_mv
 printf("%s:ndir=(%p)%s,p=(%p)%s\n",__FILE__,ndir,ndir,p,p);
 #endif
-        if (p>ndir) {
-            *(p) = '\0';
-        }
-        else
-            strcpy(ndir,"");
+		if (p>ndir) {
+			*(p) = '\0';
+		}
+		else {
+      if (odir[0] == '\\' )
+			  strcpy(odir,"\\");
+      else
+			  strcpy(odir,"");
+    }
 
 #ifdef debug_mv
 printf("%s:odir = /%s/ ndir = /%s/\n",__FILE__,odir,ndir);
 #endif
 
 #ifdef MV_WILD
-        if(wild == 1) {
-            if(trueName(nn,arg[2]) == NULL) {
-                printf("Malformed path:\n%s\n",arg[2]);
-                /* break */
-            }
+		if(wild == 1) {
+			if(trueName(nn,arg[2]) == NULL) {
+				printf("Malformed path:\n%s\n",arg[2]);
+				/* break */
+			}
 
-            if(trueName(on,fn) == NULL) {
-                printf("Malformed path:\n%s\n",arg[1]);
-                /* break */
-            }
+			if(trueName(on,fn) == NULL) {
+				printf("Malformed path:\n%s\n",arg[1]);
+				/* break */
+			}
 
-            for(b=0;nn[b] != '\0';b++) {
-                if(nn[b] == '?')
-                    nn[b]=on[b];
-            }
-        }
+			for(b=0;nn[b] != '\0';b++) {
+				if(nn[b] == '?')
+					nn[b]=on[b];
+			}
+		}
 #else
-        strcpy(on,odir);
-        strcat(on,fb->ff_name);
-        strcpy(nn,ndir);
-        strcat(nn,tn);
+		strcpy(on,odir);
+		strcat(on,fb->ff_name);
+		strcpy(nn,ndir);
+		strcat(nn,tn);
 #endif
-        printf("%s --> %s\n",on,nn);
-        r = newname(on,nn);
+		printf("%s --> %s\n",on,nn);
+		r = newname(on,nn);
 
-        if(r == 255) {
-            switch(r) {
-						 case ENOFILE:
-								printf("%s NOT found.\n",on);
-								break;
-						 case ENOPATH:
-								puts("Path not found.");
-								break;
-						 case EACCES:
-								puts("Access denied.");
-								break;
-						 case EINVFMT:
-								puts("Invalid format.");
-								break;
-            }
-        }
+		if(r == 255) {
+			switch(r) {
+			 case ENOFILE:
+				printf("%s NOT found.\n",on);
+				break;
+			 case ENOPATH:
+				puts("Path not found.");
+				break;
+			 case EACCES:
+				puts("Access denied.");
+				break;
+			 case EINVFMT:
+				puts("Invalid format.");
+				break;
+			}
+		}
 
-        b = findnext(fb);
-    }
-    return 0;
+		b = findnext(fb);
+	}
+	return 0;
 
 }
 
@@ -139,37 +149,37 @@ printf("%s:odir = /%s/ ndir = /%s/\n",__FILE__,odir,ndir);
 
 WORD newname(BYTE *oldname, BYTE *newname)
 {
-    WORD r;
-    
-	  asm mov ah,56h
-		asm push cs
-		asm pop es
-		asm mov dx,oldname
-		asm mov di,newname
-		asm int 21h
-		asm jnc  nn_ok
-		asm mov r,ax
+	WORD r;
 
-    return r;
-    nn_ok:
-    return 0;
+	asm mov ah,56h
+	asm push cs
+	asm pop es
+	asm mov dx,oldname
+	asm mov di,newname
+	asm int 21h
+	asm jnc	nn_ok
+	asm mov r,ax
+
+	return r;
+	nn_ok:
+	return 0;
 }
 
 /****************************************************************************/
 
 BYTE *trueName(BYTE *name,BYTE *tn)
 {
-  	asm push ds
+	asm push ds
 	 	asm pop es
-		asm mov si,name
-		asm mov di,tn
-		asm mov ah,60h
-		asm int 21h
-		asm jnc tn_ok
-    
-    return NULL;
-    tn_ok:
-    return tn;
+	asm mov si,name
+	asm mov di,tn
+	asm mov ah,60h
+	asm int 21h
+	asm jnc tn_ok
+
+	return NULL;
+	tn_ok:
+	return tn;
 
 }
 

@@ -1,6 +1,6 @@
 /*
 
-CL.C - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
+CL.C - DOG - Alternate command processor for freeDOS
 
 Copyright (C) 1999,2000 Wolf Bergenheim
 
@@ -34,8 +34,8 @@ void do_cl(void);
 #pragma argsused
 int main(BYTE n, BYTE *arg[])
 {
-	/* 
-	 switch because this WILL be extended to clear 
+	/*
+	 switch because this WILL be extended to clear
 	 the screen in to differnt video modes.
 	*/
 	switch (n) {
@@ -46,14 +46,14 @@ int main(BYTE n, BYTE *arg[])
 		do_cl();
 		break;
 	}
-	
+
 	return 0;
 }
-		
+
 
 void do_cl(void)
 {
-	
+
 	  asm MOV ax,0600h
 		asm MOV bh,07h
 		asm MOV cx,0000h        /* (0,0) to*/
@@ -63,6 +63,6 @@ void do_cl(void)
 		asm MOV bh,00h
 		asm MOV dx,0000h        /* (0,0)*/
 		asm INT 10h             /*Move cursor to upper left corner*/
-    
+
 }
 

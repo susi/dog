@@ -1,6 +1,6 @@
 /*
 
-LS.C - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
+LS.C - DOG - Alternate command processor for freeDOS
 
 Copyright (C) 1999,2000 Wolf Bergenheim
 
@@ -46,11 +46,11 @@ struct ts_flags
 	 BYTE flags;
 }ls_f;
 
- 
+
 
 int main(int nargs, char *argv[])
 {
-	 
+
 	 int r;
 	 r = init(nargs,argv); /* parses argv and extracts flags and patterns */
 	 if (r == 0)
@@ -69,48 +69,48 @@ void show_entry(struct ffblk *fb)
 	WORD h, min, sec, y, m, d;
 
 	printf("%8ld   ",fb->ff_fsize);
-	
+
 	if (((fb->ff_attrib & FA_ARCH) == FA_ARCH) && (fb->ff_attrib & FA_LABEL != FA_LABEL)) {
 		printf("A");
 	}
-	
+
 	else if((fb->ff_attrib & FA_LABEL) == FA_LABEL) printf("L");
 	else printf("-");
-	
+
 	if ((fb->ff_attrib & FA_SYSTEM) == FA_SYSTEM) printf("S");
 	else if((fb->ff_attrib & FA_LABEL) == FA_LABEL) printf("A");
 	else printf("-");
-	
+
 	if ((fb->ff_attrib & FA_RDONLY) == FA_RDONLY) printf("R");
 	else if((fb->ff_attrib & FA_LABEL) == FA_LABEL) printf("B");
 	else printf("-");
-	
+
 	if ((fb->ff_attrib & FA_HIDDEN) == FA_HIDDEN) printf("H");
 	else if((fb->ff_attrib & FA_LABEL) == FA_LABEL) printf("E");
 	else printf("-");
-	
+
 	if ((fb->ff_attrib & FA_DIREC) == FA_DIREC) printf("D");
 	else if((fb->ff_attrib & FA_LABEL) == FA_LABEL) printf("L");
 	else printf("-");
-	
+
 	y = ((fb->ff_fdate & 0x0fe00)>>9);
 	y += 1980;
 	m = (fb->ff_fdate &  0x01e0)>>5;
 	d = (fb->ff_fdate &  0x001f);
-	
+
 	printf("   %02d.%02d.%04d   ",d,m,y);
-	
+
 	h = (fb->ff_ftime & 0x0F800)>>11;
 	min = (fb->ff_ftime & 0x03E0)>>5;
 	sec = (fb->ff_ftime & 0x001f)<<1; /* *2 */
-	
+
 	printf("%02d:%02d.%02d   ",h,min,sec);
-	
-	
+
+
 	printf("%s\n",fb->ff_name);
-	
+
 	return;
-			
+
 }
 /*
  * Return -1 for error 0 for OK 1 for OK, but stop (e.g. help)
@@ -121,7 +121,7 @@ int init(int nargs, char *arg[])
 
 	ls_f.npatt = 1;
 	ls_f.patt = (BYTE **) malloc(nargs * (sizeof(BYTE *)));
-	
+
 	ls_f.patt[0] = "*.*";
 
 #ifdef ls_debug
@@ -180,7 +180,7 @@ printf("do_ls:2: ls_f.patt[0]=%s hxls_f.patt=%x\n",ls_f.patt[0],ls_f.patt[0]);
 			}
 		}
 	}
-	
+
 	ls_f.npatt += k;
 	return 0;
 }
@@ -192,7 +192,7 @@ printf("do_ls:2: ls_f.patt[0]=%s hxls_f.patt=%x\n",ls_f.patt[0],ls_f.patt[0]);
  */
 void do_ls(void)
 {
-	
+
 	 BYTE *p, j, m, k;
 	 signed char r;
 	 struct ffblk *fb;
@@ -200,7 +200,7 @@ void do_ls(void)
 	 m = 0;
 
 	 printf("    size   ASRHD   dd.mm.yyyy   hh:mm.ss   name\n\n");
-		
+
 	 for(j=0;j < ls_f.npatt;j++) {
 
 #ifdef ls_debug
@@ -213,15 +213,15 @@ void do_ls(void)
 			ls_f.patt[j] = p;
 			m = 1;
 		}
-		
+
 		r = findfirst(ls_f.patt[j], fb,ls_f.attrs);
-		
+
 #ifdef ls_debug
 		fprintf(stderr,"do_ls: r=%d\n",r);
 #endif
-		
+
 		while(1) {
-				 
+
 #ifdef ls_debug
 fprintf(stderr,"do_ls: r=%d\n",r);
 fprintf(stderr,"do_ls: r=%d\ndate:%d time:%d\n",r,fb->ff_fdate,fb->ff_ftime);
@@ -238,14 +238,14 @@ fprintf(stderr,"do_ls: r=%d\ndate:%d time:%d\n",r,fb->ff_fdate,fb->ff_ftime);
 				 break;
 			 r = findnext (fb);
 		}
-			 
+
 #ifdef ls_debug
 		fprintf(stderr,"do_ls: r=%d\n",r);
 #endif
 	 if(m == 1) free(ls_f.patt[j]); /* if patt[j] was previously malloced */
-		 
+
 	}
-	 
+
 	 free(fb);
 	 return;
 }

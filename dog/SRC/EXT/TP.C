@@ -1,6 +1,6 @@
 /*
 
-TP.C - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
+TP.C - DOG - Alternate command processor for freeDOS
 
 Copyright (C) 1999,2000 Wolf Bergenheim
 
@@ -23,6 +23,7 @@ Wolf Bergenheim (WB)
 
 History
 18.03.00 - Extracted from DOG.C - WB
+02.01.02 - Bugfix: return errorcode 1 on missing filename - WB
 
 **************************************************************************/
 
@@ -38,10 +39,10 @@ int main(BYTE n, BYTE *arg[])
     BYTE i,j,r,*buff,dir[200],savedir[200],dir_flag;
 
 	 buff = malloc(BUFF_SIZE);
-	 
+
     if(n == 1) {
         fprintf(stderr,"Missing filename.\n");
-        return;
+        return 1;
     }
     else if(n >1) {
 
@@ -65,7 +66,7 @@ printf("dir[%d]=%c\n",j,dir[j]);
 #ifdef debug_tp
 printf("dir=%s\n",dir);
 #endif
-                
+
                 printf("\n---------------%s---------------\n\n",fb->ff_name);
                 if (dir_flag == 1)
                     strcat(dir,fb->ff_name);
@@ -128,7 +129,7 @@ printf("dir=%s\n",dir);
 
             if((r == 255) && (errno !=ENOFILE)) {
 								switch(errno) {
-/*								  
+/*
                     case ENOFILE:
 										fprintf(stderr,"\n****File not found: %s\n",arg[i]);
 										break;
@@ -142,7 +143,7 @@ printf("dir=%s\n",dir);
 								 default:
 										fprintf(stderr,"\n****File not found: %s (DOS error (%x))\n",arg[i],errno);
 										break;
-										
+
 								}
 						}
 
