@@ -21,12 +21,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 This program is part of DOG - The DOG Operating Ground
 
+Developers:
+Wolf Bergenheim (WB)
+Eugene Wong (EW)
+
 History
 Based on CLK skeleton by Eugene Wong
 30.11.99 - Created by Wolf Bergenheim
 08.12.99 - Made DT check current CountryCode and use the CC-block to show time and date correctly
-12.03.00 - Added DOSCC struct to fix program -WB
-
+12.03.00 - Added DOSCC struct to fix program - WB
+02.04.00 - I put the date ahead of the time when displayed,
+           because I thought it might be more standard. - EW
 */
 #include "util.h"
 
@@ -52,16 +57,16 @@ struct DOSCC {
     BYTE reserved[10];
 }ccb;
 
-BYTE mm=0,dy=0,wk=0,h=0,m=0,s=0,ms=0, str[50]={0};
+BYTE mo=0,dy=0,wk=0,h=0,mi=0,s=0,ms=0, str[50]={0};
 WORD off=0,seg=0,yy=0,cc=0;
 static BYTE Day[7][4] = {"Sun","Mon","Tue","Wed","Thu","Fri","Sat"};
 static BYTE Time[2][3] = {"am","pm"};
 
 int get_sw(int nargs, char *arg[]);
-void put_tm(void);
 void put_dt(void);
-void set_tm(void);
+void put_tm(void);
 void set_dt(void);
+void set_tm(void);
 BYTE parse_tm(void);
 BYTE parse_dt(void);
 
@@ -69,18 +74,18 @@ int main(int nargs, char *arg[])
 {
     int set;
     if(nargs == 1) {
-        put_tm();
         put_dt();
+        put_tm();
     }
     else {
         set = get_sw(nargs,arg);
-        if((set & TIME) == TIME){
-            put_tm();
-            set_tm();
-        }
         if((set & DATE) == DATE){
             put_dt();
             set_dt();
+        }
+        if((set & TIME) == TIME){
+            put_tm();
+            set_tm();
         }
     }
     return 0;
@@ -111,7 +116,7 @@ void put_dt(void)
         INT 21h         ;/*get DATE*/
         MOV wk,AL
         MOV dy,DL
-        MOV mm,DH
+        MOV mo,DH
         MOV yy,CX
         MOV DX, offset ccb
         MOV AX,3800h
@@ -121,13 +126,13 @@ void put_dt(void)
 
     switch(ccb.dtf) {
         case 0:
-            printf("%s %02d%s%02d%s%d\n",Day[wk],mm,ccb.dts,dy,ccb.dts,yy);
+            printf("%s %02d%s%02d%s%d\n",Day[wk],mo,ccb.dts,dy,ccb.dts,yy);
             break;
         case 1:
-            printf("%s %02d%s%02d%s%d\n",Day[wk],dy,ccb.dts,mm,ccb.dts,yy);
+            printf("%s %02d%s%02d%s%d\n",Day[wk],dy,ccb.dts,mo,ccb.dts,yy);
             break;
         case 2:
-            printf("%s %d%s%02d%s%02d\n",Day[wk],yy,ccb.dts,mm,ccb.dts,dy);
+            printf("%s %d%s%02d%s%02d\n",Day[wk],yy,ccb.dts,mo,ccb.dts,dy);
             break;
     }
     return;
@@ -139,7 +144,7 @@ void put_tm(void)
         MOV AH,2Ch
         INT 21h         ;/*GET TIME*/
         MOV h,CH
-        MOV m,CL
+        MOV mi,CL
         MOV s,DH
         MOV _ms,DL
         MOV DX, offset ccb
@@ -150,10 +155,10 @@ void put_tm(void)
 
     if((ccb.tf&1) == 0) {
         if(h==0) h = 12;
-        printf("%02d%s%02d%s%02d%c%02d%s\n",(h>12)?h-12:h,ccb.tms,m,ccb.tms,s,(ccb.dtf==0)?'.':',',ms,(h>12)?Time[1]:Time[0]);
+        printf("%02d%s%02d%s%02d%c%02d%s\n",(h>12)?h-12:h,ccb.tms,mi,ccb.tms,s,(ccb.dtf==0)?'.':',',ms,(h>12)?Time[1]:Time[0]);
     }
     else
-        printf("%02d%s%02d%s%02d%c%02d\n",h,ccb.tms,m,ccb.tms,s,(ccb.dtf==0)?'.':',',ms);
+        printf("%02d%s%02d%s%02d%c%02d\n",h,ccb.tms,mi,ccb.tms,s,(ccb.dtf==0)?'.':',',ms);
 
     return;
 }
@@ -210,10 +215,10 @@ BYTE parse_dt(void)
     i=0;
     l=strlen(str);
     if(l==0) return 0;
-    dy =0; mm=0;yy=0;
+    dy =0; mo=0;yy=0;
     switch(ccb.dtf) {
         case 0:
-            while((isdigit(*p))&&(p<str+l)) mm=mm*10+(*p++)-'0';
+            while((isdigit(*p))&&(p<str+l)) mo=mo*10+(*p++)-'0';
             p++;
             while((isdigit(*p))&&(p<str+l)) dy=dy*10+(*p++)-'0';
             p++;
@@ -226,7 +231,7 @@ BYTE parse_dt(void)
         case 1:
             while((isdigit(*p))&&(p<str+l)) dy=dy*10+(*p++)-'0';
             p++;
-            while((isdigit(*p))&&(p<str+l)) mm=mm*10+(*p++)-'0';
+            while((isdigit(*p))&&(p<str+l)) mo=mo*10+(*p++)-'0';
             p++;
             while((isdigit(*p))&&(p<str+l)) {
                 yy=yy*10+(*p++)-'0';
@@ -240,14 +245,14 @@ BYTE parse_dt(void)
                 i++;
             }
             p++;
-            while((isdigit(*p))&&(p<str+l)) mm=mm*10+(*p++)-'0';
+            while((isdigit(*p))&&(p<str+l)) mo=mo*10+(*p++)-'0';
             p++;
             while((isdigit(*p))&&(p<str+l)) dy=dy*10+(*p++)-'0';
             p++;
             break;
     }
 
-    if((dy >31) || (mm>12)) return 0x0FF;
+    if((dy >31) || (mo>12)) return 0x0FF;
     switch(i) {
         case 1:
             yy +=2000;
@@ -265,7 +270,7 @@ BYTE parse_dt(void)
     asm{
         MOV AX,2B00h
         MOV CX,yy
-        MOV DH,mm
+        MOV DH,mo
         MOV dL,dy
         INT 21h
         MOV i,AL
@@ -283,11 +288,11 @@ BYTE parse_tm(void)
     i=0;
     l=strlen(str);
     if(l==0) return 0;
-    h=0; m=0; s=0; ms=0;
+    h=0; mo=0; s=0; ms=0;
 
     while((isdigit(*p))&&(p<str+l)) h = h * 10 + (*p++) -'0';
     p++;    /* pass delimiter */
-    while((isdigit(*p))&&(p<str+l)) m = m * 10 + (*p++) -'0';
+    while((isdigit(*p))&&(p<str+l)) mi = mi * 10 + (*p++) -'0';
     p++;    /* pass delimiter */
     while((isdigit(*p))&&(p<str+l)) s = s * 10 + (*p++) -'0';
     p++;    /* pass delimiter */
@@ -295,16 +300,17 @@ BYTE parse_tm(void)
     if (toupper(*p) == 'P') h+=12;
     else if(h == 12) h=0;
 
-    if((h >23) || (m>60) || (s>60) || (ms>99)) return 0x0FF;
+    if((h >23) || (mi>60) || (s>60) || (ms>99)) return 0x0FF;
 
     asm{
         MOV AX,2D00h
         MOV CH,h
-        MOV CL,m
+        MOV CL,mi
         MOV DH,s
         MOV dL,ms
         INT 21h         ;/*set time*/
-        MOV i,AL
+        
+OV i,AL
     }
     return i;
 }
