@@ -20,8 +20,49 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 Developers:
 Wolf Bergenheim (WB)
+David MacIlwraith (DMacI)
 
 History
-18.03.00 - Extracted from DOG.C - WB
+25.03.00 - started... based on the code written by David MacIlwraith
 
 */
+
+void do_ct(BYTE n)
+{
+    asm{
+        mov ax,3d02h            ;/* open file using handle */
+        mov dx,offset arg[1]    ;/* filename */
+        int 21h                 ;/* open file... er device */
+        jc do_ct_err
+        mov bx,ax               ;/* save handle */
+        mov ax,4400h            ;/* IOCTL - Get dev info */
+        int 21h
+        jc do_ct_err
+        test dl,80h             ;/* is it a device */
+        jz do_ct_err
+        mov ax,4406h
+        int 21h                 ;/* IOCT - Get input status */
+        jc do_ct_err
+        or al,al                ;/* is it ready? */
+        jz do_ct_dnr
+        mov ax,4407h
+        int 21h                 ;/* IOCT - Get output status */
+        jc do_ct_err
+        or al,al                ;/* is it ready? */
+        jz do_ct_dnr
+        mov cx,0003h            ;/* STDERR */
+        mov ah,46h              ;/* DUP2: make handle in CX same as */
+    do_ct_dup2:                 ;/* handle in BX = handle of input dev */
+        int 21h
+        jc do_ct_err
+        loop do_ct_dup2         ;/*decreases cx and jmp to label while cx>0 */
+    }
+    return;
+
+    do_ct_err:
+        fputs(stderr,"Invalid device.");
+        return;       
+    do_ct_dnr:
+        fprintf(stderr,"Device %s not ready error.\n",arg[1]);
+        return;
+}    
