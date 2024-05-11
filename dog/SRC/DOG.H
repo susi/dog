@@ -1,4 +1,4 @@
-/* 
+/*
 DOG.H   -  Alternate command processor for (currently) MS-DOS ver 3.30
 
 Copyright (C) 1999  Wolf Bergenheim
@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdlib.h>
 #include <stdio.h>
 #include <dos.h>
+
 #include <dir.h>
 #include <string.h>
 #include <ctype.h>
@@ -60,7 +61,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ff_attrib attrib
 #define ff_ftime  wr_time
 #define ff_fdate  wr_date
-#define ff_fsize  size 
+#define ff_fsize  size
 #define ff_name	  name
 */
 
@@ -88,18 +89,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _COW_PROMPT2 "$t$_$_(__)$n$t$_$_(oo)$n$_$_/-------(..)$n$_/$_|$_$_$_$_$_||$n*$_$_||W---||$n$_$_$_^^$_$_$_$_^^$n$p$g"
 
 /*
-  
+
   |\_
   | .\---.
  /   ,__/
 /   /C:\DOG  _
 
     _
-   / \__     
-  (_'  @\___       
-  /         O      
+   / \__
+  (_'  @\___
+  /         O
  /   (_____/
-/     /   U 
+/     /   U
 c:\DOG _
 
 
@@ -172,7 +173,7 @@ C:\DOG>_
 
 /* Define Global Variables */
 BYTE DOG_ma = DOG_MA, DOG_mi = DOG_MI, DOG_re = DOG_RE;
-BYTE Xit = 0, Xitable = 1, eh = 0, D=0, P[MAXDIR]; 
+BYTE Xit = 0, Xitable = 1, eh = 0, D=0, P[MAXDIR];
 BYTE comline[200]= {0}, *com = comline, *arg[_NARGS], varg[_NARGS][200], *prompt;
 BYTE commands[_NCOMS][3] = {
 	"AL",
@@ -244,9 +245,9 @@ BYTE flags;
 #define C_AL 0
 #define	C_CC 1
 #define	C_CD 2
-#define	C_CT 3 
-#define C_EH 4 
-#define C_HH 5 
+#define	C_CT 3
+#define C_EH 4
+#define C_HH 5
 #define C_MD 6
 #define C_RD 7
 #define C_SE 8
@@ -314,22 +315,23 @@ struct pipe{
 /* startup and utility */
 void printprompt(void);
 BYTE initialize(int nargs, char* argv[]);
-BYTE parsecom(BYTE * line, BYTE ll); 
+BYTE parsecom(BYTE * line, BYTE ll);
 BYTE getcom(BYTE *com);
 BYTE redir(BYTE *c);
-BYTE getcur(BYTE *p); 
+BYTE getcur(BYTE *p);
 WORD my_exe(BYTE *prog, BYTE *args);
 BYTE *trueName(BYTE *name, BYTE *tn);
-BYTE *getevar(BYTE *varname, BYTE *value);
+BYTE *getevar(BYTE *varname, BYTE *value, WORD vlen);
 void setevar(BYTE *varname, BYTE *value);
-BYTE *getalias(BYTE *varname, BYTE *value);
+BYTE *getalias(BYTE *varname, BYTE *value, WORD vlen);
 void setalias(BYTE *varname, BYTE *value);
-BYTE *getudata(BYTE *varname, BYTE *value, WORD blockseg);
+BYTE *getudata(BYTE *varname, BYTE *value, WORD blockseg, WORD vlen);
 BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg);
 WORD mkudata(WORD oldseg, WORD *nseg, WORD bsz, WORD nbsz);
 WORD myallocmem(WORD sz, WORD *seg);
 BYTE aliasreplace(BYTE *com);
 void evarreplace(BYTE *com, BYTE ln);
+BYTE isfchar(BYTE c);
 
 void clearbat(void); /* clear the b file linked list*/
 void prevbat(void); /* return to the previous nest-level in bat*/
