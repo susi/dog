@@ -38,6 +38,7 @@ History
              the size of value. To avoid some nasy buffer overruns.
              Also updated do_se and setudata to use standard functions.
 2024-05-11 - Building as a module.
+
 **************************************************************************/
 #include <mem.h>
 #include "dog.h"
@@ -71,11 +72,11 @@ void do_al( BYTE n)
       strcat(p,arg[b]);
       strcat(p," ");
     }
-#ifdef b_debug
+#ifdef B_DEBUG
     printf("do_al:1:p(last)=(%c)\n",*(p+(strlen(p)-1)));
 #endif
     if(*(p+(strlen(p)-1)) == ' ') *(p+(strlen(p)-1)) = '\0';
-#ifdef b_debug
+#ifdef B_DEBUG
     printf("do_al:2:p(last)=(%c)\n",*(p+(strlen(p)-1)));
 #endif
     if (strlen(p) == 0) p = NULL;
@@ -111,7 +112,7 @@ void do_se( BYTE n)
     p = malloc(200);
     memset(p, '\0', 200);
     l=0;
-#ifdef se_lookups
+#ifdef SE_LOOKUPS
     if(n < 3) {
 	q = getevar(arg[1], p, 200);
 	if (q == NULL) {
@@ -127,29 +128,29 @@ void do_se( BYTE n)
     }
 #endif
     for(b=2;b<n;b++) {
-#ifdef b_debug
+#ifdef B_DEBUG
 	printf("do_se:0:p:'%s' l:%d arg[%d]:'%s'\n", p, l, b, arg[b]);
 #endif
 	strncat(p,arg[b], 200-l);
 	strcat(p," ");
 	l = strlen(p);
-#ifdef b_debug
+#ifdef B_DEBUG
 	printf("do_se:0:p:'%s' l:%d arg[%d]:'%s'\n", p, l, b, arg[b]);
 #endif
     }
     l = strlen(p); /*l*/
-#ifdef b_debug
+#ifdef B_DEBUG
     printf("do_se:1:p:'%s' l:%d\n", p, l);
 #endif
     if(p[l-1] == ' ') {
 	p[l-1] = '\0';
 	l--;
     }
-#ifdef b_debug
+#ifdef B_DEBUG
     printf("do_se:2:p:'%s' l:%d\n", p, l);
 #endif
     if (l <= 0) p = NULL;
-#ifdef b_debug
+#ifdef B_DEBUG
     printf("do_se:3:p:'%s' l:%d\n", p, l);
 #endif
     setevar(arg[1], p);
@@ -183,24 +184,24 @@ BYTE *getudata(BYTE *varname, BYTE *value, WORD blockseg, WORD vlen)
    BYTE far *last;
    nlen = strlen(varname);
 
-#ifdef b_debug
+#ifdef B_DEBUG
    printf("Looking for '%s' block at %04X:0000h vlen:%d\n", varname, blockseg, vlen);
 #endif
 
 
    while(*block) {
-#ifdef b_debug
+#ifdef B_DEBUG
        printf("Checking if block[%d] is '=': %c\n", nlen, block[nlen]);
 #endif
        if(block[nlen] == '=') { /*possible match */
-#ifdef b_debug
+#ifdef B_DEBUG
 	   printf("Found possible match: '%Fs'\n", block);
 #endif
 	   if (_fstrnicmp(block, varname, nlen) == 0) { /*found it! */
 	       block = _fstrchr(block, '=');
 	       block++;
 	       last = _fmemccpy(value, block, '\0', vlen);
-#ifdef b_debug
+#ifdef B_DEBUG
 	       printf("Found match: '%Fs'=='%s'\n", block, varname);
 #endif
 	       if (last == NULL) {
@@ -209,7 +210,7 @@ BYTE *getudata(BYTE *varname, BYTE *value, WORD blockseg, WORD vlen)
 	       else {
 		   *(last-1) = 0;
 	       }
-#ifdef b_debug
+#ifdef B_DEBUG
 	       printf("Found match: '%s':'%s'\n", varname, value);
 #endif
 	       return value;
@@ -251,35 +252,35 @@ BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg)
   block = MK_FP(blockseg,0);
   nlen = strlen(varname);
   vlen = strlen(value);
-#ifdef b_debug
+#ifdef B_DEBUG
   printf("setudata:0:'%s'='%s' block@%04X:0000h\n", varname, value, blockseg);
 #endif
 
   writesize = nlen+vlen+2; /* = strings + 0 + '=' */
   b=malloc(writesize);
   memset(b, '\0', writesize);
-#ifdef b_debug
+#ifdef B_DEBUG
   printf("setudata:1:writesize=%d\n", writesize);
 #endif
 
   strupr(varname);
-#ifdef b_debug
+#ifdef B_DEBUG
   printf("setudata:2:b:'%s', varname='%s'\n", b, varname);
 #endif
   strncpy(b,varname,nlen);
-#ifdef b_debug
+#ifdef B_DEBUG
   printf("setudata:3:b:'%s', varname='%s'\n", b, varname);
 #endif
   b[nlen] = '=';
-#ifdef b_debug
+#ifdef B_DEBUG
   printf("setudata:4:b:'%s', varname='%s'\n", b, varname);
 #endif
-#ifdef b_debug
+#ifdef B_DEBUG
   printf("setudata:5:b:'%s', varname='%s'\n", b, varname);
 #endif
 
   if (value != NULL) strcat((b+nlen+1),value);
-#ifdef b_debug
+#ifdef B_DEBUG
   printf("setudata:6:b:'%s', value='%s'\n", b, value);
 #endif
   blocksz = peek(blockseg-1,3) << 4;
@@ -310,13 +311,13 @@ BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg)
   /* check if var exists, if it does write new value in place of old
    if not then write new var to end of env */
 
-#ifdef b_debug
+#ifdef B_DEBUG
     printf("rest=%Fp\n",rest);
 #endif
 
   while(*rest!='\0') {
     if(*(rest+nlen) == '=') { /*possible match */
-#ifdef b_debug
+#ifdef B_DEBUG
     printf("rest+nlen=%Fp\n",(rest+nlen));
 #endif
       *(rest+nlen) = '\0';
@@ -341,7 +342,7 @@ BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg)
   } /* rest points to '\0' if end of env */
   if(found==0) evalue = rest;
 
-#ifdef b_debug
+#ifdef B_DEBUG
     printf("evalue=%Fp\n",evalue);
 #endif
 
@@ -368,12 +369,12 @@ BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg)
     /*the env var will be owerwritten with rest.*/
   }
   else { /*write value to environment. evalue points*/
-#ifdef b_debug
+#ifdef B_DEBUG
     printf("b=(%s)\n",b);
 #endif
     for(w=0;w<writesize;w++) {
       *(evalue+w) = *(b+w);
-#ifdef b_debug
+#ifdef B_DEBUG
       printf("*(b+w)=(%c)\n",*(b+w));
 #endif
     }
@@ -397,7 +398,9 @@ WORD mkudata(WORD oldseg, WORD *nseg, WORD bsz, WORD nbsz)
 {
 	WORD w;
 	BYTE far *p,far *s,far *d;
-  printf("nbsz = %x\n",nbsz);
+#ifdef ENV_DEBUG
+	printf("nbsz = %x\n",nbsz);
+#endif
   while( (w = allocmem(nbsz,nseg)) != 0xffff) {
     printf("newseg=%x nbsz=%x\n",*nseg,nbsz);
     nbsz = w;
@@ -409,7 +412,7 @@ WORD mkudata(WORD oldseg, WORD *nseg, WORD bsz, WORD nbsz)
 	if(w == 0) exit(-3);
 
   p = MK_FP(*nseg,0); /* point to beg of block*/
-#ifdef b_debug
+#ifdef B_DEBUG
   printf("p=%Fp\n",p);
 #endif
   *(p) = 0;
@@ -421,13 +424,13 @@ WORD mkudata(WORD oldseg, WORD *nseg, WORD bsz, WORD nbsz)
     s = MK_FP(oldseg,0);
     d = MK_FP(w,0);
 
-#ifdef b_debug
+#ifdef B_DEBUG
     printf("oldseg=%x bsz=%x\n",oldseg,bsz);
     printf("newseg=%x nbsz=%x\n",*nseg,nbsz);
 #endif
     for(w=0;w<bsz;w++) {
       d[w] = s[w];
-#ifdef b_debug_2
+#ifdef B_DEBUG
       printf("s(%Fp)->%Fc d(%Fp)->%Fc\n",s+w,*(s+w),d+w,*(d+w));
 #endif
     }
@@ -494,7 +497,7 @@ void evarreplace(BYTE *com, BYTE ln)
     if(com[i] == '%') {
       if( com[i+1] == '%' ) {
         strcat(newcom,"%");
-#ifdef b_debug
+#ifdef B_DEBUG
         printf("evarreplace:0:newcom[%u]=(%c) newcom[%u]=(%c)\n",i,newcom[i],i+1,newcom[i+1]);
 #endif
         i++;
@@ -505,7 +508,7 @@ void evarreplace(BYTE *com, BYTE ln)
         }
         if (j > 19) j=19;
         strcat(newcom,varg[j]);
-#ifdef b_debug
+#ifdef B_DEBUG
         printf("evarreplace:1:j = %d varg[%d]=(%s) newcom=(%s)\n",j,j,varg[j],newcom);
 #endif
       }
@@ -515,21 +518,21 @@ void evarreplace(BYTE *com, BYTE ln)
         memset(evar,0,50);
         for(j=0;(com[i] != '%') && (i<ln);j++,i++) {
           evar[j] = com[i];
-#ifdef b_debug
+#ifdef B_DEBUG
           printf("evarreplace:2-0:evar[%u]=(%c);com[%u]=(%c)\n",j,evar[j],i,com[i]);
 #endif
         }
-#ifdef b_debug
+#ifdef B_DEBUG
           printf("evarreplace:2-1:evar[%u]=(%c);com[%u]=(%c)\n",j,evar[j],i,com[i]);
 #endif
         evar[j]= '\0';
 /*        i++; */
-#ifdef b_debug
+#ifdef B_DEBUG
           printf("evarreplace:2-2:evar[%u]=(%c);com[%u]=(%c)\n",j,evar[j],i,com[i]);
 #endif
 	  getevar(evar,eval,200); /* replace %varname% with value*/
         strcat(newcom,eval);
-#ifdef b_debug
+#ifdef B_DEBUG
         printf("evarreplace:3:evar=(%s) eval=(%s) newcom=(%s) com[%u]=(%c)\n",evar,eval,newcom,i,com[i]);
 #endif
       }
@@ -537,18 +540,18 @@ void evarreplace(BYTE *com, BYTE ln)
     else {
       tmp[0]=com[i];
       tmp[1]=0;
-#ifdef b_debug
+#ifdef B_DEBUG
         printf("evarreplace:4:com[%d]=(%c)\n",i,com[i]);
 #endif
       strcat(newcom,tmp);
     }
   }
 
-#ifdef b_debug
+#ifdef B_DEBUG
         printf("evarreplace:5:com=(%s)\n",com);
 #endif
   strcpy(com,newcom);
-#ifdef b_debug
+#ifdef B_DEBUG
         printf("evarreplace:6:com=(%s)\n",com);
 #endif
   return;

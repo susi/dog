@@ -271,7 +271,7 @@ BYTE initialize(int nargs, char *args[])
 */
   Xitable = 1;
 
-#ifdef debug
+#ifdef DOG_DEBUG
   printf("PSP = %x PPID = %x\n",_psp,peek(_psp,PPID_OFS));
 #endif
     /* save STDIN STDOUT */
@@ -296,7 +296,7 @@ BYTE initialize(int nargs, char *args[])
   envsz = peek(envseg-1,3) << 4; /*get size of block allocated from MCB*/
   aliassz = 0x200;
 
-#ifdef env_debug
+#ifdef ENV_DEBUG
   printf("nargs=%u\n",nargs);
   printf("envsz=%ux\n",envsz);
 #endif
@@ -389,7 +389,7 @@ BYTE initialize(int nargs, char *args[])
           envseg=nenvseg;
           poke(_psp,ENVSEG_OFS,nenvseg);
 #endif
-#ifdef b_debug
+#ifdef B_DEBUG
           printf("envseg=0x%x envsz=0x%x\n",envseg,envsz);
 #endif
 
@@ -434,11 +434,11 @@ BYTE initialize(int nargs, char *args[])
     if(nenvsz > 0x800) nenvsz=0x800;
 
     nenvseg = envseg;
-#ifdef b_debug
+#ifdef B_DEBUG
     printf("initialize():before mkudata: envsz = (%x) nenvsz = (%x)\n",envsz,nenvsz);
 #endif
     nenvsz = mkudata(envseg, &nenvseg, envsz, nenvsz);
-#ifdef b_debug
+#ifdef B_DEBUG
     printf("env @ %04x0 (%x) nenv @ %04x0 (%x)\n",envseg,envsz,nenvseg,nenvsz);
 #endif
     /* envsz = nenvsz << 4; */
@@ -464,14 +464,14 @@ BYTE initialize(int nargs, char *args[])
   naliassz >>= 4; /* para */
   if(naliassz < 0x5) naliassz=0x5;
   if(naliassz > 0x800) naliassz=0x800;
-#ifdef b_debug
+#ifdef B_DEBUG
   printf("aliassz = %x aliasseg = %x\n",aliassz, aliasseg);
 	printf("initialize():before mkudata: aliassz = (%x) naliassz = (%x)\n",aliassz,naliassz);
 #endif
   aliassz = mkudata(0, &aliasseg, 0, naliassz);
 
 	/*  aliassz <<= 4; */
-#ifdef b_debug
+#ifdef B_DEBUG
     printf("aliassz = %x aliasseg = %x\n",aliassz, aliasseg);
 #endif
 
@@ -497,7 +497,7 @@ BYTE getln(BYTE *s, BYTE lim)
 
   i = strlen(s);
 
-#ifdef debug
+#ifdef DOG_DEBUG
   fprintf(stderr,"getln:2: i:%d s:!%s!\n",i,s);
 #endif
 
@@ -511,24 +511,24 @@ BYTE parsecom(BYTE * line,BYTE ll)
   BYTE ename[80],eval[80];
   BYTE *p;
 
-#ifdef parse_debug
+#ifdef PARSE_DEBUG
   printf("parsecom:0-1: line(%s)\n",line);
 #endif
     for(i=0;(i<MAX_ALIAS_LOOPS) && (aliasreplace(line) != 0xFF);i++);
-#ifdef parse_debug
+#ifdef PARSE_DEBUG
   printf("parsecom:0-2: line(%s)\n",line);
 #endif
   ll = strlen(line);
   evarreplace(line,ll);
   ll = strlen(line);
-#ifdef parse_debug
+#ifdef PARSE_DEBUG
   printf("parsecom:0-3: line(%s) ll=%d\n",line,ll);
 #endif
 
   i=0;
   while((j<_NARGS) && (i<ll)) {
     while((isspace(line[i]) || (line[i] == '\0') )&& (i<ll)) {
-#ifdef b_debug
+#ifdef PARSE_DEBUG
       printf("parsecom:2-0: %c(%x)[%d]\n",line[i],line[i],i);
 #endif
       line[i++] = '\0';
@@ -538,13 +538,13 @@ BYTE parsecom(BYTE * line,BYTE ll)
     }
 
     while(!isspace(line[i]) && (i<ll)) {
-#ifdef b_debug
+#ifdef PARSE_DEBUG
       printf("parsecom:2-1: %c(%x)[%d]\n",line[i],line[i],i);
 #endif
 			i++;
 		}
   }
-#ifdef b_debug
+#ifdef PARSE_DEBUG
   printf("parsecom:3: j=%d line: !%s! arg(varg):",j,line);
   for(i=0;i<j;i++)
   printf("\t%s(%s)\n",arg[i],varg[i]);
@@ -572,12 +572,12 @@ BYTE getcom(BYTE *com)
   }
 
   ln = strlen(com);
-#ifdef debug
+#ifdef DOG_DEBUG
   fprintf(stderr,"getcom:1: com: !%s! ln:%u\n",com,ln);
 #endif
 
   r = parsecom(com,ln);
-#ifdef debug
+#ifdef DOG_DEBUG
   fprintf(stderr,"getcom:2: com: !%s! ln:%u\n",com,ln);
 #endif
 
@@ -586,7 +586,7 @@ BYTE getcom(BYTE *com)
     return 0;
   }
 
-#ifdef debug
+#ifdef DOG_DEBUG
   fprintf(stderr,"getcom:3: r=%d com: !%s!\n",r,com);
 #endif
   return r;
@@ -674,7 +674,7 @@ BYTE redir(BYTE *c)
   p = c;
 
   for(i=0;i<l;i++) {
-#ifdef debug
+#ifdef DOG_DEBUG
     printf("redir:0: &p(%x) *p(%c)\n",p,*p);
 #endif
     if(*p == '>') {
@@ -685,7 +685,7 @@ BYTE redir(BYTE *c)
         *p = ' '; /*erase the >*/
       }
 
-#ifdef debug
+#ifdef DOG_DEBUG
       printf("redir:1:c(%s) p(%s) *p(%c)\n",c,p,*p);
 #endif
       /* skip spaces and tabs*/
@@ -693,7 +693,7 @@ BYTE redir(BYTE *c)
 			fo=p-1; /*begining of filename*/
       while(isfchar(*(++p)));
       /* p points to first spc AFTER filename*/
-#ifdef debug
+#ifdef DOG_DEBUG
       printf("redir:2:*fo(%c) *p-1(%x) *p(%x) *p+1(%x)\n",*fo,*(p-1),*p,*(p+1));
 #endif
       if(*(p-1)=='\n')
@@ -714,11 +714,11 @@ BYTE redir(BYTE *c)
       if(isspace(*p))
       p++;
       fi=p; /*begining of filename*/
-#ifdef debug
+#ifdef DOG_DEBUG
       printf("redir:3:fi(%x) &fi(%x) &p(%x) *p(%x)\n",fi,fi,p,p);
 #endif
       while(isfchar(*(++p))) {
-#ifdef debug
+#ifdef DOG_DEBUG
         printf("redir:4:fi(%x) &fi(%x) &p(%x) *p(%x)\n",fi,fi,p,p);
 #endif
       }
@@ -727,7 +727,7 @@ BYTE redir(BYTE *c)
       if(*(p-1)=='\n')
       *(p-1)='\0';
       *p = '\0';
-#ifdef debug
+#ifdef DOG_DEBUG
       printf("redir:5:fi(%s) &fi(%x) &p-1(%x) &p(%x) &p+1(%x)\n",fi,fi,(p-1),p,(p+1));
 #endif
       strcpy(fin.name,fi);
@@ -751,13 +751,13 @@ BYTE redir(BYTE *c)
       sprintf(pip.pname,"%c:\\%s\\",D,P);
 
       /***/
-#ifdef debug
+#ifdef DOG_DEBUG
       printf("redir:6:c(%s) p(%s) *p(%c) pip.pname=(%s)\n",c,p,*p,pip.pname);
 #endif
 
       pip.phandle = mktmpfile(pip.pname);
 
-#ifdef debug
+#ifdef DOG_DEBUG
       printf("redir:6:c(%s) p(%s) *p(%c) pip.pname=(%s)\n",c,p,*p,pip.pname);
 #endif
 
@@ -766,13 +766,13 @@ BYTE redir(BYTE *c)
         return 0;
       }
 
-#ifdef debug
+#ifdef DOG_DEBUG
       printf("redir:7:pip.pname=(%s) pip.phandle=(%x)",pip.pname,pip.phandle);
 #endif
       /***/
 
       if(dup2(pip.phandle,fileno(stdout)) != 0) {
-#ifdef debug
+#ifdef DOG_DEBUG
         printf("redir:6.7:errno=%x",errno);
         printf("redir:7:pip.pname=(%s) pip.phandle=(%x)",pip.pname,pip.phandle);
 #endif
@@ -789,7 +789,7 @@ BYTE redir(BYTE *c)
 
   }
   if(fout.redirect) {
-#ifdef debug
+#ifdef DOG_DEBUG
     printf("redir:8:c(%s) fout.name(%s)\n",c,fout.name);
 #endif
     if((fout.fp = fopen(fout.name,fout.opt)) == NULL) {
@@ -802,7 +802,7 @@ BYTE redir(BYTE *c)
   }
 
   if(fin.redirect) {
-#ifdef debug
+#ifdef DOG_DEBUG
     printf("redir:9:c(%s) fin.name(%s)\n",c,fin.name);
 #endif
     if((fin.fp = fopen(fin.name,fin.opt)) == NULL) {
@@ -857,7 +857,7 @@ void printprompt(void)
 		k = 0;
 	}
 
-#ifdef prompt_debug
+#ifdef PROMPT_DEBUG
   printf("printprompt:0:prompt=(%s) strlen=(%d)\n",prompt,k);
 #endif
 
@@ -867,7 +867,7 @@ void printprompt(void)
    */
 
   for(i=0;i<k;i++) {
-#ifdef prompt_debug
+#ifdef PROMPT_DEBUG
   printf("printprompt:1:prompt[%d]=%c\n",i,prompt[i]);
 #endif
     if(prompt[i]=='$') {
@@ -976,17 +976,17 @@ void printprompt(void)
       else {
         for(j=0;(prompt[i] != '%') && (i<k);j++,i++) {
           ename[j] = prompt[i];
-#ifdef prompt_debug
+#ifdef PROMPT_DEBUG
 	  printf("printprompt:2:prompt[%d]=%c\n",i,prompt[i]);
 #endif
 	}
-#ifdef prompt_debug
+#ifdef PROMPT_DEBUG
 	printf("printprompt:3:prompt[%d]=%c\n",i,prompt[i]);
 #endif
         ename[j]= '\0';
         getevar(ename,eval,80); /* replace %varname% with value*/
 /*				eval[strlen(eval)-2;*/
-#ifdef prompt_debug
+#ifdef PROMPT_DEBUG
 	printf("printprompt:4:eval=(%s\b)\n",eval);
 #endif
         printf("%s\b",eval);
@@ -998,7 +998,7 @@ void printprompt(void)
     }
   }
 
-#ifdef prompt_debug
+#ifdef PROMPT_DEBUG
   printf("printprompt:5:prompt=(%s) length=%d\n",prompt,k);
 #endif
 
@@ -1052,7 +1052,7 @@ int main(int nargs, char *argv[])
 
 
     if(fout.redirect) {
-#ifdef debug
+#ifdef DOG_DEBUG
       fprintf(stderr,"main:0:closing handle %x\n",fileno(fout.fp));
 #endif
       dup2(OUT,fileno(stdout));
@@ -1061,7 +1061,7 @@ int main(int nargs, char *argv[])
     }
 
     if(fin.redirect) {
-#ifdef debug
+#ifdef DOG_DEBUG
       fprintf(stderr,"main:0:closing handle %x\n",fileno(fin.fp));
 #endif
       dup2(IN,fileno(stdin));
@@ -1117,7 +1117,7 @@ int main(int nargs, char *argv[])
         continue;
       }
       else {
-#ifdef debug
+#ifdef DOG_DEBUG
         fprintf(stderr,"Ctrl Break found!\n");
 #endif
         cBreak = 0;
@@ -1128,7 +1128,7 @@ int main(int nargs, char *argv[])
 
     if (eh == 0) {
 
-#ifdef bat_debug
+#ifdef BAT_DEBUG
       fprintf(stderr,"main:1:bf:%x  bf->in=%d\n",&(*bf),bf->nest);
 #endif
       if (bf->in) {
@@ -1152,7 +1152,7 @@ int main(int nargs, char *argv[])
       else {
         printprompt();
         na = getcom(com);
-#ifdef debug
+#ifdef DOG_DEBUG
         fprintf(stderr,"main:2.a:You said:/%s/\n",com);
         fprintf(stderr,"main:2.b:You said:/%s/\n",arg[0]);
         fprintf(stderr,"main:3:Arguments=%d\n",na);
@@ -1175,19 +1175,19 @@ int main(int nargs, char *argv[])
       if ( (flags & FLAG_P ) == FLAG_P ) {
         Xit = 0;
         eh = 0;
-#ifdef debug
+#ifdef DOG_DEBUG
         fprintf(stderr,"main:6-0:Xit = %u\n",Xit);
         fprintf(stderr,"main:6-1:flags = %u\n",flags);
 #endif
       }
       else {
         Xit = 1;
-#ifdef debug
+#ifdef DOG_DEBUG
         fprintf(stderr,"main:6-2:Xit = %u\n",Xit);
         fprintf(stderr,"main:6-3:flags = %u\n",flags);
 #endif
       }
-#ifdef debug
+#ifdef DOG_DEBUG
       fprintf(stderr,"main:6-4:Xit = %u\n",Xit);
       fprintf(stderr,"main:6-5:flags = %u\n",flags);
 #endif
@@ -1195,7 +1195,7 @@ int main(int nargs, char *argv[])
       do_command(na);
     }
 
-#ifdef debug
+#ifdef DOG_DEBUG
     fprintf(stderr,"main:7:Xit = %u\n",Xit);
     fprintf(stderr,"main:7:flags = %u\n",flags);
     fprintf(stderr,"main:7:xit = %u\n",(flags & FLAG_P ) == FLAG_P);
@@ -1211,7 +1211,8 @@ int main(int nargs, char *argv[])
     }
 
     if((Xit == 1) && ( (flags & FLAG_P ) != FLAG_P )) break;
-#ifdef debug
+#ifdef DOG_DEBUG
+
     fprintf(stderr,"Xit: %d\tXitable: %d\n",Xit,Xitable);
 #endif
   }
@@ -1249,7 +1250,7 @@ void do_command( BYTE na)
 {
   BYTE i;
 
-#ifdef do_debug
+#ifdef DO_DEBUG
   BYTE dbi;
 #endif
   if (na==0) return;
@@ -1257,7 +1258,7 @@ void do_command( BYTE na)
   if ((strlen(arg[0])==2) || (arg[0][2]=='.') || (arg[0][2]=='\\')) {
 
     for(i=0;i<_NCOMS;i++) {
-#ifdef do_debug
+#ifdef DO_DEBUG
       fprintf(stderr,"do_command:1: searching command(%d)=%s\n",i,commands[i]);
       fprintf(stderr,"do_command:2: line is: ");
       for(dbi=0;dbi<na;dbi++) {
@@ -1269,7 +1270,7 @@ void do_command( BYTE na)
         break;
       }
     }
-#ifdef do_debug
+#ifdef DO_DEBUG
     fprintf(stderr,"\n");
 #endif
     switch(i) {
@@ -1419,12 +1420,12 @@ void do_exe(BYTE n)
 
   /*First try to exec arg[0]*/
   strcpy(prog,arg[0]);
-#ifdef exe_debug
+#ifdef EXE_DEBUG
   printf("do_exe:0:prog=%s\n",prog);
 #endif
   i = findfirst(prog,fb,0x37); /*attrib = 00100111 */
   if (i == 0) {
-#ifdef exe_debug
+#ifdef EXE_DEBUG
     printf("do_exe:1:prog=%s\n",prog);
     printf("do_exe:2:%s a directory\n",((fb->ff_attrib & FA_DIREC) == FA_DIREC)?"Is":"Isn't");
     printf("do_exe:3:ff_attrib = 0x%x\n",fb->ff_attrib);
@@ -1436,7 +1437,7 @@ void do_exe(BYTE n)
     if(strstr(fb->ff_name,".COM") == NULL) {
       if (strstr(fb->ff_name,".EXE") == NULL) {
         if (strstr(fb->ff_name,".DOG") == NULL) {
-#ifdef exe_debug
+#ifdef EXE_DEBUG
           printf("do_exe:4:ff_name = %s\n",fb->ff_name);
 #endif
           exec_f = NON;
@@ -1444,7 +1445,7 @@ void do_exe(BYTE n)
         else {
           exec_f = DOG;
           strcpy(dog,prog);
-#ifdef exe_debug
+#ifdef EXE_DEBUG
           printf("do_exe:5:ff_name = %s\n",fb->ff_name);
 #endif
         }
@@ -1452,7 +1453,7 @@ void do_exe(BYTE n)
       else {
         exec_f = EXE;
         strcpy(exe,prog);
-#ifdef exe_debug
+#ifdef EXE_DEBUG
         printf("do_exe:6:ff_name = %s\n",fb->ff_name);
 #endif
       }
@@ -1460,7 +1461,7 @@ void do_exe(BYTE n)
     else {
       exec_f = COM;
       strcpy(com,prog);
-#ifdef exe_debug
+#ifdef EXE_DEBUG
       printf("do_exe:7:ff_name = %s\n",fb->ff_name);
 #endif
     }
@@ -1482,12 +1483,12 @@ void do_exe(BYTE n)
 		strncat(p,envi,253);
 		strncpy(envi,p,255);
     free(p);
-#ifdef exe_debug
+#ifdef EXE_DEBUG
 		printf("do_exe:8:PATH=%s\n",envi);
 #endif
 		for(cpath=strtok(envi,";");;cpath=strtok(NULL,";")) {
 			if(cpath == NULL) break;
-#ifdef exe_debug
+#ifdef EXE_DEBUG
 			printf("do_exe:9:dir=%s\n",cpath);
 #endif
 			strcpy(file,cpath);
@@ -1502,14 +1503,14 @@ void do_exe(BYTE n)
 			strcat(com,".COM");
 			strcat(exe,".EXE");
 			strcat(dog,".DOG");
-#ifdef exe_debug
+#ifdef EXE_DEBUG
 			printf("do_exe:10:file=%s\n",file);
 			printf("do_exe:11:com=%s\n",com);
 			printf("do_exe:12:exe=%s\n",exe);
 			printf("do_exe:13:dog=%s\n",dog);
 #endif
 			if(findfirst(com,fb,0x27) == 0) {
-#ifdef exe_debug
+#ifdef EXE_DEBUG
 				printf("do_exe:11:com=%s\n",com);
 				printf("\ndo_exe:14:file=%s\n",fb->ff_name);
 #endif
@@ -1517,21 +1518,21 @@ void do_exe(BYTE n)
 				break;
 			}
 			else if (findfirst(exe,fb,0x27) == 0) {
-#ifdef exe_debug
+#ifdef EXE_DEBUG
 				printf("\ndo_exe:15:file=%s\n",fb->ff_name);
 #endif
 				exec_f = EXE;
 				break;
 			}
 			else if (findfirst(dog,fb,0x27) == 0) {
-#ifdef exe_debug
+#ifdef EXE_DEBUG
 				printf("\ndo_exe:16:file=%s\n",fb->ff_name);
 #endif
 				exec_f = DOG;
 				break;
 			}
 			else if(findfirst(file,fb,0x27) == 0) {
-#ifdef exe_debug
+#ifdef EXE_DEBUG
 				printf("\ndo_exe:17:file=%s\n",fb->ff_name);
 #endif
 				if(strstr(fb->ff_name,".COM") == NULL) {
@@ -1560,7 +1561,7 @@ void do_exe(BYTE n)
 				exec_f = NON;
 			}
 
-#ifdef exe_debug
+#ifdef EXE_DEBUG
 			printf("do_exe:18:exec_f = %u\n",exec_f);
 #endif
 
@@ -1568,7 +1569,7 @@ void do_exe(BYTE n)
   }
   exec_now:
 
-#ifdef exe_debug
+#ifdef EXE_DEBUG
   printf("do_exe:19:exec_f = %u\n",exec_f);
   printf("do_exe:20:file=%s\n",file);
   printf("do_exe:21:com=%s\n",com);
@@ -1589,19 +1590,19 @@ void do_exe(BYTE n)
     free(fb);
     return;
    case COM:
-#ifdef exe_debug
+#ifdef EXE_DEBUG
     printf("do_exe:24:found %s in %s\n",fb->ff_name,cpath);
 #endif
     errorlevel=my_exe(trueName(com,trunam),s);
     break;
    case EXE:
-#ifdef exe_debug
+#ifdef EXE_DEBUG
     printf("do_exe:25:found %s in %s -> %s\n",fb->ff_name,cpath,exe);
 #endif
     errorlevel=my_exe(trueName(exe,trunam),s);
     break;
    case DOG:
-#ifdef exe_debug
+#ifdef EXE_DEBUG
     printf("do_exe:26:found %s in %s ->%s\n",fb->ff_name,cpath,dog);
 		printf("do_exe:27:bf->args[i] = %x\n",bf->args);
 #endif
@@ -1611,18 +1612,18 @@ void do_exe(BYTE n)
     for(i=0;i<_NARGS;i++) {
       if(arg[i] != 0) {
         bf->args[i] = (bf->cline) + (arg[i] - comline);
-#ifdef bat_debug
+#ifdef BAT_DEBUG
         printf("do_exe:28:bf->args[%u](%x) =  (bf->cline(%x)) + (arg[%u](%x) - comline(%x))\n",i,bf->args[i],bf->cline,i,arg[i], comline);
 	printf("do_exe:29:bf->args[i] = %s\n",bf->args[i]);
 #endif
       }
-#ifdef bat_debug
+#ifdef BAT_DEBUG
       else {
 	  printf("do_exe:30:arg[%u] == 0\n",i);
       }
 #endif
     }
-#ifdef exe_debug
+#ifdef EXE_DEBUG
     printf("do_exe:31:bf->name= %s\n",dog);
 #endif
     sprintf(bf->name,"%s",dog);

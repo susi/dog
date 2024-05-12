@@ -15,16 +15,23 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
+
 CC=C:\BORLANDC\BIN\BCC
-CFLAGS=-B -d -mt -O1 -Z -f- -g15 -tDc -Fc -Tq -Tml -Tmx -Tt
-!if $(DEB)
-DEBUG=-Ddebug=1 -Dmv_debug=1
+
+CFLAGS=-B -d -mt -O1 -Z -Fs -f- -g15 -tDc -Fc -Tq -Tml -Tmx -Tt -I..
+LINKFLAGS=-lc -ld -lt -lTdc
+
+# See debug.h for all the possible debugs. ext.h includes it
+# _DEBUG_ALL_ turns all all debugging and durns off optimization
+!if $(DEBUG)
+DEBUG=-D_DEBUG_ALL_ -N -Od -w
+LINKFLAGS=$(LINKFLAGS) -ll -lm -ls -lv
 !endif
 
 PROGS=bp.com br.com cl.com cp.com dt.com ls.com mv.com rm.com sz.com tp.com vf.com vr.com
 
 .c.com:
-	$(CC) $(CFLAGS) $(DEBUG) $.
+	$(CC) $(CFLAGS) $(LINKFLAGS) $(DEBUG) $.
 
 all: $(PROGS)
 

@@ -125,7 +125,7 @@ int init(int nargs, char *arg[])
 
 	ls_f.patt[0] = "*.*";
 
-#ifdef ls_debug
+#ifdef LS_DEBUG
 fprintf(stderr,"do_ls:0: ls_f.patt[0]=%s; nargs=%d\n",ls_f.patt[0],nargs);
 #endif
 
@@ -136,7 +136,7 @@ fprintf(stderr,"do_ls:0: ls_f.patt[0]=%s; nargs=%d\n",ls_f.patt[0],nargs);
 	if (nargs > 1) {
 		for(i=1;i<nargs;i++) {
 
-#ifdef ls_debug
+#ifdef LS_DEBUG
 fprintf(stderr,"do_ls:1: ls_f.patt[0]=%s\n",ls_f.patt[0]);
 #endif
 			if (arg[i][0] == '-') {
@@ -175,7 +175,7 @@ fprintf(stderr,"do_ls:1: ls_f.patt[0]=%s\n",ls_f.patt[0]);
 			}
 			else {
 				ls_f.patt[k++] = arg[i];
-#ifdef ls_debug
+#ifdef LS_DEBUG
 printf("do_ls:2: ls_f.patt[0]=%s hxls_f.patt=%x\n",ls_f.patt[0],ls_f.patt[0]);
 #endif
 			}
@@ -204,7 +204,7 @@ void do_ls(void)
 
 	 for(j=0;j < ls_f.npatt;j++) {
 
-#ifdef ls_debug
+#ifdef LS_DEBUG
 		fprintf(stderr,"do_ls:3: ls_f.patt[%u]=%s offset=%x ls_f.patt[%d][last] =  %c\n",j,ls_f.patt[0],ls_f.patt[0],j,ls_f.patt[j][strlen(ls_f.patt[j])-1]);
 #endif
 		if((ls_f.patt[j][strlen(ls_f.patt[j])-1] == '\\') || (ls_f.patt[j][strlen(ls_f.patt[j])-1] == ':')) {
@@ -217,13 +217,13 @@ void do_ls(void)
 
 		r = findfirst(ls_f.patt[j], fb,ls_f.attrs);
 
-#ifdef ls_debug
+#ifdef LS_DEBUG
 		fprintf(stderr,"do_ls:4: r=%d\n",r);
 #endif
 
 		while(1) {
 
-#ifdef ls_debug
+#ifdef LS_DEBUG
 fprintf(stderr,"do_ls:5: r=%d\n",r);
 fprintf(stderr,"do_ls:6: r=%d\ndate:%d time:%d\n",r,fb->ff_fdate,fb->ff_ftime);
 #endif
@@ -240,7 +240,7 @@ fprintf(stderr,"do_ls:6: r=%d\ndate:%d time:%d\n",r,fb->ff_fdate,fb->ff_ftime);
 			 r = findnext (fb);
 		}
 
-#ifdef ls_debug
+#ifdef LS_DEBUG
 		fprintf(stderr,"do_ls:7: r=%d\n",r);
 #endif
 	 if(m == 1) free(ls_f.patt[j]); /* if patt[j] was previously malloced */
@@ -250,5 +250,3 @@ fprintf(stderr,"do_ls:6: r=%d\ndate:%d time:%d\n",r,fb->ff_fdate,fb->ff_ftime);
 	 free(fb);
 	 return;
 }
-
-

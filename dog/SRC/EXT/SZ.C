@@ -73,7 +73,7 @@ int init(int nargs, char *arg[])
 
 	 sz_f.patt[0] = "*.*";
 
-#ifdef sz_debug
+#ifdef SZ_DEBUG
 	 fprintf(stderr,"init:0: sz_f.patt[0]=%s; nargs=%d\n",sz_f.patt[0],nargs);
 #endif
 
@@ -83,7 +83,7 @@ int init(int nargs, char *arg[])
 	 if (nargs > 1) {
 			for(i=1;i<nargs;i++) {
 
-#ifdef sz_debug
+#ifdef SZ_DEBUG
 fprintf(stderr,"init:1: sz_f.patt[0]=%s k=%u\n",sz_f.patt[0],k);
 #endif
 				 if (arg[i][0] == '-') {
@@ -123,7 +123,7 @@ fprintf(stderr,"init:1: sz_f.patt[0]=%s k=%u\n",sz_f.patt[0],k);
 				 }
 				 else {
 						sz_f.patt[k++] = arg[i];
-#ifdef sz_debug
+#ifdef SZ_DEBUG
 						printf("init:2: sz_f.patt[0]=%s sz_f.patt=0x%x, npatt=%u, k=%u\n",sz_f.patt[0],sz_f.patt,sz_f.npatt,k);
 #endif
 				 }
@@ -169,7 +169,7 @@ fprintf(stderr,"init:1: sz_f.patt[0]=%s k=%u\n",sz_f.patt[0],k);
    disk_size = ((DWORD)dt[0] << 16) + df[1];
 #endif
 
-#ifdef sz_debug
+#ifdef SZ_DEBUG
 	 printf("init:3: sz_f.npatt=%u\n",sz_f.npatt);
 #endif
 
@@ -198,7 +198,7 @@ void do_sz(void)
 			nf=0;
 			hf=0;
 
-#ifdef sz_debug
+#ifdef SZ_DEBUG
 		fprintf(stderr,"do_sz:3: sz_f.patt[%u]=%s offset=%x sz_f.patt[%d][last] =  %c\n",j,sz_f.patt[0],sz_f.patt[0],j,sz_f.patt[j][strlen(sz_f.patt[j])-1]);
 #endif
 			if((sz_f.patt[j][strlen(sz_f.patt[j])-1] == '\\') || (sz_f.patt[j][strlen(sz_f.patt[j])-1] == ':')) {
@@ -211,12 +211,12 @@ void do_sz(void)
 
 			r = findfirst(sz_f.patt[j], fb, FA_NORMAL|FA_HIDDEN|FA_SYSTEM);
 
-#ifdef sz_debug
+#ifdef SZ_DEBUG
 		fprintf(stderr,"do_sz: r=%d\n",r);
 #endif
 			while (1) {
 
-#ifdef sz_debug
+#ifdef SZ_DEBUG
 fprintf(stderr,"do_sz: r=%d\n",r);
 fprintf(stderr,"do_sz: r=%d\ndate:%d time:%d\n",r,fb->ff_fdate,fb->ff_ftime);
 #endif
@@ -243,7 +243,7 @@ fprintf(stderr,"do_sz: r=%d\ndate:%d time:%d\n",r,fb->ff_fdate,fb->ff_ftime);
 
 			}
 
-#ifdef sz_debug
+#ifdef SZ_DEBUG
 fprintf(stderr,"do_sz: r=%d\n",r);
 #endif
 
@@ -281,4 +281,3 @@ fprintf(stderr,"do_sz: r=%d\n",r);
 
 	 return;
 }
-

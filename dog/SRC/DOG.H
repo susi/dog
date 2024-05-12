@@ -33,18 +33,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <errno.h>
 #include <fcntl.h>
 
-#define de bug
-#define list
-#define do_de bug
-#define ls_de	bug
-#define exe_de bug
-#define bat_de bug
-#define cd_de bug
-#define eh_de bug
-#define ca_de bug
-#define b_debug
-#define parse_de bug
-#define prompt_de bug
+/* See ..\debug.h for all the possible debugs. ext.h includes it
+   _DEBUG_ALL_ turns all all debugging and turns off optimization */
+#include "debug.h"
 
 #define BYTE unsigned char
 #define WORD unsigned int

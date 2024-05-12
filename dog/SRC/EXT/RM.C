@@ -46,9 +46,9 @@ BYTE rm_dir(BYTE *dir)
   BYTE path[80];
   strcpy(path,dir);
   strcat(path,"\\*.*");
-#ifdef debug
+#ifdef RM_DEBUG
   printf("rm_dir (%d): path=(%s)[%x] dir=(%s)[%x]\n",__LINE__,path,path,dir,dir);
-#endif  
+#endif
   return rm_file((BYTE *)path);
 
 }
@@ -60,17 +60,17 @@ BYTE rm_file(BYTE *patt)
   BYTE fn[129]={0};
   struct ffblk fb;
 
-#ifdef debug	  
+#ifdef RM_DEBUG
   printf("rm_file (%d): patt=(%s)[%x]\n",__LINE__,patt,patt);
 #endif
-  
+
   f=findfirst(patt,&fb,0|FA_DIREC);
-#ifdef debug	
+#ifdef RM_DEBUG
   printf("rm_file (%d): patt=(%s)[%x] f=%x\n",__LINE__,patt,patt,f);
 #endif
-  
+
   if(f==0) {
-		
+
 		p = patt;
 		p+=strlen(patt) - 1;
 		if((*p == '\\') || (*p == '/')) {
@@ -85,15 +85,15 @@ BYTE rm_file(BYTE *patt)
 		}
 		else
 			strcpy(fn,fb.ff_name);
-		
-#ifdef debug
+
+#ifdef RM_DEBUG
 		printf("rm_file (%d): fn=(%s)[%x]\n",__LINE__,fn,fn);
-#endif	
+#endif
 		if((fb.ff_name)[0] != '.') {
-#ifdef debug
+#ifdef RM_DEBUG
 			printf("rm_file (%d): fb.ff_name=(%s)[%x],ok=%x\n",__LINE__,fb.ff_name,fb.ff_name,ok);
-#endif	  
-			
+#endif
+
 			if(flag_i == FLAG_SET) {
 				printf("remove %s (Y/N/A)? ",fn);
 				r = getch();
@@ -101,12 +101,12 @@ BYTE rm_file(BYTE *patt)
 					return -1;
 				else
 					printf("%c\n",r);
-				
+
 				if((r=='A') || (r=='a')) {
 					r = 'y';
 					flag_i = FLAG_UNSET;
 				}
-#ifdef debug	
+#ifdef RM_DEBUG
 				printf("rm_file (%d): r=(%c)[%x],ok=%x\n",__LINE__,r,r,ok);
 #endif
 				if((r == 'y') || (r == 'Y')) {
@@ -114,7 +114,7 @@ BYTE rm_file(BYTE *patt)
 						if(flag_r == FLAG_SET) {
 							ret = rm_dir(fn);
 						}
-#ifdef debug	
+#ifdef RM_DEBUG
 						printf("rm_file (%d): fb.ff_name=(%s)[%x],ok=%x\n",__LINE__,fb.ff_name,fb.ff_name,ok);
 #endif
 						ok = rmdir(fn);
@@ -140,7 +140,7 @@ BYTE rm_file(BYTE *patt)
 					if(flag_r == FLAG_SET) {
 						ret = rm_dir(fn);
 					}
-#ifdef debug			  
+#ifdef RM_DEBUG
 					printf("rm_file (%d): fb.ff_name=(%s)[%x],ok=%x\n",__LINE__,fb.ff_name,fb.ff_name,ok);
 #endif
 					ok = rmdir(fn);
@@ -160,26 +160,26 @@ BYTE rm_file(BYTE *patt)
 				}
 
 			}
-			
-#ifdef debug	
+
+#ifdef RM_DEBUG
 			printf("rm_file (%d): fb.ff_name=(%s)[%x],ok=%x\n",__LINE__,fb.ff_name,fb.ff_name,ok);
-#endif	
+#endif
 		}
 	}
   else if((f==255) && (errno==2)) {
 	ret = 1;
 		printf("%s - no such file or directory.\n",patt);
-  } 
-  
-#ifdef debug	
+  }
+
+#ifdef RM_DEBUG
   printf("rm_file (%d): f=(%d)[%x],ok=%x\n",__LINE__,f,f,fb.ff_name,ok);
-#endif  
-  
-  while((f=findnext(&fb))==0) {	
-#ifdef debug	
+#endif
+
+  while((f=findnext(&fb))==0) {
+#ifdef RM_DEBUG
 		printf("rm_file (%d): f=(%d)[%x],ok=%d\n",__LINE__,f,f,fb.ff_name,ok);
 		printf("rm_file (%d): fb.ff_name=(%s)[%x],ok=%x\n",__LINE__,fb.ff_name,fb.ff_name,ok);
-#endif	
+#endif
 		if(fb.ff_name[0] == '.')
 			continue; /* ignore . and .. */
 		for(p+=strlen(patt)+1;(*p!='\\')&&(*p!='/');p--);
@@ -191,10 +191,10 @@ BYTE rm_file(BYTE *patt)
 		}
 		else
 			strcpy(fn,fb.ff_name);
-#ifdef debug	
+#ifdef RM_DEBUG
 		printf("rm_file (%d): fb.ff_name=(%s)[%x],ok=%x\n",__LINE__,fb.ff_name,fb.ff_name,ok);
 #endif
-		
+
 		if(flag_i == FLAG_SET) {
 			printf("remove %s (Y/N/A)? ",fn);
 			/* Get character */
@@ -204,7 +204,7 @@ BYTE rm_file(BYTE *patt)
 			else
 				printf("%c\n",r);
 
-#ifdef debug	
+#ifdef RM_DEBUG
 			printf("rm_file (%d): r=(%c)[%x],ok=%x\n",__LINE__,r,r,ok);
 #endif
 			if((r=='A') || (r=='a')) {
@@ -217,7 +217,7 @@ BYTE rm_file(BYTE *patt)
 				continue;
 			}
 		}
-		
+
 		if((fb.ff_attrib & FA_DIREC) == FA_DIREC) {
 			if(flag_r == FLAG_SET) {
 				rm_dir(fn);
@@ -245,11 +245,11 @@ BYTE rm_list(BYTE *list)
   BYTE fn[129]={0};
   FILE *f;
   BYTE ret=0;
-  
-#ifdef DEBUG  
+
+#ifdef RM_DEBUG
   fprintf(stderr,"list=(%s)\n",list);
 #endif
-  
+
   f = fopen(list,"r");
   if(f != NULL) {
 	while(fscanf(f,"%s",&fn)!=EOF){
@@ -262,9 +262,9 @@ BYTE rm_list(BYTE *list)
 	fprintf(stderr,"Can not open list-file: %s - ",list);
 	perror("");
   }
-  
+
   return ret;
-  
+
 }
 
 void print_help(BYTE mode) {
@@ -288,7 +288,7 @@ void print_help(BYTE mode) {
 	printf("\nRM is part of DOG (http://dog.sf.net/)\n");
 	return;
 }
-	
+
 int main(BYTE n,BYTE *arg[])
 {
   BYTE r,f,i,j,dir[80];
@@ -299,12 +299,12 @@ int main(BYTE n,BYTE *arg[])
 		mode = MODE_RT;
 		flag_r = FLAG_SET;
 	}
-  
+
   if(n > 1) {
-		
+
 		/* check flags */
 		for(i=1;i<n;i++) {
-#ifdef DEBUG
+#ifdef RM_DEBUG
 			printf("flags: arg = %s\n",arg[i]);
 #endif
 			if ((arg[i][0] == '-') || (arg[i][0] == '/')) {
@@ -329,7 +329,7 @@ int main(BYTE n,BYTE *arg[])
 			}
 		}
 		for(i=1;i<n;i++) {
-#ifdef debug
+#ifdef RM_DEBUG
 			printf("main for-loop: arg = %s\n",arg[i]);
 #endif
 			if (arg[i][0] == '@') {
@@ -342,13 +342,13 @@ int main(BYTE n,BYTE *arg[])
 				if(strstr(arg[i],"*.*")!=NULL) {
 					printf("Removing %s - Are you sure(Y/N)? ",arg[i]);
 					/* Get character */
-					
+
 					asm mov ah,1 ;
 					asm int 21h ;
 					asm mov r,al ;
 					putchar('\n');
 					putchar('\r');
-					
+
 					/* get to next arg if not 'Y' or 'y' */
 					if((r != 'y') && (r != 'Y'))
 						break;
@@ -362,6 +362,6 @@ int main(BYTE n,BYTE *arg[])
 		print_help(mode);
 		ret = 0xff;
   }
-  
+
   return ret;
 }

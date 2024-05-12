@@ -42,16 +42,16 @@ int main(BYTE n, BYTE *arg[])
 	FILE *fp;
 	struct ffblk *fb;
 	BYTE i,j,r,*buff,dir[200],savedir[200],dir_flag;
-	
+
 	buff = malloc(BUFF_SIZE);
-	
+
 	if(n == 1) {
 		fputs("Missing filename.\n\n",stderr);
 		print_help();
 		return 1;
 	}
 	else if(n >1) {
-		
+
 		/* check flags */
 		for(i=1;i<n;i++) {
 #ifdef DEBUG
@@ -76,7 +76,7 @@ int main(BYTE n, BYTE *arg[])
 			if(r==0) {
 				strcpy(dir,arg[i]);
 				for(j=strlen(dir);j>0;j--) {
-#ifdef debug_tp
+#ifdef TP_DEBUG
 					printf("dir[%d]=%c\n",j,dir[j]);
 #endif
 					if(dir[j] == '\\') {
@@ -86,16 +86,16 @@ int main(BYTE n, BYTE *arg[])
 					}
 				}
 				strcpy(savedir,dir);
-#ifdef debug_tp
+#ifdef TP_DEBUG
 				printf("dir=%s\n",dir);
 #endif
-				
+
 				printf("\n---------------%s---------------\n\n",fb->ff_name);
 				if (dir_flag == 1)
 					strcat(dir,fb->ff_name);
 				else
 					strcpy(dir,fb->ff_name);
-				
+
 				fp = fopen(dir,"r");
 				if (fp == NULL) {
 					fprintf(stderr,"\n****Error opening file %s\n",dir);
@@ -122,11 +122,11 @@ int main(BYTE n, BYTE *arg[])
 								 default:
 					fprintf(stderr,"\n****File not found: %s (DOS error (%x))\n",arg[i],errno);
 					break;
-					
+
 				}
 				continue;
 			}
-			
+
 			r = findnext(fb);
 			while(errno != 2) {
 				printf("\n---------------%s---------------\n\n",fb->ff_name);
@@ -135,7 +135,7 @@ int main(BYTE n, BYTE *arg[])
 					strcat(dir,fb->ff_name);
 				else
 					strcpy(dir,fb->ff_name);
-				
+
 				fp = fopen(dir,"r");
 				if (fp == NULL) {
 					fprintf(stderr,"\n****Error opening file %s\n",dir);
@@ -149,7 +149,7 @@ int main(BYTE n, BYTE *arg[])
                 }
 				r = findnext(fb);
 			}
-			
+
 			if((r == 255) && (errno !=ENOFILE)) {
 				switch(errno) {
 					/*
@@ -166,12 +166,12 @@ int main(BYTE n, BYTE *arg[])
 				 default:
 					fprintf(stderr,"\n****File not found: %s (DOS error (%x))\n",arg[i],errno);
 					break;
-					
+
 				}
 			}
-			
+
 		}
-		
+
 	}
 	free(fb);
 	free(buff);
@@ -183,7 +183,7 @@ void print_help(void)
 	fputs("Usage: TP [OPTION] FILE...\n\nTyPe FILE(s) to standard output device\n\n", stderr);
 	fputs("The OPTIONS are:\n",stderr);
 /*	fputs("\t-v:  verbose: print filename of each removed file\n",stderr);
- \t-i:  interactive mode: prompt (Y/N) for each file or directory\n */ 
+ \t-i:  interactive mode: prompt (Y/N) for each file or directory\n */
 	fputs("  -h|-H|-?:  display this help and exit\n",stderr);
 	fputs("\nFILE is a name of a file to write\n", stderr);
 	fputs("\nTP is part of DOG (http://dog.sf.net/)\n", stderr);

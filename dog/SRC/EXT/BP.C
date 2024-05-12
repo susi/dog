@@ -52,7 +52,7 @@ int main(int nargs, char *args[])
 int init(int n, char *arg[])
 {
 
-#ifdef bat_debug
+#ifdef BP_DEBUG
 BYTE b;
 printf("n = %u\n",n);
 for(b=0;b<n;b++)
@@ -99,7 +99,7 @@ printf("do_bp:arg[%d]=(%s)\n",b,arg[b]);
 void do_bp(void)
 {
 
-#ifdef bp_debug
+#ifdef BP_DEBUG
 	printf("tone: %uHz %ums\n",f,t);
 #endif
 	if(t == 0)
@@ -115,4 +115,3 @@ void do_bp(void)
 
 	return;
 }
-

@@ -1,4 +1,4 @@
-/* 
+/*
 UTIL.H - Header for DOG utilities.
 
 Copyright (C) 1999, 2000  Wolf Bergenheim
@@ -34,7 +34,9 @@ Wolf Bergenheim (WB)
 #include <process.h>
 #include <errno.h>
 
-#define de		bug
+/* See ..\debug.h for all the possible debugs. ext.h includes it
+   _DEBUG_ALL_ turns all all debugging and durns off optimization */
+#include "debug.h"
 
 #define BYTE unsigned char
 #define WORD unsigned int
@@ -48,7 +50,7 @@ Wolf Bergenheim (WB)
 #define ff_attrib   attrib
 #define ff_ftime    wr_time
 #define ff_fdate    wr_date
-#define ff_fsize    size 
+#define ff_fsize    size
 #define ff_name	    name
 #endif
 

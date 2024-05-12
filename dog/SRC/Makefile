@@ -16,73 +16,89 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 CC=C:\BORLANDC\BIN\BCC
-#Use -B to use TASM to assemple inline
+LINK=C:\BORLANDC\BIN\TLINK
+
 #-w turn on all warnings
-CFLAGS=-B -d -mt -O1 -Z -f- -g15 -tDc -Fc -Tq -Tml -Tmx -Tt
-!if $(DEB)
-DEBUG=-Dbat_debug=1 -Ddebug=1 -Od
+CFLAGS=-B -d -mt -O1 -Z -Fs -f- -g15 -tDc -Fc -Tq -Tml -Tmx -Tt
+LINKFLAGS=/c /d /t /Tdc
+
+# See debug.h for all the possible debugs.
+# _DEBUG_ALL_ turns all all debugging and durns off optimization
+!if $(DEBUG)
+MAKEDEBUG=-DDEBUG
+DEBUG=-D_DEBUG_ALL_ -N -Od
+LINKFLAGS=$(LINKFLAGS) /l /m /s /v
 !endif
+
+!if $(WARN)
+CFLAGS=$(CFLAGS) -w
+LINKFLAGS=$(LINKFLAGS)
+!endif
+
 DOG=dog.com
 PROGS=$(DOG)
-OBJS=dog.obj bat.obj ints.obj  alse.obj cc.obj cmrd.obj ct.obj eh.obj hh.obj xx.obj
+COMOBJ=c:\borlandc\lib\c0ft.obj
+OBJS=dog.obj bat.obj ints.obj alse.obj cc.obj cmrd.obj ct.obj eh.obj hh.obj xx.obj
 
 .c.obj:
 	$(CC) $(CFLAGS) -c $(DEBUG) $.
 
-dog.com: $(OBJS)
-	tlink /c /d /t /Tdc c:\borlandc\lib\c0t.obj $**,dog,,cs
-
-#dog.com: dog.c dog.h bat.c ints.c  alse.c cc.c cmrd.c ct.c eh.c hh.c xx.c
-#	$(CC) $(CFLAGS) -lt $(DEBUG) $*.c
+dog.com: $(OBJS) dog.h debug.h
+	$(LINK) $(LINKFLAGS) @&&!
+$(COMOBJ) $(OBJS)
+$*
+$*
+cs.lib
+!
 
 all: ext util dog
 
-dog: $(DOG) dog.h
+dog: $(DOG) dog.h debug.h
 
 ext:
 	cd ext
-	make all
+	$(MAKE) $(MAKEDEBUG) all
 	cd ..
 
 util:
 	cd util
-	make all
+	$(MAKE) $(MAKEDEBUG) all
 	cd ..
 
 cp: cp.com
 
 cp.com:
 	cd ext
-	make cp
+	$(MAKE) cp
 	cp -v cp.com ..
-	make clean
+	$(MAKE) clean
 	cd ..
 
 rm: rm.com
 
-rm.com: cp
+rm.com: cp.com
 	cd ext
-	make cp rm
+	$(MAKE) cp rm
 	cp -v rm.com ..
-	make clean
+	$(MAKE) clean
 	cd ..
 
 install: dog
 	cd ext
-	make install
+	$(MAKE) install
 	cd ..
 	cd util
-	make install
+	$(MAKE) install
 	cd..
 	cp -v dog.com ..\bin
 
 .ignore
-clean: rm
+clean: rm.com
 	cd ext
-	make clean
+	$(MAKE) clean
 	cd ..
 	cd util
-	make clean
+	$(MAKE) clean
 	cd..
 	rm *.obj
 	rm *.com

@@ -66,14 +66,14 @@ void parse_vars(void)
 void prevbat(void)
 {
     struct bfile *obf;
-#ifdef bat_debug
+#ifdef BAT_DEBUG
 printf("prevbat:1:bf:%x bf->prev:%x\n",&(*bf),bf->prev);
 #endif
     if(bf->prev != NULL) {
         obf = bf->prev;
         free(bf);
         bf = obf;
-#ifdef bat_debug
+#ifdef BAT_DEBUG
 printf("prevbat:2:bf:%x bf->prev:%x\n",&(*bf),bf->prev);
 #endif
     }
@@ -86,7 +86,7 @@ printf("prevbat:2:bf:%x bf->prev:%x\n",&(*bf),bf->prev);
 void clearbat(void)
 {
     struct bfile *obf;
-#ifdef bat_debug
+#ifdef BAT_DEBUG
 printf("clearbat:1:bf:%x bf->prev:%x\n",&(*bf),bf->prev);
 #endif
     while(1) {
@@ -98,12 +98,12 @@ printf("clearbat:1:bf:%x bf->prev:%x\n",&(*bf),bf->prev);
         else {
             break;
         }
-#ifdef bat_debug
+#ifdef BAT_DEBUG
 printf("clearbat:2:bf:%x bf->prev:%x\n",&(*bf),bf->prev);
 #endif
 
     }
-#ifdef bat_debug
+#ifdef BAT_DEBUG
 printf("clearbat:3:bf:%x bf->prev:%x\n",&(*bf),bf->prev);
 #endif
     return;
@@ -118,7 +118,7 @@ void do_bat(void)
 	struct ffblk *fba;
 	FILE *fp;
 
-#ifdef bat_debug
+#ifdef BAT_DEBUG
 printf("do_bat:0:bf:%x name=|%s|\n",&(*bf),bf->name);
 #endif
 
@@ -157,7 +157,7 @@ printf("do_bat:0:bf:%x name=|%s|\n",&(*bf),bf->name);
 	}
 	free(fba);
 
-#ifdef bat_debug
+#ifdef BAT_DEBUG
 printf("do_bat:1:bf->line=%d,bf->nest=%d\n",bf->line,bf->nest);
 #endif
 
@@ -194,7 +194,7 @@ printf("do_bat:1:bf->line=%d,bf->nest=%d\n",bf->line,bf->nest);
 
 	parse_vars();
 
-#ifdef parse_debug
+#ifdef PARSE_DEBUG
 for(i=0;i<_NARGS;i++)
 printf("do_bat:2:bf->args[%d]=(%s) varg[%d]=(%s)\n",i,bf->args[i],i,varg[i]);
 #endif
@@ -209,7 +209,7 @@ printf("do_bat:2:bf->args[%d]=(%s) varg[%d]=(%s)\n",i,bf->args[i],i,varg[i]);
 	na = parsecom(com,ll);
 	fclose(fp);
 
-#ifdef bat_debug
+#ifdef BAT_DEBUG
 printf("do_bat:3:ll=%d com=/%s/\n",i,com);
 #endif
 
@@ -241,7 +241,7 @@ printf("do_bat:3:ll=%d com=/%s/\n",i,com);
 
 	do_batcommand(na);
 
-#ifdef bat_debug
+#ifdef BAT_DEBUG
 printf("do_bat:7:i=%u\n",i);
 #endif
 	return;
@@ -253,7 +253,7 @@ void do_batcommand(BYTE n)
 {
 	BYTE i;
 
-#ifdef bat_debug
+#ifdef BAT_DEBUG
 	printf("do_batc:0:n = %d\n",n);
 	for(i=0;i<n;i++)
 	printf("do_batc:1:arg[%d]=(%s)\n",i,arg[i]);
@@ -261,7 +261,7 @@ void do_batcommand(BYTE n)
 
 	if(strlen(arg[0]) == 2) {
 		for(i=0;i< _BAT_COMS;i++) {
-#ifdef bat_debug_detail
+#ifdef BAT_DEBUG_detail
 			printf("do_batc:2:batch[%d]=(%s)\n",i,batch[i]);
 #endif
 			if(!stricmp(arg[0], batch[i]))
@@ -324,7 +324,7 @@ void do_go(BYTE n)
     for(i=0;1;i++) {
         p = fgets(l,120,fp);
 
-#ifdef bat_debug
+#ifdef BAT_DEBUG
 printf("label=%8s l=%s\n",label,l);
 #endif
 
@@ -351,7 +351,7 @@ void do_ca(BYTE n)
     BYTE i;
     struct bfile *nbf;
 
-#ifdef ca_debug
+#ifdef CA_DEBUG
 printf("do_ca:1:name=%s na=%u in=%u line=%u nest=%u\n",bf->name,bf->na,bf->in,bf->line,bf->nest);
 printf("do_ca:1:bf = %x\n",&(*bf));
 #endif
@@ -377,13 +377,13 @@ printf("do_ca:1:bf = %x\n",&(*bf));
         nbf->in = 1;
         nbf->prev = bf;
         bf = nbf;
-#ifdef ca_debug
+#ifdef CA_DEBUG
 printf("---------\n");
 printf("do_ca:2:name=%s na=%u in=%u line=%u nest=%u\n",bf->name,bf->na,bf->in,bf->line,bf->nest);
 printf("do_ca:3:bf = %x\n",&(*bf));
 #endif
 /*        do_bat(); */
-#ifdef ca_debug
+#ifdef CA_DEBUG
 printf("do_ca:3:name=%s na=%u in=%u line=%u nest=%u\n",bf->name,bf->na,bf->in,bf->line,bf->nest);
 printf("do_ca:3:bf = %x\n",&(*bf));
 #endif

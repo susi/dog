@@ -65,7 +65,7 @@ int main(BYTE n, BYTE *arg[])
 
 	k = 0;
 	mv_p.npatt = 0;
-	
+
 	for(i=1;i<n;i++) {
 		if ((arg[i][0] == '-') || (arg[i][0] == '/')) {
 			for(j=1;arg[i][j]!='\0';j++) {
@@ -90,9 +90,9 @@ int main(BYTE n, BYTE *arg[])
 			k++;
 		}
 	}
-	
+
 	mv_p.npatt = k;
-		
+
 	if(mv_p.npatt == 0){
 		fputs("Missing source and destination",stderr);
 		print_help();
@@ -107,9 +107,9 @@ int main(BYTE n, BYTE *arg[])
 		print_help();
 		return -1;
 	}
-	
+
 	strcpy(sn_fil,mv_p.patt[0]);
-	fnsplit(sn_fil, s_drv, s_dir, s_fil, s_ext);		
+	fnsplit(sn_fil, s_drv, s_dir, s_fil, s_ext);
 
 	strcpy(dn_fil,mv_p.patt[1]);
 
@@ -118,17 +118,17 @@ int main(BYTE n, BYTE *arg[])
 		printf("Can not find %s.\n",mv_p.patt[0]);
 		return -1;
 	}
-		
+
 	while (b == 0) {
 
 		strcpy(sn_fil,mv_p.patt[0]);
 		strcpy(dn_fil,mv_p.patt[1]);
-		
+
 		strcpy(sn_fil, s_drv);
 		strcat(sn_fil, s_dir);
 		strcat(sn_fil, ffb.ff_name); /*Got the fullpath of source*/
 
-		fnsplit(sn_fil, s_drv, s_dir, s_fil, s_ext);		
+		fnsplit(sn_fil, s_drv, s_dir, s_fil, s_ext);
 		fnsplit(dn_fil, d_drv, d_dir, d_fil, d_ext);
 
 		/*Replace wildcards '?' and/or '*'*/
@@ -136,27 +136,27 @@ int main(BYTE n, BYTE *arg[])
 /* fileneme */
 			if(d_fil[j] == '?'){
 				d_fil[j] = s_fil[j];
-#ifdef mv_debug
+#ifdef MV_DEBUG
 				printf("%s:%d: ? found at %d: s_fil[%d]=%c\n",__FILE__,__LINE__,j,j,s_fil[j]);
-#endif				
+#endif
 			}
 			else if((d_fil[j] == '*') && (strlen(s_fil) >= strlen(d_fil))){
-#ifdef mv_debug
+#ifdef MV_DEBUG
 				printf("%s:%d: * found at %d: s_fil='%s' d_fil='%s'\n",__FILE__,__LINE__,j,j,s_fil,d_fil);
-#endif				
+#endif
 				for(k = j; k <= strlen(s_fil); k++){
 					d_fil[k] = s_fil[k];
 				}
 			}
 			else if((d_fil[j] == '*') && (strlen(s_fil) < strlen(d_fil))){
-#ifdef mv_debug
+#ifdef MV_DEBUG
 				printf("%s:%d: * found at %d: s_fil='%s' d_fil='%s', source SHORTER than dest\n",__FILE__,__LINE__,j,j,s_fil,d_fil);
-#endif				
+#endif
 				for(k = j; k <= strlen(d_fil); k++){
 					d_fil[k] = '\0';
-#ifdef mv_debug
+#ifdef MV_DEBUG
 					printf("%s:%d:            %d: s_fil[%d]='%c'\n",__FILE__,__LINE__,k,k,s_fil[k]);
-#endif				
+#endif
 				}
 			}
 		}
@@ -164,25 +164,25 @@ int main(BYTE n, BYTE *arg[])
 		for(j = 0; j < strlen(d_ext); j++){
 			if(d_ext[j] == '?'){
 				d_ext[j] = s_ext[j];
-#ifdef mv_debug
+#ifdef MV_DEBUG
 				printf("%s:%d: ? found at %d: s_ext[%d]=%c\n",__FILE__,__LINE__,j,j,s_ext[j]);
-#endif				
+#endif
 			}
 			else if((d_ext[j] == '*') && (strlen(s_ext) >= strlen(d_ext))){
-#ifdef mv_debug
+#ifdef MV_DEBUG
 				printf("%s:%d: * found at %d: s_ext='%s' d_ext='%s'\n",__FILE__,__LINE__,j,j,s_ext,d_ext);
-#endif				
+#endif
 				for(k = j; k <= strlen(s_ext); k++){
 					d_ext[k] = s_ext[k];
-#ifdef mv_debug
+#ifdef MV_DEBUG
 				printf("%s:%d:            %d: s_ext[%d]='%c'\n",__FILE__,__LINE__,k,k,s_ext[k]);
-#endif				
+#endif
 				}
 			}
 			else if((d_ext[j] == '*') && (strlen(s_ext) < strlen(d_ext))){
-#ifdef mv_debug
+#ifdef MV_DEBUG
 				printf("%s:%d: * found at %d: s_ext='%s' d_ext='%s', source SHORTER than dest\n",__FILE__,__LINE__,j,j,s_ext,d_ext);
-#endif				
+#endif
 				for(k = j; k <= strlen(d_ext); k++){
 					d_ext[k] = '\0';
 				}
@@ -193,7 +193,7 @@ int main(BYTE n, BYTE *arg[])
 		strcat(dn_fil, d_dir);
 		strcat(dn_fil, d_fil);
 		strcat(dn_fil, d_ext);
-				
+
 		if(flag_v == FLAG_SET) printf("%s --> %s",sn_fil,dn_fil);
 		if(flag_i == FLAG_SET) {
 			if(findfirst(dn_fil,&ff,FA_NORMAL|FA_DIREC|FA_ARCH|FA_SYSTEM|FA_RDONLY|FA_HIDDEN)==0) {
@@ -235,7 +235,7 @@ int main(BYTE n, BYTE *arg[])
 
 		printf("\n");
 
-		
+
 		if(rename(sn_fil,dn_fil)!=0) {
 			switch(errno) {
 			 case ENOENT:
@@ -271,7 +271,7 @@ WORD newname(BYTE *oldname, BYTE *newname)
 	asm jnc	nn_ok
 	asm mov r,ax
 
-		
+
 	return r;
 	nn_ok:
 	printf("r=0x%x\n",r);
@@ -288,7 +288,7 @@ void print_help(void)
 				"  to new names with PATTERN2 [with an optionional path]",stderr);
 	fputs("The OPTIONS are:\n",stderr);
 	fputs("\t-v:  verbose: print filename of each moved file\n",stderr);
-/*  \t-i:  interactive mode: prompt (Y/N) for each file or directory\n */ 
+/*  \t-i:  interactive mode: prompt (Y/N) for each file or directory\n */
 	fputs("  -h|-H|-?:  display this help and exit\n",stderr);
 	fputs("\nFILE is a name of a file to write\n", stderr);
 	fputs("\nMV is part of DOG (http://dog.sf.net/)\n", stderr);

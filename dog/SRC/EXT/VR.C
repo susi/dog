@@ -80,34 +80,34 @@ int main(void)
     dog_test(dog_str);
 
     /* Get DOS Version */
-    asm MOV ah,30h
-    asm MOV al,00h
-    asm INT 21h
-    asm MOV DOS_ma,  al
-    asm MOV DOS_mi,  ah
-    asm MOV DOS_OEM, bh
-    asm MOV serial[0], ch /* serial number is a 24 bit number in BL:CX - saving it in little-endian order */
-    asm MOV serial[1], cl
-    asm MOV serial[2], bl /* revision seq for FreeDOS */
-#ifdef debug
+    asm MOV ah,30h;
+    asm MOV al,00h;
+    asm INT 21h;
+    asm MOV DOS_ma,  al;
+    asm MOV DOS_mi,  ah;
+    asm MOV DOS_OEM, bh;
+    asm MOV serial[0], ch /* serial number is a 24 bit number in BL:CX - saving it in little-endian order */;
+    asm MOV serial[1], cl;
+    asm MOV serial[2], bl /* revision seq for FreeDOS */;
+#ifdef VR_DEBUG
     printf("DEBUG: DOS version %u.%u rev %02Xh OEM:%02Xh serial: %02X%02X%02Xh\n",DOS_ma,DOS_mi,DOS_rev,DOS_OEM,serial[2],serial[1],serial[0]);
 #endif
     /* Try to Get true DOS version */
-    asm mov ax,3306h
-    asm int 21h
-    asm cmp ax, 3306h
-    asm je old_dos
-    asm cmp al, 0FFh
-    asm je old_dos
-    asm cmp ah, 00h
-    asm je old_dos
-    asm mov DOS_ma, bl
-    asm mov DOS_mi, bh
-    asm and dl, 7h /* bits 0-2 */
-    asm mov DOS_rev, dl
+    asm mov ax,3306h;
+    asm int 21h;
+    asm cmp ax, 3306h;
+    asm je old_dos;
+    asm cmp al, 0FFh;
+    asm je old_dos;
+    asm cmp ah, 00h;
+    asm je old_dos;
+    asm mov DOS_ma, bl;
+    asm mov DOS_mi, bh;
+    asm and dl, 7h /* bits 0-2 */;
+    asm mov DOS_rev, dl;
     /* Ignore version flag */
   old_dos:
-#ifdef debug
+#ifdef VR_DEBUG
 	printf("DEBUG: DOS version %u.%u rev %02Xh OEM:%02Xh serial: %02X%02X%02Xh\n",DOS_ma,DOS_mi,DOS_rev,DOS_OEM,serial[2],serial[1],serial[0]);
 #endif
 
@@ -116,14 +116,14 @@ int main(void)
 	/* try to detect DOSBox */
 	/* get list of lists */
 	/* DOSBox stores it in segment 80h */
-	asm mov ah, 52h
-	asm int 21h
-	asm push es
-	asm pop ax
-        asm mov sys_seg, ax
+	asm mov ah, 52h;
+	asm int 21h;
+	asm push es;
+	asm pop ax;
+        asm mov sys_seg, ax;
         cmd_seg = get2e();
 	/* DOSBox 0.74-2+ at least has these segments hard coded */
-#ifdef debug
+#ifdef VR_DEBUG
 	printf("DEBUG: Command segment: %04Xh SYS segment: %04Xh\n", cmd_seg, sys_seg);
 #endif
 	if(cmd_seg == 0xf000 && sys_seg == 0x0080) {
@@ -141,7 +141,7 @@ int main(void)
 	DR_nat = (BYTE)(DR_vrnat>>8);
 	drdos_VER = getenv("VER");
 	drdos_OS = getenv("OS");
-#ifdef debug
+#ifdef VR_DEBUG
 	    printf("DEBUG: DR-DOS Product %02Xh Multi-user nature: %02Xh\n",DR_vr, DR_nat);
 	    if (drdos_VER != NULL)
 		printf("DEBUG: env VER='%s'\n", drdos_VER);
@@ -255,28 +255,28 @@ WORD dog_test(char *dog_str)
     BYTE DOG_ma=0,DOG_mi=0,DOG_re=0x0b;
 
     /* check for DOG int d0 */
-    asm mov ax,35d0h
-    asm int 21h
-    asm push es
-    asm pop ax
-    asm cmp ax,0000h
-    asm jz no_DOG    /* DOG not installed */
-    asm mov ax,0123h /* DOG function 1 with test */
-    asm int 0d0h     /* DOG service */
-    asm cmp ax,0123h /* AX unchanged, DOG not installed */
-    asm jz no_DOG
+    asm mov ax,35d0h;
+    asm int 21h;
+    asm push es;
+    asm pop ax;
+    asm cmp ax,0000h;
+    asm jz no_DOG    /* DOG not installed */;
+    asm mov ax,0123h /* DOG function 1 with test */;
+    asm int 0d0h     /* DOG service */;
+    asm cmp ax,0123h /* AX unchanged, DOG not installed */;
+    asm jz no_DOG;
     /* DOG version is packed as 0x1234 = 1.2.34 or 0x083b = 0.8.3b */
-    asm mov DOG_vr, ax
+    asm mov DOG_vr, ax;
     /* Unpack the dog version */
-    asm mov bh,ah
-    asm shr bh,1
-    asm shr bh,1
-    asm shr bh,1
-    asm shr bh,1
-    asm MOV DOG_ma,bh
-    asm AND ah,0fh
-    asm MOV DOG_mi,ah
-    asm MOV DOG_re,al
+    asm mov bh,ah;
+    asm shr bh,1;
+    asm shr bh,1;
+    asm shr bh,1;
+    asm shr bh,1;
+    asm MOV DOG_ma,bh;
+    asm AND ah,0fh;
+    asm MOV DOG_mi,ah;
+    asm MOV DOG_re,al;
     sprintf(dog_str,"DOG version %u.%u.%02x\n",DOG_ma,DOG_mi,DOG_re);
     return DOG_vr;
 
@@ -289,16 +289,16 @@ WORD drdos_version(void)
 {
     WORD dr_vr;
     /* CALL INT 21h with AX = 4452h ("DR") and CF set to check if DR DOS */
-    asm mov ax, 4452h
-    asm stc
-    asm int 21h
-    asm jnc maybe_dr
-    asm jmp not_dr
+    asm mov ax, 4452h;
+    asm stc;
+    asm int 21h;
+    asm jnc maybe_dr;
+    asm jmp not_dr;
  maybe_dr:
-    asm cmp ax, 4452h
-    asm je not_dr
+    asm cmp ax, 4452h;
+    asm je not_dr;
 
-    asm mov dr_vr,ax
+    asm mov dr_vr,ax;
     return dr_vr;
 not_dr:
     return 0;
@@ -313,19 +313,19 @@ not_dr:
 int detect_switcher(void)
 {
     int retval = 1;
-    asm push di
-    asm push es
-    asm xor bx, bx
-    asm mov di, bx
-    asm mov es, bx
-    asm mov ax, 4b02h
-    asm int 2fh
-    asm mov cx, es
-    asm or cx, di
-    asm je no_switcher
+    asm push di;
+    asm push es;
+    asm xor bx, bx;
+    asm mov di, bx;
+    asm mov es, bx;
+    asm mov ax, 4b02h;
+    asm int 2fh;
+    asm mov cx, es;
+    asm or cx, di;
+    asm je no_switcher;
 done:
-    asm pop es
-    asm pop di
+    asm pop es;
+    asm pop di;
     return retval;
 no_switcher:
     retval = 0;
@@ -335,11 +335,11 @@ no_switcher:
 WORD get2e(void)
 {
     WORD int2e_seg=0;
-    asm MOV ax,352eh
-    asm int 21h
-    asm push es
-    asm pop ax
-    asm mov int2e_seg,ax
+    asm MOV ax,352eh;
+    asm int 21h;
+    asm push es;
+    asm pop ax;
+    asm mov int2e_seg,ax;
 
    return int2e_seg;
 }
@@ -350,23 +350,23 @@ int is_win(BYTE *pmaj, BYTE *pmin, WORD *pmode)
   BYTE min=0, mode=0;
 
   /* make sure someone, anyone has INT 2Fh */
-    asm MOV ax,352fh
-    asm int 21h
-    asm push es
-    asm pop ax
-    asm cmp ax,0000h
-    asm jz is_win_1
-  asm jmp is_win_end
+    asm MOV ax,352fh;
+    asm int 21h;
+    asm push es;
+    asm pop ax;
+    asm cmp ax,0000h;
+    asm jz is_win_1;
+  asm jmp is_win_end;
   is_win_1:
   /* call 2F/160A to see if Windows X*/
-  asm mov ax, 160ah
-  asm int 2fh
-  asm cmp ax,0000h
-  asm jne iswin_1
+  asm mov ax, 160ah;
+  asm int 2fh;
+  asm cmp ax,0000h;
+  asm jne iswin_1;
 
-  asm mov mode, cx  /* CX=2 means Std; CX=3 means Enh */
-  asm mov maj, bh   /* BX = major/minor (e.g., 030Ah) */
-  asm mov min, bl
+  asm mov mode, cx  /* CX=2 means Std; CX=3 means Enh */;
+  asm mov maj, bh   /* BX = major/minor (e.g., 030Ah) */;
+  asm mov min, bl;
   *pmaj = maj;
   *pmin = min;
   *pmode = mode;
@@ -374,10 +374,10 @@ int is_win(BYTE *pmaj, BYTE *pmin, WORD *pmode)
 
   iswin_1:
   /* call 2F/1600 to see if Windows 3.0 Enhanced mode or Windows/386 */
-  asm mov ax, 1600h
-  asm int 2fh
-  asm mov maj, al
-  asm mov min, ah
+  asm mov ax, 1600h;
+  asm int 2fh;
+  asm mov maj, al;
+  asm mov min, ah;
   if ((maj == 1) || (maj == 0xFF)) {  /* Windows/386 2.x is running */
     *pmaj = 2;              /* Windows/386 2.x */
     *pmin = 1;              /* don't know; assume 2.1? */
@@ -394,9 +394,9 @@ int is_win(BYTE *pmaj, BYTE *pmin, WORD *pmode)
 
   /* call 2F/4680 to see if Windows 3.0 Standard or Real mode; but,
    this could be a "3.0 derivative" such as DOSSHELL task switcher! */
-  asm mov ax, 4680h
-  asm int 2fh
-  asm mov retval, ax
+  asm mov ax, 4680h;
+  asm int 2fh;
+  asm mov retval, ax;
   if (retval == 0) {            /* AX=0 if 2F/4680 handled */
     /* make sure it isn't DOSSHELL task switcher */
     if (detect_switcher())

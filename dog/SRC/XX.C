@@ -31,11 +31,11 @@ History
 
 void do_xx(void)
 {
-#ifdef xx_debug
+#ifdef XX_DEBUG
 printf("Xitable=%d Xit=%d\n",Xitable,Xit);
 #endif
     if(Xitable==1) Xit = 1;
-#ifdef xx_debug
+#ifdef XX_DEBUG
 printf("Xitable=%d Xit=%d\n",Xitable,Xit);
 #endif
     return;
