@@ -1,6 +1,6 @@
 /*
 
-CT.C - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
+CT.C - DOG - Change Terminal (CTTY)
 
 Copyright (C) 1999,2000 Wolf Bergenheim
 
@@ -24,12 +24,13 @@ David McIlwraith (DMcI)
 
 History
 25.03.00 - started... based on the code written by David MacIlwraith
-
+2024-05-11 - Building as a module. - WB
 */
+#include "dog.h"
+
 #pragma argsused
 void do_ct(BYTE n)
 {
-
 	asm MOV ax,3d02h            ;/* open file using handle */
 	asm MOV dx,offset arg[1]    ;/* filename */
 	asm INT 21h                 ;/* open file... er device */
@@ -63,8 +64,8 @@ void do_ct(BYTE n)
 
     do_ct_err:
         fprintf(stderr,"Invalid device.\n");
-        return;       
+        return;
     do_ct_dnr:
         fprintf(stderr,"Device %s not ready error.\n",arg[1]);
         return;
-}    
+}

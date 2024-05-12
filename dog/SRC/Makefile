@@ -16,26 +16,28 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 CC=C:\BORLANDC\BIN\BCC
-CFLAGS=-B -d -mt -O1 -Z
+#Use -B to use TASM to assemple inline
+#-w turn on all warnings
+CFLAGS=-B -d -mt -O1 -Z -f- -g15 -tDc -Fc -Tq -Tml -Tmx -Tt
 !if $(DEB)
-DEBUG=-Dbat_debug=1 -Ddebug=1 -O-
+DEBUG=-Dbat_debug=1 -Ddebug=1 -Od
 !endif
 DOG=dog.com
 PROGS=$(DOG)
 OBJS=dog.obj bat.obj ints.obj  alse.obj cc.obj cmrd.obj ct.obj eh.obj hh.obj xx.obj
 
-#.c.obj:
-#	$(CC) $(CFLAGS) -c $(DEBUG) $.
+.c.obj:
+	$(CC) $(CFLAGS) -c $(DEBUG) $.
 
-#dog.com: $(OBJS)
-#	tlink /c /t $**,dog
+dog.com: $(OBJS)
+	tlink /c /d /t /Tdc c:\borlandc\lib\c0t.obj $**,dog,,cs
 
-dog.com: dog.c dog.h bat.c ints.c  alse.c cc.c cmrd.c ct.c eh.c hh.c xx.c
-	$(CC) $(CFLAGS) -lt $(DEBUG) $*.c
+#dog.com: dog.c dog.h bat.c ints.c  alse.c cc.c cmrd.c ct.c eh.c hh.c xx.c
+#	$(CC) $(CFLAGS) -lt $(DEBUG) $*.c
 
 all: ext util dog
 
-dog: $(DOG)
+dog: $(DOG) dog.h
 
 ext:
 	cd ext

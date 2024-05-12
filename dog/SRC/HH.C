@@ -25,7 +25,10 @@ History
 18.03.00 - Extracted from DOG.C - WB
 06.04.00 - Started - WB
 2002-03-01 - Internal and external commands are now sepatate
+2024-05-11 - Building as a module. - WB
 */
+
+#include "dog.h"
 
 void do_hh(BYTE n)
 {

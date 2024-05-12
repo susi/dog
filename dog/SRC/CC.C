@@ -1,6 +1,6 @@
 /*
 
-CC.C - DOG - Alternate command processor for (currently) MS-DOS ver 3.30
+CC.C - DOG - Change Codepage
 
 Copyright (C) 1999,2000 Wolf Bergenheim
 
@@ -23,5 +23,11 @@ Wolf Bergenheim (WB)
 
 History
 18.03.00 - Extracted from DOG.C - WB
-
+2024-05-12 - Placeholder implementation - WB
 */
+#include "dog.h"
+
+void do_cc(BYTE n)
+{
+    printf("CC - Change Codepage, currently unimplemented\n");
+}

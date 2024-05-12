@@ -16,7 +16,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 CC=C:\BORLANDC\BIN\BCC
-CFLAGS=-B -d -mt -O1 -O- -Z -lt
+CFLAGS=-B -d -mt -O1 -Z -f- -g15 -tDc -Fc -Tq -Tml -Tmx -Tt
 !if $(DEB)
 DEBUG=-Ddebug=1
 !endif

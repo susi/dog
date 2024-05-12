@@ -23,8 +23,11 @@ Wolf Bergenheim (WB)
 
 History
 18.03.00 - Extracted from DOG.C - WB
+2024-05-11 - Building as a module. - WB
 
 **************************************************************************/
+
+#include "dog.h"
 
 void do_xx(void)
 {
@@ -38,5 +41,3 @@ printf("Xitable=%d Xit=%d\n",Xitable,Xit);
     return;
 
 }
-
-

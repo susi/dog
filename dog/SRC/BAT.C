@@ -21,6 +21,8 @@ History
 06.05.99 - BAT.C is a now also ported.
 
 */
+#include "dog.h"
+
 #define _BAT_COMS 8
 
 #define B_C_CA 0
@@ -43,14 +45,12 @@ BYTE batch[_BAT_COMS][3] = {
     "TI"   /*Timer*/
 };
 
-
-
 /***************************************************************************/
 
 void parse_vars(void)
 {
 	int i;
-	
+
 	for(i=0;i<bf->na;i++) {
 		strcpy(varg[i],bf->args[i]);
 	}
@@ -58,8 +58,9 @@ void parse_vars(void)
 		varg[i][0] = '\0';
 		bf->args[i] = NULL;
 	}
-	
+
 }
+
 /***************************************************************************/
 
 void prevbat(void)
@@ -155,7 +156,7 @@ printf("do_bat:0:bf:%x name=|%s|\n",&(*bf),bf->name);
 		}
 	}
 	free(fba);
-	
+
 #ifdef bat_debug
 printf("do_bat:1:bf->line=%d,bf->nest=%d\n",bf->line,bf->nest);
 #endif
@@ -166,7 +167,7 @@ printf("do_bat:1:bf->line=%d,bf->nest=%d\n",bf->line,bf->nest);
 	for(i=0;i<bf->line;i++) {
 		fgets(com,200,fp);
 	}
-	
+
     /* end of bfile:
                     if nest = 0 return
                     if nest > 0 return one lvl down */
@@ -186,7 +187,7 @@ printf("do_bat:1:bf->line=%d,bf->nest=%d\n",bf->line,bf->nest);
 		}
 
 	}
-	
+
 	/* extract $0..$9 to varg[0]..varg[9] */
 
 	bf->line++;
@@ -204,10 +205,10 @@ printf("do_bat:2:bf->args[%d]=(%s) varg[%d]=(%s)\n",i,bf->args[i],i,varg[i]);
 		return;
 	}
 	ll=strlen(com);
-		
+
 	na = parsecom(com,ll);
 	fclose(fp);
-	
+
 #ifdef bat_debug
 printf("do_bat:3:ll=%d com=/%s/\n",i,com);
 #endif
@@ -237,7 +238,7 @@ printf("do_bat:3:ll=%d com=/%s/\n",i,com);
 			return;
 		}
 	}
-	
+
 	do_batcommand(na);
 
 #ifdef bat_debug
@@ -251,13 +252,13 @@ printf("do_bat:7:i=%u\n",i);
 void do_batcommand(BYTE n)
 {
 	BYTE i;
-	
+
 #ifdef bat_debug
 	printf("do_batc:0:n = %d\n",n);
 	for(i=0;i<n;i++)
 	printf("do_batc:1:arg[%d]=(%s)\n",i,arg[i]);
 #endif
-	
+
 	if(strlen(arg[0]) == 2) {
 		for(i=0;i< _BAT_COMS;i++) {
 #ifdef bat_debug_detail
@@ -414,7 +415,7 @@ void do_if(BYTE n)
     printf("syntax error in command if:\n syntax is if foo ! OR = bar somecommand and arguments\n");
     return;
   }
-  
+
   tr = 0;
   if(stricmp(arg[1],"errolevel") == 0) {
     sprintf(p,"%d",errorlevel);
@@ -431,15 +432,13 @@ void do_if(BYTE n)
     printf("syntax error in command if:\n syntax is if foo ! OR = bar somecommand and arguments\n");
     return;
   }
-  
+
   if (tr == 1) {
     for (i=4;i<n;i++) {
       arg[i-4] = arg[i];
     }
     do_batcommand(n-4);
   }
-  
-  return; 
+
+  return;
 }
-
-

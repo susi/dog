@@ -18,6 +18,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
+#ifndef __DOG_H__
+#define __DOG_H__
 #include <stdlib.h>
 #include <stdio.h>
 #include <dos.h>
@@ -172,71 +174,15 @@ C:\DOG>_
 #define DOG_RE 0x3b
 
 /* Define Global Variables */
-BYTE DOG_ma = DOG_MA, DOG_mi = DOG_MI, DOG_re = DOG_RE;
-BYTE Xit = 0, Xitable = 1, eh = 0, D=0, P[MAXDIR];
-BYTE comline[200]= {0}, *com = comline, *arg[_NARGS], varg[_NARGS][200], *prompt;
-BYTE commands[_NCOMS][3] = {
-	"AL",
-	"CC",
-	"CD",
-	"CT",
-	"EH",
-	"HH",
-	"MD",
-	"RD",
-	"SE",
-	"XX"};
+extern BYTE DOG_ma, DOG_mi, DOG_re;
+extern BYTE Xit, Xitable, eh, D, P[];
+extern BYTE comline[200], *com, *arg[_NARGS], varg[_NARGS][200], *prompt;
+extern BYTE commands[_NCOMS][3];
+extern BYTE ext_commands[_NECOMS][3];
+extern BYTE command_des[_NCOMS][21];
+extern BYTE ext_command_des[_NECOMS][21];
 
-BYTE ext_commands[_NECOMS][3] = {
-  "BP",
-	"BR",
-	"CL",
-	"CP",
-	"LS",
-	"MV",
-	"RM",
-	"SZ",
-	"TP",
-	"VF",
-	"VR"};
-
-BYTE command_des[_NCOMS][21] = {
-	"ALias               ",
-	"Change Codepage     ",
-	"Change Directory    ",
-	"Change Terminal     ",
-	"EcHo                ",
-	"Help                ",
-	"Make Directory      ",
-	"Remove Directory    ",
-	"Set to Environment  ",
-	"eXit                "};
-
-BYTE ext_command_des[_NECOMS][21] = {
-  "BeeP                ",
-	"BReak               ",
-	"CLear screen        ",
-	"CoPy                ",
-	"LiSt files          ",
-	"MoVe file (rename)  ",
-	"ReMove files        ",
-	"SiZe of files in dir",
-	"TyPe                ",
-	"VeriFy              ",
-	"VeRsion             "};
-
-/* BYTE *command_help[_NCOMS]; */
-
-/*
-Structure of the flags variable. Tells which flags were given to DOG
-3 2 1 0
-^ ^ ^ ^
-| | | +-- P
-| | +---- E
-| +------ C
-+-------- A
-*/
-BYTE flags;
+extern BYTE flags;
 #define FLAG_P 0x1
 #define FLAG_E 0x2
 #define FLAG_C 0x4
@@ -253,20 +199,18 @@ BYTE flags;
 #define C_SE 8
 #define C_XX 9
 
-
-
-BYTE cBreak = 0;
-WORD drvs,errorlevel=0,PSP;
-WORD envseg,envsz;
-WORD aliasseg,aliassz;
-BYTE far * _env;
-WORD i22_s, i22_o;
-WORD i23_s, i23_o; /* variables to store old ctrl-c handler*/
-WORD i2e_s, i2e_o;
-WORD i24_s, i24_o;
-WORD id0_s, id0_o; /* the old handler for the D0GFunc */
-BYTE IN,OUT,sin,sout;
-BYTE REDIRECTED_OUT, REDIRECTED_IN;
+extern BYTE cBreak;
+extern WORD drvs,errorlevel,PSP;
+extern WORD envseg,envsz;
+extern WORD aliasseg,aliassz;
+extern BYTE far * _env;
+extern WORD i22_s, i22_o;
+extern WORD i23_s, i23_o; /* variables to store old ctrl-c handler*/
+extern WORD i2e_s, i2e_o;
+extern WORD i24_s, i24_o;
+extern WORD id0_s, id0_o; /* the old handler for the D0GFunc */
+extern BYTE IN,OUT,sin,sout;
+extern BYTE REDIRECTED_OUT, REDIRECTED_IN;
 
 struct bfile {
     BYTE name[MAXDIR];
@@ -278,7 +222,9 @@ struct bfile {
     WORD line;
     WORD nest;
     struct bfile *prev;
-}*bf;
+};
+
+extern struct bfile *bf;
 
 struct red {
     BYTE name[MAXDIR];
@@ -287,14 +233,18 @@ struct red {
 	  WORD fo;
     BYTE redirect;
     BYTE opt[3];
-}fout, fin;
+};
+
+extern struct red fout, fin;
 
 struct s_pipe {
 	WORD phandle;
 	BYTE pname[MAXDIR+13];
 	BYTE pcmd[200];
 	BYTE pstatus; /*0=nopipes active 1=tmp file pending delete 2= active */
-}pip;
+};
+
+extern struct s_pipe pip;
 
 struct ExecBlock {
 	WORD env;
@@ -336,9 +286,16 @@ BYTE isfchar(BYTE c);
 void clearbat(void); /* clear the b file linked list*/
 void prevbat(void); /* return to the previous nest-level in bat*/
 
+/* ints.c */
+void get_int(void);
+void set_int(void);
+void make_int2e(void);
+void make_intd0(void);
+
 /* internal commands */
 void do_al(BYTE n);
 void do_se(BYTE n);
+void do_cc(BYTE n);
 void do_ct(BYTE n);
 void do_cd(BYTE n);
 void do_hh(BYTE n);
@@ -358,3 +315,5 @@ void do_chdr(BYTE dr);
 void do_bat(void);
 void do_command(BYTE na);
 void do_batcommand(BYTE na);
+
+#endif /* __DOG_H__ */

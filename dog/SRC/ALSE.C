@@ -37,8 +37,10 @@ History
 2024-05-11 - fixed getudata (and getevar and getalias) to require providing
              the size of value. To avoid some nasy buffer overruns.
              Also updated do_se and setudata to use standard functions.
+2024-05-11 - Building as a module.
 **************************************************************************/
 #include <mem.h>
+#include "dog.h"
 
 void do_al( BYTE n)
 {
