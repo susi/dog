@@ -167,6 +167,8 @@ History
              a directory with the same name exists
              e.g.: FOO.COM and a directory FOO exists; if you type foo, then
              FOO.COM is executed, if you want the dir FOO you type FOO. -WB
+2024-05-12 - Brought back the DOG prompt! Also uses the DOG prompt when no
+             PROMPT is defined in the ENV. -WB
 */
 
 #include "dog.h"
@@ -450,7 +452,7 @@ BYTE initialize(int nargs, char *args[])
     for(p = & args[0][strlen(args[0])];*p != '\\';p--);
     *p = '\0';
     setevar("PATH",args[0]);
-    setevar("PROMPT",_PROMPT);
+    /* no need to set PROMPT since it defaults to _DOG_PROMPT */
   }
   else {
     _env = MK_FP(envseg,0);
@@ -844,18 +846,25 @@ void printprompt(void)
 {
   WORD yr;
   BYTE dow,mo,day,i,k,h,mi,s,ms,j;
-  BYTE ename[80],eval[80];
+  BYTE ename[80],eval[120];
 
   prompt = malloc(200);
+  if (prompt==NULL) {
+      printf("> ");
+      return;
+  }
   memset(prompt,'\0',200);
-	memset(eval,'\0',80);
+  memset(eval,'\0',80);
 
-	if((prompt = getevar("PROMPT",prompt,200)) != NULL) {
-		k = strlen(prompt);
-	}
+  if(getevar("PROMPT",prompt,200) != NULL) {
+      k = strlen(prompt);
+  }
   else {
-		k = 0;
-	}
+      /* Make sure there is a prompt. */
+      /* Long live the dog promopt! */
+      k = sizeof(_DOG_PROMPT);
+      memcpy(prompt, _DOG_PROMPT, k);
+  }
 
 #ifdef PROMPT_DEBUG
   printf("printprompt:0:prompt=(%s) strlen=(%d)\n",prompt,k);
@@ -884,8 +893,8 @@ void printprompt(void)
         putchar('|');
         break;
        case  'e':
-				printf("%d",errorlevel);
-				break;
+	   printf("%d",errorlevel);
+	   break;
        case  'E':
         putchar('\x1b');
         break;
@@ -968,18 +977,18 @@ void printprompt(void)
     }
     else if(prompt[i] == '%') {
       if(prompt[++i]  == '%') {
-				putchar('%');
-			}
+	  putchar('%');
+      }
       else if(isdigit(prompt[i])) {
-        printf("%s",varg[prompt[i] -'0']);
+	  printf("%s",varg[prompt[i] -'0']);
       }
       else {
-        for(j=0;(prompt[i] != '%') && (i<k);j++,i++) {
-          ename[j] = prompt[i];
+	  for(j=0;(prompt[i] != '%') && (i<k);j++,i++) {
+	      ename[j] = prompt[i];
 #ifdef PROMPT_DEBUG
-	  printf("printprompt:2:prompt[%d]=%c\n",i,prompt[i]);
+	      printf("printprompt:2:prompt[%d]=%c\n",i,prompt[i]);
 #endif
-	}
+	  }
 #ifdef PROMPT_DEBUG
 	printf("printprompt:3:prompt[%d]=%c\n",i,prompt[i]);
 #endif
