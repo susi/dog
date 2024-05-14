@@ -32,6 +32,7 @@ History
 2002-05-15 - Added support for detecting Windows version (<= 4.*)
 2024-05-10 - Cleaned up code and added DOSBox detection
 2024-05-08 - Improved DR DOS detection
+2024-05-13 - Fixed FreeDOS detection, also print OS_VERSION for FreeDOS
 **************************************************************************/
 
 #include "ext.h"
@@ -65,12 +66,17 @@ struct dosemu_detect {
 
 int main(void)
 {
-    WORD DOG_vr,win_mode,sys_seg,cmd_seg,DR_vrnat;
-    BYTE DR_vr,DR_nat,DOS_ma=3,DOS_mi=30,DOS_OEM=0xFD,DOS_rev=0,win_ma=0,win_mi=0, vbe_check,serial[3];
+    WORD DOG_vr,win_mode,sys_seg,cmd_seg,DR_vrnat, FD_ver_off, FD_ver_seg;
+    BYTE DR_vr,DOS_ma=3,DOS_mi=30,DOS_OEM=0xFD,DOS_rev=0,win_ma=0,win_mi=0, vbe_check,serial[3];
     struct dosemu_detect far* given = (void far*) DOSEMU_MAGIC_LOCATION;
     struct dosemu_detect expect = {DOSEMU_MAGIC};
     char dog_str[161];
-    char *drdos_VER, *drdos_OS;
+    char *drdos_VER, *drdos_OS, *fd_VER;
+    char far *fd_kernel;
+#ifdef VR_DEBUG
+    BYTE DR_nat
+    char *drdos_OS;
+#endif
 
     /* test for dosemu */
     if ((expect.u.magic[0] == given->u.magic[0]) && (expect.u.magic[0] == given->u.magic[0]))
@@ -138,10 +144,10 @@ int main(void)
 	/* Check for DR DOS version */
 	DR_vrnat = drdos_version();
 	DR_vr = (BYTE)(DR_vrnat & 0x00ff);
-	DR_nat = (BYTE)(DR_vrnat>>8);
 	drdos_VER = getenv("VER");
-	drdos_OS = getenv("OS");
 #ifdef VR_DEBUG
+	DR_nat = (BYTE)(DR_vrnat>>8);
+	drdos_OS = getenv("OS");
 	    printf("DEBUG: DR-DOS Product %02Xh Multi-user nature: %02Xh\n",DR_vr, DR_nat);
 	    if (drdos_VER != NULL)
 		printf("DEBUG: env VER='%s'\n", drdos_VER);
@@ -189,12 +195,22 @@ int main(void)
 	}
     }
     else if (DOS_OEM == 0xFD) { /* FreeDOS */
+	fd_VER = getenv("OS_VERSION");
+	if (fd_VER != NULL) {
+	    printf("FreeDOS version %s\n", fd_VER);
+	}
 	printf("FreeDOS Kernel compatibility %u.%u\n",DOS_ma,DOS_mi);
-	if(serial[0] == 0xFF)
+	if(serial[0] == 0xFF) {
 	    printf("FreeDOS Kernel (build 1993 or prior)\n");
+	}
 	else {
-	    printf("FreeDOS Kernel revision %u\n", serial[2]);
-	    /* to do: get version string too */
+	    asm mov ax,33FFh;      /* Get FreeDOS kernel string */
+	    asm int 21h;
+	    asm mov FD_ver_seg,dx; /* kernel string offset */
+	    asm mov FD_ver_off,ax; /* kernel string offset */
+
+	    fd_kernel = MK_FP(FD_ver_seg, FD_ver_off);
+	    printf("%Fs\n", fd_kernel);
 	}
 	puts(dog_str);
     }
@@ -236,7 +252,7 @@ int main(void)
 	    printf("Windows %u.%02u\n",win_ma,win_mi);
     }
     else {
-	if (DOS_ma == 7) {
+	if ((DOS_ma == 7) && (DOS_OEM != 0xFD)) {
 	    if (DOS_mi==0)
 		printf("Microsoft Windows 95\n%s",dog_str);
 	    else if (DOS_mi==10)
