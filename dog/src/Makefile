@@ -37,7 +37,7 @@ LINKFLAGS=$(LINKFLAGS)
 
 DOG=dog.com
 PROGS=$(DOG)
-COMOBJ=c:\borlandc\lib\c0ft.obj
+COMOBJ=c:\borlandc\lib\c0t.obj
 OBJS=dog.obj bat.obj ints.obj alse.obj cc.obj cmrd.obj ct.obj eh.obj hh.obj xx.obj
 
 .c.obj:

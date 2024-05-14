@@ -24,7 +24,7 @@ LINKFLAGS=-lc -ld -lt -lTdc
 # See debug.h for all the possible debugs. ext.h includes it
 # _DEBUG_ALL_ turns all all debugging and durns off optimization
 !if $(DEBUG)
-DEBUG=-D_DEBUG_ALL_ -N -Od -w
+DEBUG=-D_DEBUG_ALL_ -N -Od
 LINKFLAGS=$(LINKFLAGS) -ll -lm -ls -lv
 !endif
 
