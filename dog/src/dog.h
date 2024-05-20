@@ -154,11 +154,23 @@ C:\DOG>_
 #define _NCOMS 10
 #define _NECOMS 11
 #define _NARGS 20
+#define MAX_ALIAS_LOOPS 21
 
 /* PSP */
-#define MAX_ALIAS_LOOPS 21
-#define PPID_OFS 0x0016
-#define ENVSEG_OFS 0x002C
+#define PSP_I22_OFS 0x000A
+#define PSP_I22_SEG 0x000C
+#define PSP_I23_OFS 0x000E
+#define PSP_I23_SEG 0x0010
+#define PSP_I24_OFS 0x0012
+#define PSP_I24_SEG 0x0014
+#define PSP_PPID_OFS 0x0016
+#define PSP_ENVSEG_OFS 0x002C
+
+/* MCB is 1 segment preceeding the block segment,
+   at offset 3 is the size of the block in paragraphs (16 bytes) */
+#define BLOCKSZ(segment) (peek(segment-1,3) << 4)
+
+/* VERSION */
 #define DOG_VER 083bh
 #define DOG_MA 0
 #define DOG_MI 8
@@ -195,10 +207,12 @@ extern WORD drvs,errorlevel,PSP;
 extern WORD envseg,envsz;
 extern WORD aliasseg,aliassz;
 extern BYTE far * _env;
-extern WORD i22_s, i22_o;
+extern WORD my_i22_s, my_i22_o;
+extern WORD my_i23_s, my_i23_o; /* When making a permanent shell take over */
+extern WORD my_i24_s, my_i24_o; /* int 23 and int 24. */
 extern WORD i23_s, i23_o; /* variables to store old ctrl-c handler*/
-extern WORD i2e_s, i2e_o;
 extern WORD i24_s, i24_o;
+extern WORD i2e_s, i2e_o;
 extern WORD id0_s, id0_o; /* the old handler for the D0GFunc */
 extern BYTE IN,OUT,sin,sout;
 extern BYTE REDIRECTED_OUT, REDIRECTED_IN;
@@ -269,7 +283,8 @@ void setalias(BYTE *varname, BYTE *value);
 BYTE *getudata(BYTE *varname, BYTE *value, WORD blockseg, WORD vlen);
 BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg);
 WORD mkudata(WORD oldseg, WORD *nseg, WORD bsz, WORD nbsz);
-WORD myallocmem(WORD sz, WORD *seg);
+BYTE myallocmem(WORD *sz, WORD *seg);
+BYTE myfreemem(WORD seg);
 BYTE aliasreplace(BYTE *com);
 void evarreplace(BYTE *com, BYTE ln);
 BYTE isfchar(BYTE c);
@@ -278,8 +293,8 @@ void clearbat(void); /* clear the b file linked list*/
 void prevbat(void); /* return to the previous nest-level in bat*/
 
 /* ints.c */
-void get_int(void);
-void set_int(void);
+void save_error_ints(void);
+void set_error_ints(void);
 void make_int2e(void);
 void make_intd0(void);
 

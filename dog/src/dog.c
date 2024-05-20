@@ -169,9 +169,13 @@ History
              FOO.COM is executed, if you want the dir FOO you type FOO. -WB
 2024-05-12 - Brought back the DOG prompt! Also uses the DOG prompt when no
              PROMPT is defined in the ENV. -WB
+2024-05-20 - Fixed init code and setting of the PSP when -P is given.
+             Also updated environment and alias blocks setup.
+             Fixed calls to int21/AH=25h, to use DS, not ES for the segment.
 */
 
 #include "dog.h"
+#include <mem.h>
 
 /* Define Global Variables */
 BYTE Xit = 0, Xitable = 1, eh = 0, D=0, P[MAXDIR]={0};
@@ -241,13 +245,15 @@ BYTE flags=0;
 BYTE DOG_ma = DOG_MA, DOG_mi = DOG_MI, DOG_re = DOG_RE;
 WORD PSP=0;
 BYTE cBreak = 0;
-WORD i22_s=0, i22_o=0;
+WORD my_i22_s, my_i22_o;
+WORD my_i23_s, my_i23_o; /* When making a permanent shell take over */
+WORD my_i24_s, my_i24_o; /* int 23 and int 24. */
 WORD i23_s=0, i23_o=0; /* variables to store old ctrl-c handler*/
-WORD i2e_s=0, i2e_o=0;
 WORD i24_s=0, i24_o=0;
+WORD i2e_s=0, i2e_o=0;
 WORD id0_s=0, id0_o=0; /* the old handler for the D0GFunc */
 WORD envseg=0,envsz=512;
-WORD aliasseg=0,aliassz=256;
+WORD aliasseg=0,aliassz=2048;
 
 WORD drvs=3,errorlevel=0;
 BYTE far * _env;
@@ -258,23 +264,124 @@ struct bfile *bf;
 struct red fout, fin;
 struct s_pipe pip;
 
-BYTE initialize(int nargs, char *args[])
+extern unsigned _psp;
+extern unsigned _heaplen;
+extern unsigned _stklen;
+
+extern BYTE _osmajor;
+extern BYTE _osminor;
+
+void make_permanent(char * argv0);
+
+/* This function is called when the -P flag is set.
+   It sets the DOG interrupt handlers and makes DOG its own parent. */
+void make_permanent(char * argv0)
 {
-  BYTE i,j,k,*p,*q,line[200]={0};
-  BYTE far *s;
-  BYTE far *d;
-  BYTE far *ep;
-  WORD w,nenvsz,nenvseg,eoesz,o,naliassz,naliasseg;
-  j = 0;
-/*
- for(i=0;i<_NCOMS;i++) { /* TEMPORARY ONLY!!! * /
-    command_help[i] = 0;
-  }
-*/
-  Xitable = 1;
+    BYTE path[200]={0}, *p;
+    /* Install the error interrupt vectors in the PSP */
+    /* These will be used by child processes, so point to me since we are THE shell */
+#ifdef DOG_DEBUG
+    printf("make_permanent():0:PSP=%04Xh PPID=%04Xh\n",_psp,peek(_psp,PSP_PPID_OFS));
+    printf("make_permanent():0:PSP[i22(%02Xh)]=%04Xh:%04Xh\n",
+	   PSP_I22_OFS, peek(_psp,PSP_I22_SEG), peek(_psp,PSP_I22_OFS));
+    printf("make_permanent():0:PSP[i23(%02Xh)]=%04Xh:%04Xh\n",
+	   PSP_I23_OFS, peek(_psp,PSP_I23_SEG), peek(_psp,PSP_I23_OFS));
+    printf("make_permanent():0:PSP[i24(%02Xh)]=%04Xh:%04Xh\n",
+	   PSP_I24_OFS, peek(_psp,PSP_I24_SEG), peek(_psp,PSP_I24_OFS));
+#endif
+    poke(_psp,PSP_I22_OFS,my_i22_o); /* termination address, top of DOG loop */
+    poke(_psp,PSP_I22_SEG,my_i22_s);
+    poke(_psp,PSP_I23_OFS,my_i23_o); /* Crit C handler */
+    poke(_psp,PSP_I23_SEG,my_i23_s);
+    poke(_psp,PSP_I24_OFS,my_i24_o); /* Crit Err handler */
+    poke(_psp,PSP_I24_SEG,my_i24_s);
 
 #ifdef DOG_DEBUG
-  printf("PSP = %x PPID = %x\n",_psp,peek(_psp,PPID_OFS));
+    printf("make_permanent():1:PSP[i22(%02Xh)]=%04Xh:%04Xh\n",
+	   PSP_I22_OFS, peek(_psp,PSP_I22_SEG), peek(_psp,PSP_I22_OFS));
+    printf("make_permanent():1:PSP[i23(%02Xh)]=%04Xh:%04Xh\n",
+	   PSP_I23_OFS, peek(_psp,PSP_I23_SEG), peek(_psp,PSP_I23_OFS));
+    printf("make_permanent():1:PSP[i24(%02Xh)]=%04Xh:%04Xh\n",
+	   PSP_I24_OFS, peek(_psp,PSP_I24_SEG), peek(_psp,PSP_I24_OFS));
+#endif
+
+#ifdef DOG_DEBUG
+    printf("make_permanent():2:PSP[parent(%02Xh)]=%04Xh\n",
+	   PSP_PPID_OFS, peek(_psp,PSP_PPID_OFS));
+#endif
+    /* make DOG it's own parrent*/
+    poke(_psp,PSP_PPID_OFS,_psp);
+#ifdef DOG_DEBUG
+    printf("make_permanent():3:PSP[parent(%02Xh)]=%04Xh\n",
+	   PSP_PPID_OFS, peek(_psp,PSP_PPID_OFS));
+#endif
+
+    Xitable = 0;
+    setevar("COMSPEC",argv0);
+
+    /* Make sure there is at least a path to the directory from where DOG was run. */
+    p = getevar("PATH", path, 200);
+    if (p == NULL) {
+	for(p = & argv0[strlen(argv0)];*p != '\\';p--);
+	*p = '\0';
+	setevar("PATH", argv0);
+    }
+#ifdef DOG_DEBUG
+    printf("make_permanent():4:_env=%Fp envz:%p PATH:'%s', p='%s'\n", _env, envsz, path, p);
+#endif
+}
+
+BYTE initialize(int nargs, char *args[])
+{
+    BYTE i,j,k,*p,*q,line[200]={0};
+    BYTE far *s;
+    BYTE far *d;
+    BYTE far *ep;
+    WORD w,nenvsz=0,nenvseg=0,eoesz,o,naliassz=0;
+    BYTE DOS_ma, DOS_mi;
+
+    /* Get DOS Version */
+    asm MOV ah,30h;
+    asm INT 21h;
+    asm MOV DOS_ma, al;
+    asm MOV DOS_mi, ah;
+
+    if((DOS_ma < 3) && (DOS_mi < 30)) {
+	printf("Sorry your DOS is too lame.\nGet at least version 3.30\n");
+	exit(1);
+    }
+
+    j = 0;
+    Xitable = 1;
+
+    /* save and set int23 (CtrlC) and int24 (Crit Err) handlers */
+    save_error_ints();
+    set_error_ints();
+
+    /* make int D0 point to D0GFunc */
+    make_intd0();
+
+    /* make int 2e point to D0GFunc */
+    make_int2e();
+
+    /* point int 22 termination address at DOG loop*/
+    /* and save it to i22_s:i22_o */
+    asm mov ax,2522h;
+    asm mov dx,offset DOG_loop;
+    asm mov my_i22_o,dx;
+    asm push cs;
+    asm pop ds;
+    asm mov my_i22_s,ds;
+    asm int 21h;
+
+#if 0
+    for(i=0;i<_NCOMS;i++) { /* TEMPORARY ONLY!!! */
+	command_help[i] = 0;
+    }
+#endif
+
+#ifdef DOG_DEBUG
+  printf("initialize():0:PSP = %x PPID = %x\n",_psp,peek(_psp,PSP_PPID_OFS));
 #endif
     /* save STDIN STDOUT */
 
@@ -293,14 +400,15 @@ BYTE initialize(int nargs, char *args[])
   drvs = 0;
 
   /* get the segment of the environment from the PSP*/
-  envseg = peek(_psp,ENVSEG_OFS);
+  envseg = peek(_psp, PSP_ENVSEG_OFS);
   _env = MK_FP(envseg,0);
-  envsz = peek(envseg-1,3) << 4; /*get size of block allocated from MCB*/
-  aliassz = 0x200;
+  envsz = BLOCKSZ(envseg); /*get size of block allocated from MCB*/
+  aliassz = 2048;
 
 #ifdef ENV_DEBUG
-  printf("nargs=%u\n",nargs);
-  printf("envsz=%ux\n",envsz);
+  printf("initialize():1:nargs=%u\n",nargs);
+  printf("initialize():1:envsz=%04Xh\n",envsz);
+  printf("initialize():1:aliassz=%04Xh\n",aliassz);
 #endif
 
   if(nargs > 1) {
@@ -320,15 +428,8 @@ BYTE initialize(int nargs, char *args[])
           /* Accept all strings beginning with -A */
           while((!isdigit(*p))&&(*p!='\0')&&(*p!='-')) p++;
           while(isdigit(*p)) naliassz=naliassz*10+(*p++)-'0';
-
-#if 0
-          naliassz >>= 4; /* paragraphs */
-          if(naliassz < 0x10) naliassz=0x10;
-          if(naliassz > 0x800) naliassz=0x800;
-
-          aliassz = mkudata(aliasseg, &naliasseg, aliassz, naliassz);
-          aliassz <<= 4;
-          aliasseg = naliasseg;
+#ifdef ENV_DEBUG
+          printf("initialize():2:naliassz=04X%h\n",naliassz);
 #endif
           break;
 
@@ -356,70 +457,22 @@ BYTE initialize(int nargs, char *args[])
           /* Accept all strings beginning with -E */
           while((!isdigit(*p))&&(*p!='\0')&&(*p!='-')) p++;
           while(isdigit(*p)) nenvsz=nenvsz*10+(*p++)-'0';
-#if 0
-          nenvsz >>= 4; /* paragraphs */
-          if(nenvsz < 0x10) nenvsz=0x10;
-          if(nenvsz > 0x800) nenvsz=0x800;
-
-          nenvseg = envseg;
-
-          nenvsz = mkudata(envseg, &nenvseg, envsz, nenvsz);
-          if(nenvseg != envseg) {
-
-            rebuild = 1;
-
-          }
-          envsz = nenvsz << 4;
-          envseg = nenvseg;
-          poke(_psp,ENVSEG_OFS,envseg);
-#endif
           break;
 
          case 'P':/* make a permanent shell */
           flags |= FLAG_P;
-          nenvsz = 0;
-          /* Accept all strings beginning with -P */
+          /* Accept all strings beginning with -P, ignore also numbers */
           while((!isdigit(*p))&&(*p!='\0')&&(*p!='-')) p++;
-          while(isdigit(*p)) nenvsz=nenvsz*10+(*p++)-'0';
+#ifdef ENV_DEBUG
+          printf("initialize():2:envseg=04X%h envsz=04X%h\n",envseg,envsz);
+#endif
 #if 0
-          nenvsz /= 16; /*paragraphs*/
-          if(nenvsz < 0x10) nenvsz=0x10;
-          if(nenvsz > 0x800) nenvsz=0x800;
-
-          envsz = mkudata(envseg, &nenvseg, envsz, nenvsz);
-
-          envseg=nenvseg;
-          poke(_psp,ENVSEG_OFS,nenvseg);
+          nenvsz = 0;
+          while(isdigit(*p)) nenvsz=nenvsz*10+(*p++)-'0';
+#ifdef ENV_DEBUG
+          printf("initialize():2:envseg=04X%h envsz=04X%h\n",envseg,envsz);
 #endif
-#ifdef B_DEBUG
-          printf("envseg=0x%x envsz=0x%x\n",envseg,envsz);
 #endif
-
-          get_int();
-          set_int();
-
-          /* make int 2e point to D0GFunc */
-	  make_int2e();
-
-          /* point int 22 termination address at DOG loop*/
-          asm mov ax,2522h;
-          asm mov dx,offset DOG_loop;
-          asm mov i22_o,dx;
-          asm push cs;
-          asm pop ds;
-          asm mov i22_s,ds;
-          asm int 21h;
-	  /* put int handlers in to PSP */
-          poke(_psp,0x0a,i22_o);
-          poke(_psp,0x0a+2,i22_s);
-          poke(_psp,0x0e,i23_o);
-          poke(_psp,0x0e+2,i23_s);
-          poke(_psp,0x12,i24_o);
-          poke(_psp,0x12+2,i24_s);
-          /* makeDOG it's own parrent*/
-          poke(_psp,PPID_OFS,_psp);
-
-          Xitable = 0;
           break;
         }
       }
@@ -430,52 +483,61 @@ BYTE initialize(int nargs, char *args[])
     }
   }
 
-  if(( ( flags & FLAG_E ) == FLAG_E ) || ( ( flags & FLAG_P ) == FLAG_P ) ) {
-    nenvsz >>= 4; /* paragraphs */
-    if(nenvsz < 0x5) nenvsz=0x5;
-    if(nenvsz > 0x800) nenvsz=0x800;
-
-    nenvseg = envseg;
-#ifdef B_DEBUG
-    printf("initialize():before mkudata: envsz = (%x) nenvsz = (%x)\n",envsz,nenvsz);
-#endif
-    nenvsz = mkudata(envseg, &nenvseg, envsz, nenvsz);
-#ifdef B_DEBUG
-    printf("env @ %04x0 (%x) nenv @ %04x0 (%x)\n",envseg,envsz,nenvseg,nenvsz);
-#endif
-    /* envsz = nenvsz << 4; */
-    envseg = nenvseg;
-    poke(_psp,ENVSEG_OFS,envseg);
-    _env = MK_FP(envseg,0);
-    envsz = peek(envseg-1,3) << 4; /*get size of block allocated from MCB*/
-    setevar("COMSPEC",args[0]);
-    for(p = & args[0][strlen(args[0])];*p != '\\';p--);
-    *p = '\0';
-    setevar("PATH",args[0]);
-    /* no need to set PROMPT since it defaults to _DOG_PROMPT */
-  }
-  else {
-    _env = MK_FP(envseg,0);
-    envsz = peek(envseg-1,3) << 4; /*get size of block allocated from MCB*/
-  }
-
   if ( naliassz == 0 ) {
     naliassz = aliassz;
   }
-
-  naliassz >>= 4; /* para */
+  /* Allocate a block for alias */
+  naliassz = naliassz >> 4; /* para */
   if(naliassz < 0x5) naliassz=0x5;
   if(naliassz > 0x800) naliassz=0x800;
-#ifdef B_DEBUG
-  printf("aliassz = %x aliasseg = %x\n",aliassz, aliasseg);
-	printf("initialize():before mkudata: aliassz = (%x) naliassz = (%x)\n",aliassz,naliassz);
+#ifdef ENV_DEBUG
+  printf("initialize():3:naliassz=%04Xh para (%d bytes) aliasseg=%04Xh\n", naliassz, naliassz<<4, aliasseg);
 #endif
   aliassz = mkudata(0, &aliasseg, 0, naliassz);
 
-	/*  aliassz <<= 4; */
-#ifdef B_DEBUG
-    printf("aliassz = %x aliasseg = %x\n",aliassz, aliasseg);
+#ifdef ENV_DEBUG
+  printf("initialize():4:aliassz=%04Xh para (%u bytes) aliasseg=%04Xh\n",aliassz, aliassz<<4,aliasseg);
 #endif
+
+  if((flags & FLAG_E ) == FLAG_E) {
+    nenvsz = nenvsz >> 4; /* paragraphs */
+    envsz = envsz >> 4; /* paragraphs */
+    if(nenvsz < 0x5) nenvsz=0x5;
+    if(nenvsz > 0x800) nenvsz=0x800;
+
+    nenvseg = 0;
+#ifdef ENV_DEBUG
+    printf("initialize():5:envsz=%04Xh para (%d bytes) envseg=%04Xh\n",envsz,envsz<<4,envseg);
+    printf("initialize():5:nenvsz=%04Xh para (%d bytes) nenvseg=%04Xh\n",nenvsz,nenvsz<<4,nenvseg);
+#endif
+    nenvsz = mkudata(envseg, &nenvseg, envsz, nenvsz);
+#ifdef ENV_DEBUG
+    printf("initialize():6:envsz=%04Xh para (%d bytes) envseg=%04Xh\n",envsz,envsz<<4,envseg);
+    printf("initialize():6:nenvsz=%04Xh para (%d bytes) nenvseg=%04Xh\n",nenvsz,nenvsz<<4,nenvseg);
+#endif
+
+#ifdef ENV_DEBUG
+    printf("initialize():7:_psp=%04X\n", _psp);
+#endif
+    envseg = nenvseg;
+    envsz = nenvsz << 4;
+    poke(_psp, PSP_ENVSEG_OFS, envseg);
+    _env = MK_FP(envseg,0);
+#ifdef ENV_DEBUG
+    printf("initialize():8:_env=%Fp\n", _env);
+#endif
+  }
+  else {
+    _env = MK_FP(envseg,0);
+    envsz = BLOCKSZ(envseg); /*get size of block allocated from MCB*/
+#ifdef ENV_DEBUG
+    printf("initialize():9:_env=%Fp envz:%u\n", _env, envsz);
+#endif
+  }
+
+  if((flags & FLAG_P) == FLAG_P) {
+      make_permanent(args[0]);
+  }
 
   return j;
 }
@@ -676,7 +738,7 @@ BYTE redir(BYTE *c)
   p = c;
 
   for(i=0;i<l;i++) {
-#ifdef DOG_DEBUG
+#ifdef REDIR_DEBUG
     printf("redir:0: &p(%x) *p(%c)\n",p,*p);
 #endif
     if(*p == '>') {
@@ -687,7 +749,7 @@ BYTE redir(BYTE *c)
         *p = ' '; /*erase the >*/
       }
 
-#ifdef DOG_DEBUG
+#ifdef REDIR_DEBUG
       printf("redir:1:c(%s) p(%s) *p(%c)\n",c,p,*p);
 #endif
       /* skip spaces and tabs*/
@@ -695,7 +757,7 @@ BYTE redir(BYTE *c)
 			fo=p-1; /*begining of filename*/
       while(isfchar(*(++p)));
       /* p points to first spc AFTER filename*/
-#ifdef DOG_DEBUG
+#ifdef REDIR_DEBUG
       printf("redir:2:*fo(%c) *p-1(%x) *p(%x) *p+1(%x)\n",*fo,*(p-1),*p,*(p+1));
 #endif
       if(*(p-1)=='\n')
@@ -716,11 +778,11 @@ BYTE redir(BYTE *c)
       if(isspace(*p))
       p++;
       fi=p; /*begining of filename*/
-#ifdef DOG_DEBUG
+#ifdef REDIR_DEBUG
       printf("redir:3:fi(%x) &fi(%x) &p(%x) *p(%x)\n",fi,fi,p,p);
 #endif
       while(isfchar(*(++p))) {
-#ifdef DOG_DEBUG
+#ifdef REDIR_DEBUG
         printf("redir:4:fi(%x) &fi(%x) &p(%x) *p(%x)\n",fi,fi,p,p);
 #endif
       }
@@ -729,7 +791,7 @@ BYTE redir(BYTE *c)
       if(*(p-1)=='\n')
       *(p-1)='\0';
       *p = '\0';
-#ifdef DOG_DEBUG
+#ifdef REDIR_DEBUG
       printf("redir:5:fi(%s) &fi(%x) &p-1(%x) &p(%x) &p+1(%x)\n",fi,fi,(p-1),p,(p+1));
 #endif
       strcpy(fin.name,fi);
@@ -753,13 +815,13 @@ BYTE redir(BYTE *c)
       sprintf(pip.pname,"%c:\\%s\\",D,P);
 
       /***/
-#ifdef DOG_DEBUG
+#ifdef REDIR_DEBUG
       printf("redir:6:c(%s) p(%s) *p(%c) pip.pname=(%s)\n",c,p,*p,pip.pname);
 #endif
 
       pip.phandle = mktmpfile(pip.pname);
 
-#ifdef DOG_DEBUG
+#ifdef REDIR_DEBUG
       printf("redir:6:c(%s) p(%s) *p(%c) pip.pname=(%s)\n",c,p,*p,pip.pname);
 #endif
 
@@ -768,13 +830,13 @@ BYTE redir(BYTE *c)
         return 0;
       }
 
-#ifdef DOG_DEBUG
+#ifdef REDIR_DEBUG
       printf("redir:7:pip.pname=(%s) pip.phandle=(%x)",pip.pname,pip.phandle);
 #endif
       /***/
 
       if(dup2(pip.phandle,fileno(stdout)) != 0) {
-#ifdef DOG_DEBUG
+#ifdef REDIR_DEBUG
         printf("redir:6.7:errno=%x",errno);
         printf("redir:7:pip.pname=(%s) pip.phandle=(%x)",pip.pname,pip.phandle);
 #endif
@@ -791,7 +853,7 @@ BYTE redir(BYTE *c)
 
   }
   if(fout.redirect) {
-#ifdef DOG_DEBUG
+#ifdef REDIR_DEBUG
     printf("redir:8:c(%s) fout.name(%s)\n",c,fout.name);
 #endif
     if((fout.fp = fopen(fout.name,fout.opt)) == NULL) {
@@ -804,7 +866,7 @@ BYTE redir(BYTE *c)
   }
 
   if(fin.redirect) {
-#ifdef DOG_DEBUG
+#ifdef REDIR_DEBUG
     printf("redir:9:c(%s) fin.name(%s)\n",c,fin.name);
 #endif
     if((fin.fp = fopen(fin.name,fin.opt)) == NULL) {
@@ -1015,7 +1077,17 @@ void printprompt(void)
   return;
 }
 
+void set_psp(void)
+{
+  WORD psp=0;
 
+  /* fist set _psp to our PSP by using int 21h/62h (documented) */
+  asm mov ah, 62h; /* Get PID / PSP */
+  asm int 21h;
+  asm mov psp, bx; /* save psp */
+  _psp = psp;
+
+}
 
 /**************************************
  ***************************************
@@ -1025,26 +1097,24 @@ void printprompt(void)
  ***************************************
  *****************************************************************************/
 
-
-
 int main(int nargs, char *argv[])
 {
   BYTE i,na,ch;
 
-  printf("Coreleft() = %x\n",coreleft());
+
+  printf("_psp: %04Xh _heaplen: %04Xh _stklen: %04Xh DOS: %u.%u\n", _psp, _heaplen, _stklen, _osmajor, _osminor);
+
+  printf("Coreleft() = %lu bytes\n",  coreleft());
+  printf("PSP:%04Xh _heaplen: %04Xh _stklen: %04Xh\n", _psp, _heaplen, _stklen);
+
+  printf("_psp: %04Xh _heaplen: %04Xh _stklen: %04Xh DOS: %u.%u\n", _psp, _heaplen, _stklen, _osmajor, _osminor);
+
   na = initialize(nargs, argv);
-
-  if((_osmajor < 3) && (_osminor < 30)) {
-    printf("Sorry your DOS is too lame.\nGet at least version 3.30\n");
-    exit(1);
-  }
-
-  /* make int D0 point to D0GFunc */
-  make_intd0();
+  printf("_psp: %04Xh _heaplen: %04Xh _stklen: %04Xh DOS: %u.%u\n", _psp, _heaplen, _stklen, _osmajor, _osminor);
 
   if((flags & FLAG_P) == FLAG_P) {
-    arg[0] = "dog.dog";
-    do_command(1);
+      arg[0] = "c:\\dog.dog";
+      do_command(1);
   }
 
   if (eh == 0) {
@@ -1061,7 +1131,7 @@ int main(int nargs, char *argv[])
 
 
     if(fout.redirect) {
-#ifdef DOG_DEBUG
+#ifdef REDIR_DEBUG
       fprintf(stderr,"main:0:closing handle %x\n",fileno(fout.fp));
 #endif
       dup2(OUT,fileno(stdout));
@@ -1070,7 +1140,7 @@ int main(int nargs, char *argv[])
     }
 
     if(fin.redirect) {
-#ifdef DOG_DEBUG
+#ifdef REDIR_DEBUG
       fprintf(stderr,"main:0:closing handle %x\n",fileno(fin.fp));
 #endif
       dup2(IN,fileno(stdin));
@@ -1186,19 +1256,19 @@ int main(int nargs, char *argv[])
         eh = 0;
 #ifdef DOG_DEBUG
         fprintf(stderr,"main:6-0:Xit = %u\n",Xit);
-        fprintf(stderr,"main:6-1:flags = %u\n",flags);
+        fprintf(stderr,"main:6-1:flags = %x\n",flags);
 #endif
       }
       else {
         Xit = 1;
 #ifdef DOG_DEBUG
         fprintf(stderr,"main:6-2:Xit = %u\n",Xit);
-        fprintf(stderr,"main:6-3:flags = %u\n",flags);
+        fprintf(stderr,"main:6-3:flags = %x\n",flags);
 #endif
       }
 #ifdef DOG_DEBUG
       fprintf(stderr,"main:6-4:Xit = %u\n",Xit);
-      fprintf(stderr,"main:6-5:flags = %u\n",flags);
+      fprintf(stderr,"main:6-5:flags = %x\n",flags);
 #endif
 
       do_command(na);
@@ -1206,8 +1276,8 @@ int main(int nargs, char *argv[])
 
 #ifdef DOG_DEBUG
     fprintf(stderr,"main:7:Xit = %u\n",Xit);
-    fprintf(stderr,"main:7:flags = %u\n",flags);
-    fprintf(stderr,"main:7:xit = %u\n",(flags & FLAG_P ) == FLAG_P);
+    fprintf(stderr,"main:7:flags = %x\n",flags);
+    fprintf(stderr,"main:7:P-flag = %x\n",(flags & FLAG_P ) == FLAG_P);
 #endif
 
 
@@ -1220,10 +1290,6 @@ int main(int nargs, char *argv[])
     }
 
     if((Xit == 1) && ( (flags & FLAG_P ) != FLAG_P )) break;
-#ifdef DOG_DEBUG
-
-    fprintf(stderr,"Xit: %d\tXitable: %d\n",Xit,Xitable);
-#endif
   }
 
   /*******************************.D.O.G. .L.O.O.P****************************/
@@ -1232,7 +1298,7 @@ int main(int nargs, char *argv[])
   asm mov ax,25d0h;
   asm mov dx,id0_s;
   asm push dx;
-  asm pop es;
+  asm pop ds;
   asm mov dx,id0_o;
   asm int 21h;
 
@@ -1712,7 +1778,7 @@ tn_ok:
 WORD my_exe(BYTE *prog, BYTE *args){
 
 
-  BYTE buf[128];
+    BYTE buf[128], strat;
   WORD rc;
   WORD saveSS, saveSP;
   struct fcb fcb1, fcb2;
@@ -1731,9 +1797,54 @@ WORD my_exe(BYTE *prog, BYTE *args){
   execBlock.fcb2 = (struct fcb far *)&fcb2;
 
   /* fill FCBs */
-  if ((args = parsfnm(args, &fcb1, 1)) != NULL)
-  parsfnm(args, &fcb2, 1);
+  if ((args = parsfnm(args, &fcb1, 1)) != NULL) {
+      parsfnm(args, &fcb2, 1);
+  }
 
+#ifdef EXE_DEBUG
+  asm mov ax, 5800h ; /* Get memory alloc strat */
+  asm int 21h;
+  asm mov strat, al ; /* memory allocation strategy */
+
+  switch(strat) {
+  case 0x00:
+      printf("my_exe():1:Memory alloc strat: low memory first fit\n");
+      break;
+  case 0x01:
+      printf("my_exe():1:Memory alloc strat: low memory best fit\n");
+      break;
+  case 0x02:
+      printf("my_exe():1:Memory alloc strat: low memory last fit\n");
+      break;
+  case 0x40:
+      printf("my_exe():1:Memory alloc strat: high memory first fit\n");
+      break;
+  case 0x41:
+      printf("my_exe():1:Memory alloc strat: high memory best fit\n");
+      break;
+  case 0x42:
+      printf("my_exe():1:Memory alloc strat: high memory last fit\n");
+      break;
+  case 0x80:
+      printf("my_exe():1:Memory alloc strat: first fit, try high then low\n");
+      break;
+  case 0x81:
+      printf("my_exe():1:Memory alloc strat: best fit, try high then low\n");
+      break;
+  case 0x82:
+      printf("my_exe():1:Memory alloc strat: last fit, try high then low\n");
+      break;
+  default:
+      printf("my_exe():1:Memory alloc strat: unknown (%02Xh)", strat);
+      break;
+  }
+
+  asm mov bl, 01; /* force low memory only first fit strat */
+  asm xor bh,bh;
+  asm mov ax, 5801h;
+  asm int 21h;
+
+#endif
 
   asm push    si;
   asm push    di;
@@ -1770,6 +1881,14 @@ exec_OK:
   asm pop     di;
   asm pop     si;
 
+#ifdef EXE_DEBUG
+  printf("my_exe():2:exec: %s - return: %04Xh\n", prog, rc);
+
+  asm mov bl, strat;
+  asm xor bh,bh;
+  asm mov ax, 5801h;
+
+#endif
   return rc;
 }
 

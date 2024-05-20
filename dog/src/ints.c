@@ -16,48 +16,86 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+History
+
+2024-05-11 - Building as a module.
+2024-05-20 - Fixed calls to int21/AH=25h, to use DS, not ES for the segment.
+             Started drafting DOG func 3 - Run command.
+             Also in plans Installable commands. - WB
+
 */
 #include "dog.h"
 
-void get_int(void)
+void DOGError(void);
+void DOGFunc(void);
+
+
+void save_error_ints(void)
 {
     WORD i23_off, i23_seg;
     WORD i24_off, i24_seg;
     asm mov ax,3523h;
-    asm INT 21h;
-    asm MOV i23_off,bx;
-    asm MOV i23_seg,es;
-    asm MOV ax,3524h;
-    asm INT 21h;
-    asm MOV i24_off,bx;
-    asm MOV i24_seg,es;
-    asm INT 21h;
+    asm int 21h;
+    asm mov i23_off,bx;
+    asm mov i23_seg,es;
+    asm mov ax,3524h;
+    asm int 21h;
+    asm mov i24_off,bx;
+    asm mov i24_seg,es;
+    asm int 21h;
     i23_s = i23_seg;
     i23_o = i23_off;
     i24_s = i24_seg;
     i24_o = i24_off;
+
     return;
 }
 
-void set_int(void)
+void set_error_ints(void)
 {
-    asm MOV ax,2523h;
-    asm MOV dx,offset CBreak;
-    asm push cs;
-    asm pop es;
-    asm INT 21h;
-    asm MOV ax,2524h;
-    asm MOV dx,offset CritErr;
-    asm push cs;
-    asm pop es;
-    asm INT 21h;
+    WORD i23_off, i23_seg;
+    WORD i24_off, i24_seg;
 
+    /* set and save the CBreak handler address */
+    asm mov ax,2523h;
+    asm mov dx,offset CBreak;
+    asm mov i23_off, dx; /* save the offset */
+    asm push cs;
+    asm pop ds;
+    asm mov i23_seg, ds;   /* save the segment */
+    asm INT 21h;         /* int 21h/ah=25h,al=23h - set IRQ vector 23 */
+
+    /* set and save the CritError handler address */
+    asm mov ax,2524h;
+    asm mov dx,offset CritErr;
+    asm mov i24_off, dx; /* save the offset */
+    asm push cs;
+    asm pop ds;
+    asm mov i24_seg, ds;   /* save the segment */
+    asm INT 21h;         /* int 21h/ah=25h,al=24h - set IRQ vector 24 */
+
+    /* save to global variables */
+#ifdef DOG_DEBUG
+    printf("set_error_ints():0:i23=%04X:%04X\n", i23_seg, i23_off);
+    printf("set_error_ints():0:i24=%04X:%04X\n", i24_seg, i24_off);
+#endif
+    my_i23_s = i23_seg;
+    my_i23_o = i23_off;
+    my_i24_s = i24_seg;
+    my_i24_o = i24_off;
+#ifdef DOG_DEBUG
+    printf("set_error_ints():1:i23=%04X:%04X\n", my_i23_s, my_i23_o);
+    printf("set_error_ints():1:i24=%04X:%04X\n", my_i24_s, my_i24_o);
+    printf("set_error_ints():1:DOGError: %Fp\n", (void far *)&DOGError);
+#endif
     return;
 }
 
 void make_int2e(void)
 {
     WORD i2eseg, i2eoff;
+    WORD my_2e_s, my_2e_o;
     /* save */
     asm mov ax,352eh;
     asm mov i2eoff,bx;
@@ -65,18 +103,27 @@ void make_int2e(void)
     asm int 21h;
     /* set */
     asm mov ax,252eh;
-    asm mov dx,offset D0GFunc;
+    asm mov dx,offset D0GFunc; /* need to point to DOG2e */
+    asm mov my_2e_o, dx;
     asm push cs;
-    asm pop es;
+    asm pop ds;
+    asm mov my_2e_s, ds;
     asm int 21h;
 
     i2e_s = i2eseg;
     i2e_o = i2eoff;
+#ifdef DOG_DEBUG
+    printf("make_int2e():1:i2e=%04X:%04X\n", my_2e_s, my_2e_o);
+    printf("make_int2e():1:DOGFunc: %Fp\n", (void far *)&DOGFunc);
+#endif
+
+    return;
 }
 
 void make_intd0(void)
 {
     WORD id0seg, id0off;
+    WORD my_d0_s, my_d0_o;
     /* save */
     asm mov ax,35d0h;
     asm mov id0off,bx;
@@ -85,12 +132,20 @@ void make_intd0(void)
     /* set */
     asm mov ax,25d0h;
     asm mov dx,offset D0GFunc;
+    asm mov my_d0_o, dx;
     asm push cs;
-    asm pop es;
+    asm pop ds;
+    asm mov my_d0_s, ds;
     asm int 21h;
 
     id0_s = id0seg;
     id0_o = id0off;
+#ifdef DOG_DEBUG
+    printf("make_intd0():1:id0=%04X:%04Xh\n", my_d0_s, my_d0_o);
+    printf("make_intd0():1:DOGFunc: %Fp\n", (void far *)&DOGFunc);
+#endif
+
+    return;
 }
 
 void DOGError(void)
@@ -100,7 +155,7 @@ void DOGError(void)
     asm push ax;
     asm push ds;
     asm push bx;
-    asm MOV ah, 51h;
+    asm MOV ah, 51h;     /* Get PSP / PID */
     asm INT 21h;
     asm CMP cs:_psp, bx;
     asm je localCBreak;
@@ -122,7 +177,7 @@ localCBreak:
     asm pop ax;
     asm clc;
     asm pop bp;
-    asm db 0cah; /* fetf */
+    asm db 0cah; /* retf 2 */
     asm dw 0200h;
 
 /*********************/
@@ -134,11 +189,19 @@ localCBreak:
 
 void DOGFunc(void)
 {
+#if 0
+    BYTE far *cmd_ps, cmd_sz[200];
+#endif
+
     asm D0GFunc:
     asm cmp ah,01h;
     asm jz D0G_1;       /* Function 0x01 */
     asm cmp ah,02h;
     asm jz D0G_2;        /* Function 0x02 */
+#if 0
+    asm cmp ah,03h;
+    asm jz D0G_3;        /* Function 0x03 */
+#endif
     asm jmp D0G_naf;     /* not our function ignore.. */
 
 D0G_1:
@@ -206,6 +269,27 @@ D0G_2_7:
     asm pop es;
     asm mov bx,offset bf; /* return a pointer to bf (the first Dogfile param block) in ES:BX*/
     asm jmp D0G_2ret;
+
+#if 0
+D0G_3:
+    asm D0GF2e:      /* run command */
+    asm push es;     /* save es */
+    asm push ds;     /* save ds */
+
+    asm push ds;     /* command string is in DS:SI */
+    asm push cs;
+    asm pop ds;      /* our DS */
+    asm pop es;      /* pointer to string is now ES:SI */
+    asm cmd_ps, es:si;  /* The command to run as a Pascal String */
+    /*
+      TODO: use the string instructions to copy input to cms_sz
+      TODO: parse cmdline and run do_command(), reset com
+    */
+
+    asm pop ds;
+    asm pop es;
+    asm jmp D0G_ret;
+#endif
 D0G_2ret:
     asm pop ds;
 D0G_naf:

@@ -1,5 +1,4 @@
 /*
-
 ALSE.C - DOG - Alias and Set Env commands
 
 Copyright (C) 1999,2000 Wolf Bergenheim
@@ -38,10 +37,14 @@ History
              the size of value. To avoid some nasy buffer overruns.
              Also updated do_se and setudata to use standard functions.
 2024-05-11 - Building as a module.
+2024-05-19 - Fixed mkudata(), basically rewrote it, also using myallocmem and myfreemem. -WB
 
 **************************************************************************/
 #include <mem.h>
 #include "dog.h"
+
+static WORD usedbytes(WORD block, WORD bsz);
+
 
 void do_al( BYTE n)
 {
@@ -72,11 +75,11 @@ void do_al( BYTE n)
       strcat(p,arg[b]);
       strcat(p," ");
     }
-#ifdef B_DEBUG
+#ifdef B_DEBUG_DISABLED
     printf("do_al:1:p(last)=(%c)\n",*(p+(strlen(p)-1)));
 #endif
     if(*(p+(strlen(p)-1)) == ' ') *(p+(strlen(p)-1)) = '\0';
-#ifdef B_DEBUG
+#ifdef B_DEBUG_DISABLED
     printf("do_al:2:p(last)=(%c)\n",*(p+(strlen(p)-1)));
 #endif
     if (strlen(p) == 0) p = NULL;
@@ -94,7 +97,7 @@ void do_se( BYTE n)
   WORD w, l;
 
   if(n == 1) {
-    printf("environment @ %Fp %u(%xh) bytes\n",_env,envsz,envsz);
+    printf("environment @ %Fp %u(%04Xh) bytes\n",_env,envsz,envsz);
     for(w=0;w<envsz;w++) {
       if(*(_env+w)== 0) {
         if(*(_env+w+1) == 0)
@@ -188,9 +191,8 @@ BYTE *getudata(BYTE *varname, BYTE *value, WORD blockseg, WORD vlen)
    printf("Looking for '%s' block at %04X:0000h vlen:%d\n", varname, blockseg, vlen);
 #endif
 
-
    while(*block) {
-#ifdef B_DEBUG
+#ifdef B_DEBUG_DISABLED
        printf("Checking if block[%d] is '=': %c\n", nlen, block[nlen]);
 #endif
        if(block[nlen] == '=') { /*possible match */
@@ -283,7 +285,7 @@ BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg)
 #ifdef B_DEBUG
   printf("setudata:6:b:'%s', value='%s'\n", b, value);
 #endif
-  blocksz = peek(blockseg-1,3) << 4;
+  blocksz = BLOCKSZ(blockseg);
 
   evalue = eoe = rest = block;
 
@@ -374,7 +376,7 @@ BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg)
 #endif
     for(w=0;w<writesize;w++) {
       *(evalue+w) = *(b+w);
-#ifdef B_DEBUG
+#ifdef B_DEBUG_DISABLED
       printf("*(b+w)=(%c)\n",*(b+w));
 #endif
     }
@@ -396,69 +398,140 @@ BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg)
 
 WORD mkudata(WORD oldseg, WORD *nseg, WORD bsz, WORD nbsz)
 {
-	WORD w;
-	BYTE far *p,far *s,far *d;
+    WORD w, minspace;
+    BYTE far *p,far *s,far *d;
+
 #ifdef ENV_DEBUG
-	printf("nbsz = %x\n",nbsz);
+    printf("mkudata():0:oldseg=%04Xh nseg=%p bsz=%04Xh nbsz=%04Xh\n",
+	   oldseg, nseg, bsz, nbsz);
 #endif
-  while( (w = allocmem(nbsz,nseg)) != 0xffff) {
-    printf("newseg=%x nbsz=%x\n",*nseg,nbsz);
-    nbsz = w;
-		perror("mkudata()");
-		printf("w = %x\n",w);
-    printf("newseg=%x nbsz=%x\n",*nseg,nbsz);
-		if(nbsz == 0) exit(-3);
-  }
-	if(w == 0) exit(-3);
-
-  p = MK_FP(*nseg,0); /* point to beg of block*/
-#ifdef B_DEBUG
-  printf("p=%Fp\n",p);
-#endif
-  *(p) = 0;
-  *(++p) = 0;
-
-  if(nbsz >= bsz) { /* copy stuff from oldseg to newseg */
-    bsz <<= 4; /* bytes */
-		w = *nseg;
-    s = MK_FP(oldseg,0);
-    d = MK_FP(w,0);
-
-#ifdef B_DEBUG
-    printf("oldseg=%x bsz=%x\n",oldseg,bsz);
-    printf("newseg=%x nbsz=%x\n",*nseg,nbsz);
-#endif
-    for(w=0;w<bsz;w++) {
-      d[w] = s[w];
-#ifdef B_DEBUG
-      printf("s(%Fp)->%Fc d(%Fp)->%Fc\n",s+w,*(s+w),d+w,*(d+w));
-#endif
+    if(oldseg > 0) {
+	minspace = usedbytes(oldseg, bsz);
+	if((nbsz << 4) < minspace) {
+	    printf("WARNING: "
+		   "Block @ %04Xh:0000 won't fit in %u bytes! "
+		   "%u < %u - adjusting\n", oldseg, (nbsz << 4),
+		   (nbsz << 4), minspace);
+	    nbsz = (minspace >> 4) + 1; /* +1 paragraph to make sure we have enough */
+	}
     }
+#ifdef ENV_DEBUG
+    printf("mkudata():0:oldseg=%04Xh nseg=%p bsz=%04Xh nbsz=%04Xh\n",
+	   oldseg, nseg, bsz, nbsz);
+#endif
+    w = nbsz;
+#ifdef ENV_DEBUG
+    printf("mkudata():1:myallocmem(%p(%04Xp), %p)\n",&w,w,nseg);
+#endif
+    while(myallocmem(&w, nseg) == 1) {
+#ifdef ENV_DEBUG
+	printf("mkudata():2a:myallocmem FAIL nseg=%p nbsz=%04Xh\n",nseg,nbsz);
+#endif
+	return 0;
+    }
+    nbsz = w;
+#ifdef ENV_DEBUG
+    printf("mkudata():2b:myallocmem OK nseg=%04Xh(%p) nbsz=%04Xh\n",*nseg,nseg,nbsz);
+#endif
+
+  if(oldseg==0 || bsz==0) {
+      p = MK_FP(*nseg,0); /* point to beg of block*/
+#ifdef ENV_DEBUG
+      printf("mkudata():3:p=%Fp (%04X:0000)\n", p, *nseg);
+#endif
+      *(p) = 0;
+      *(++p) = 0;
+      return nbsz;
   }
-  freemem(oldseg);
+  /* copy stuff from oldseg to newseg */
+  s = MK_FP(oldseg,0);
+  d = MK_FP((*nseg),0);
+#ifdef ENV_DEBUG
+    printf("mkudata():4:oldseg=%04Xh bsz=%04Xh\n", oldseg, bsz);
+    printf("mkudata():4:newseg=%04Xh nbsz=%04Xh\n", *nseg, nbsz);
+#endif
+    _fmemcpy(d, s, minspace);
+#ifdef ENV_DEBUG
+    printf("mkudata():6:copied %u bytes from %Fp to %Fp\n",minspace, s, d);
+#endif
+
+  myfreemem(oldseg);
   return nbsz;
 }
 
+/****************************************************************************/
+
+WORD usedbytes(WORD block, WORD bsz)
+{
+    BYTE i;
+    char far *p;
+    WORD mbsz, blocksize=0, l, n=0;
+
+    mbsz = BLOCKSZ(block) >> 4;
+    p = MK_FP(block, 0);
+    printf("Block @ %Fp size %04Xh =? %04Xh bytes\n", p, bsz, mbsz);
+    if(bsz > mbsz) {
+	printf("WARNING WARNING SUS block size! %04Xh > %04Xh bytes\n", bsz, mbsz);
+	bsz = mbsz;
+    }
+    while(*p != '\0') {
+	l = _fstrlen(p);
+	printf("%Fs (%04Xh)\n",p, l);
+	p+=l+1; /* point to the next string, or NUL if end of block */
+	n++; /* count strings, because why not */
+	blocksize += l + 1; /* the NUL char also takes up memory space */
+    }
+    blocksize++; /* the last NUL */
+    printf("Block @ %04X:0000 has %u strings and uses %u bytes.\n", block, n, blocksize);
+    return blocksize;
+}
 
 /****************************************************************************/
-WORD myallocmem(WORD sz, WORD *seg) {
-	WORD s,e,m;
-	asm clc
-	asm mov ah,48h;
-	asm mov bx,sz;
-	asm int 21h;
-	asm jc mam_error;
-	asm mov s, ax;
-	*seg = s;
-	return 0;
-	mam_error:
-	asm mov m,bx;
-	asm mov e,ax;
+BYTE myallocmem(WORD *sz, WORD *seg) {
+    WORD s,e,m;
 
-	printf("Error(%x): Only %d bytes (%x paragraphs) available\n",e,m*0x10,m);
+    printf("alloc():1:Trying to allocate %04Xh paragraphs of data\n", *sz);
+    s = *sz;
+    asm clc;
+    asm mov ah,48h;    /* DOS Alloc mem */
+    asm mov bx,s;
+    asm int 21h;
+    asm jc mam_error;
+    asm mov s, ax;
+    printf("alloc():2:Allocated %04Xh paragraphs of data in seg %04Xh(%p)\n", *sz, s, seg);
+    *seg = s;
+    return 0;
 
+mam_error:
+    asm mov m,bx;
+    asm mov e,ax;
 
-	return 1;
+    printf("Error(%x): Only %u bytes (%u paragraphs) available\n",e,m<<4,m);
+
+    *sz = m;
+    return 1;
+}
+
+/****************************************************************************/
+BYTE myfreemem(WORD segment) {
+
+    WORD s,e,m;
+    asm clc;
+    asm mov ah,49h;       /* DOS Free mem */
+    asm mov bx, segment;
+    asm mov es, bx;
+    asm int 21h;
+    asm jc mfm_error;
+
+    return 0;
+
+mfm_error:
+    asm mov m,bx;
+    asm mov e,ax;
+
+    printf("Error(%x): Cannot free segment %04Xh\n", e, segment);
+
+    return 1;
 }
 
 /****************************************************************************/
@@ -497,7 +570,7 @@ void evarreplace(BYTE *com, BYTE ln)
     if(com[i] == '%') {
       if( com[i+1] == '%' ) {
         strcat(newcom,"%");
-#ifdef B_DEBUG
+#ifdef B_DEBUG_DISABLED
         printf("evarreplace:0:newcom[%u]=(%c) newcom[%u]=(%c)\n",i,newcom[i],i+1,newcom[i+1]);
 #endif
         i++;
@@ -518,21 +591,21 @@ void evarreplace(BYTE *com, BYTE ln)
         memset(evar,0,50);
         for(j=0;(com[i] != '%') && (i<ln);j++,i++) {
           evar[j] = com[i];
-#ifdef B_DEBUG
+#ifdef B_DEBUG_DISABLED
           printf("evarreplace:2-0:evar[%u]=(%c);com[%u]=(%c)\n",j,evar[j],i,com[i]);
 #endif
         }
-#ifdef B_DEBUG
+#ifdef B_DEBUG_DISABLED
           printf("evarreplace:2-1:evar[%u]=(%c);com[%u]=(%c)\n",j,evar[j],i,com[i]);
 #endif
         evar[j]= '\0';
 /*        i++; */
-#ifdef B_DEBUG
+#ifdef B_DEBUG_DISABLED
           printf("evarreplace:2-2:evar[%u]=(%c);com[%u]=(%c)\n",j,evar[j],i,com[i]);
 #endif
 	  getevar(evar,eval,200); /* replace %varname% with value*/
         strcat(newcom,eval);
-#ifdef B_DEBUG
+#ifdef B_DEBUG_DISABLED
         printf("evarreplace:3:evar=(%s) eval=(%s) newcom=(%s) com[%u]=(%c)\n",evar,eval,newcom,i,com[i]);
 #endif
       }

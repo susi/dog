@@ -30,6 +30,19 @@ DEBUG=-D_DEBUG_ALL_ -N -Od
 LINKFLAGS=$(LINKFLAGS) /l /m /s /v
 !endif
 
+!if $(ED)
+MAKEDEBUG=-DED
+DEBUG=-D_ENV_DEBUG_ -N -Od
+LINKFLAGS=$(LINKFLAGS) /l /m /s /v
+!endif
+
+!if $(OG)
+MAKEDEBUG=-DOG
+DEBUG=-D_DOG_DEBUG_ -N -Od
+LINKFLAGS=$(LINKFLAGS) /l /m /s /v
+!endif
+
+
 !if $(WARN)
 CFLAGS=$(CFLAGS) -w
 LINKFLAGS=$(LINKFLAGS)
