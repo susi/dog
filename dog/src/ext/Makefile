@@ -17,6 +17,7 @@
 
 
 CC=C:\BORLANDC\BIN\BCC
+CP=cp -v -f
 
 CFLAGS=-B -d -mt -O1 -Z -Fs -f- -g15 -tDc -Fc -Tq -Tml -Tmx -Tt -I..
 LINKFLAGS=-lc -ld -lt -lTdc
@@ -60,7 +61,7 @@ vf: vf.com
 vr: vr.com
 
 install: $(PROGS)
-	cp -v $** ..\..\bin\
+	$(CP) *.com ..\..\bin\
 
 .ignore
 clean: rm

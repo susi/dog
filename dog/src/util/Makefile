@@ -16,7 +16,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 CC=C:\BORLANDC\BIN\BCC
-
+CP=cp -v -f
 CFLAGS=-B -d -mt -O1 -Z -Fs -f- -g15 -tDc -Fc -Tq -Tml -Tmx -Tt -I..
 LINKFLAGS=-lc -ld -lt -lTdc
 
@@ -47,19 +47,19 @@ rm: rm.com
 cp.com:
 	cd ..\ext
 	$(MAKE) cp
-	cp -v cp.com ..\util
+	$(CP) cp.com ..\util
 	$(MAKE) clean
 	cd ..\util
 
 rm.com: cp
 	cd ..\ext
 	$(MAKE) cp rm
-	cp -v rm.com ..\util
+	$(CP) rm.com ..\util
 	$(MAKE) clean
 	cd ..\util
 
 install: cp.com $(PROGS)
-	cp -v *.com ..\..\bin
+	$(CP) *.com ..\..\bin
 
 .ignore
 clean: rm

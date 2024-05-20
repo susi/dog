@@ -17,6 +17,7 @@
 
 CC=C:\BORLANDC\BIN\BCC
 LINK=C:\BORLANDC\BIN\TLINK
+CP=cp -v -f
 
 #-w turn on all warnings
 CFLAGS=-B -d -mt -O1 -Z -Fs -f- -g15 -tDc -Fc -Tq -Tml -Tmx -Tt
@@ -83,7 +84,7 @@ cp: cp.com
 cp.com:
 	cd ext
 	$(MAKE) cp
-	cp -v cp.com ..
+	$(CP) cp.com ..
 	$(MAKE) clean
 	cd ..
 
@@ -92,7 +93,7 @@ rm: rm.com
 rm.com: cp.com
 	cd ext
 	$(MAKE) cp rm
-	cp -v rm.com ..
+	$(CP) rm.com ..
 	$(MAKE) clean
 	cd ..
 
@@ -103,7 +104,7 @@ install: dog
 	cd util
 	$(MAKE) install
 	cd..
-	cp -v dog.com ..\bin
+	$(CP) dog.com ..\bin
 
 .ignore
 clean: rm.com

@@ -34,6 +34,8 @@ History
 2002-11-24 - Added support for target directory. In 3] target doesn't
                           have to have \*.* prefix
 2002-11-25 - Added support for 4] and 5]. -WB
+2024-05-21 - Using Int 21h/AH=01 to read kbd for Yes/No/Cancel/All.
+             Added -f flag for force overwrite. -WB
 
     1]File Copy:
     ------------
@@ -97,6 +99,7 @@ struct ts_args
 BYTE flag_i = FLAG_UNSET;
 BYTE flag_v = FLAG_UNSET;
 BYTE flag_h = FLAG_UNSET;
+BYTE flag_f = FLAG_UNSET;
 
 BYTE wild[4] = {'*','.','*','\0'};
 
@@ -108,6 +111,7 @@ int main(BYTE n, BYTE *arg[])
     signed char i;
     int r, nfil = 0, done, j, k, c, attrib;
     long fskspc;
+    BYTE key;
     BYTE sn_fil[MAXPATH+13], st_fil[MAXPATH+13], dn_fil[MAXPATH+13], dt_fil[MAXPATH+13];
     BYTE s_drv[MAXDRIVE], s_dir[MAXDIR], s_fil[MAXFILE], s_ext[MAXEXT];
     BYTE d_drv[MAXDRIVE], d_dir[MAXDIR], d_fil[MAXFILE], d_ext[MAXEXT];
@@ -121,7 +125,7 @@ int main(BYTE n, BYTE *arg[])
     cp_p.npatt = 0;
 
     for(i=1;i<n;i++) {
-#ifdef DEBUG
+#ifdef CP_DEBUG
         printf("flags: arg = %s\n",arg[i]);
 #endif
         if ((arg[i][0] == '-') || (arg[i][0] == '/')) {
@@ -138,12 +142,15 @@ int main(BYTE n, BYTE *arg[])
                  case 'v':
                     flag_v = FLAG_SET;
                     break;
+		case 'f':
+		    flag_f = FLAG_SET;
+		    break;
                 }
             }
         }
         else {
             cp_p.patt[k] = arg[i];
-#ifdef DEBUG
+#ifdef CP_DEBUG
 	    printf("rm:2: cp_p.patt[%d]=(%s) hxcp_p.patt=0x%x\n",
 		   k,cp_p.patt[k],cp_p.patt[k]);
 	    printf("rm:2: arg[%d]=(%s) hxarg=0x%x\n",i,arg[i],cp_p.patt[i]);
@@ -188,7 +195,9 @@ int main(BYTE n, BYTE *arg[])
         return -1;
     }
 
-    printf(stderr,"cp : %d : st_fil = (%s)\n", __LINE__, st_fil);
+#if CP_DEBUG
+    printf("cp : %d : st_fil = (%s)\n", __LINE__, st_fil);
+#endif
 
     /*some types of error were handled above.*/
     fnsplit(st_fil, s_drv, s_dir, s_fil, s_ext);
@@ -283,23 +292,24 @@ int main(BYTE n, BYTE *arg[])
             break;
         }
 
-        if(access(dn_fil, 0) == 0) {
+        if((access(dn_fil, 0) == 0) && (flag_f == FLAG_UNSET)) {
             back:
-            fprintf(stderr, "\rReplace %s (Yes/No)? ", dn_fil);
+            fprintf(stderr, "\rReplace %s (Yes/No/Cancel/All)? ", dn_fil);
             while(1){
-                i = getchar();
-                switch(toupper(i)){
-                    case 'Y':
-                        printf("\n");
+                key = read_key();
+                switch(key){
+		case 'A':
+		    flag_f = FLAG_SET;
+		case 'Y':
+		    printf("\n");
                     goto cont;
-                    case 'N':
-                        printf("\n");
-                        nfil--;
+		case 'N':
+		    printf("\n");
+		    nfil--;
                     goto bottom;
-                    case 3:  /*Ctrl-Break.*/
-                        printf("\n");
-                        return -1;
-                    default:
+		case 'C':
+		    return 3;
+		default:
                     goto back;
                 }
             }
@@ -373,11 +383,24 @@ void print_help(void)
 {
     fputs("Usage: CP [OPTION]... SOURCE DEST\n  or:  CP [OPTION]... [PATH\\]PATTERN1 [PATH\\]PATTERN2\n\n", stderr);
     fputs("CoPy SOURCE to DEST or All files with PATTERN1 [with an optional path]\n"
-                "  to new names with PATTERN2 [with an optionional path]",stderr);
+                "  to new names with PATTERN2 [with an optionional path]\n\n",stderr);
     fputs("The OPTIONS are:\n",stderr);
-    fputs("\t-v:  verbose: print filename of each copied file\n",stderr);
-/*  \t-i:  interactive mode: prompt (Y/N) for each file or directory\n */
-    fputs("  -h|-H|-?:  display this help and exit\n",stderr);
+    fputs("  -v: verbose: print filename of each copied file\n",stderr);
+    fputs("  -f: force:   force all files to be overwritten\n",stderr);
+    fputs("  -h: help:    display this help and exit\n",stderr);
     fputs("\nFILE is a name of a file to write\n", stderr);
-    fputs("\nCP is part of DOG (http://dog.sf.net/)\n", stderr);
+    fputs("\nCP is part of DOG (https://dog.zumppe.net/)\n", stderr);
+}
+
+BYTE read_key(void)
+{
+    BYTE c;
+    asm mov ah, 01h; /* read key with echo */
+    asm int 21h;
+    asm mov c,al;
+
+    if(c >= 'a') {
+	c -= ('a' - 'A'); /* uppercase the character */
+    }
+    return c;
 }
