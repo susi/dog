@@ -31,6 +31,7 @@ History
 2024-05-13 - Fixed bug with freeing inappropriate memory.
 2024-05-14 - Added -w flag, and each pattern shows in a separate block as if
              chaining several commands (it's how it's implemented anyway)
+2024-05-21 - Added -z flag to show human readable sizes.
 ****************************************************************************/
 
 #include "ext.h"
@@ -38,11 +39,17 @@ History
 void show_entry(struct ffblk *fb);
 void show_wide_entry(struct ffblk *fb);
 void show_long_entry(struct ffblk *fb);
+char *format_size(struct ffblk *fb);
 int init(int nargs, char *arg[]);
 void do_ls(void);
 
 #define FLAG_D 0x01 /* 0000 0001 */
 #define FLAG_W 0x02 /* 0000 0010 */
+#define FLAG_Z 0x04 /* 0000 0100 */
+
+#define GIGA 1073741824
+#define MEGA 1048576
+#define KILO 1024
 
 struct ts_flags
 {
@@ -51,6 +58,7 @@ struct ts_flags
     BYTE npatt;
     BYTE flags;
     BYTE w_entry;
+    char sz[10];
 }ls_f;
 
 
@@ -118,6 +126,44 @@ void show_wide_entry(struct ffblk *fb)
 }
 
 /*
+ * Returns a char string representing the size in human readable form:
+ * e.g.
+ *  - >1024 ==> 1kB
+ *  - >1048576 ==> 1MB
+ *  - etc.
+ */
+char * format_size(struct ffblk *fb)
+{
+    unsigned long int sz;
+    unsigned long int f;
+    char *s = (char *)ls_f.sz;
+
+    sz = (unsigned long)fb->ff_fsize;
+    if (sz < KILO) {
+	sprintf(s, "%lu B ", fb->ff_fsize);
+    }
+    else if (sz < MEGA) {
+	f =  ((sz % KILO) * 10) / KILO; /* 1 decimal point */
+	sz = sz / KILO;
+	sprintf(s, "%lu.%u KB", sz, f);
+    }
+    else if (sz < GIGA) {
+	f =  ((sz % MEGA) * 10) / MEGA; /* 1 decimal point */
+	sz = fb->ff_fsize / MEGA;
+	sprintf(s, "%lu.%u MB", sz, f);
+    }
+    else {
+	f =  ((sz % GIGA) / KILO);
+	f = (f * 10) / KILO;
+	f = f / KILO; /* 1 decimal point, keep it within long int... */
+	sz = sz / GIGA;
+	sprintf(s, "%lu.%u GB", sz, f);
+    }
+
+    return s;
+}
+
+/*
  * Print the size, name, etc of a dir entry (long format).
  */
 void show_long_entry(struct ffblk *fb)
@@ -143,7 +189,12 @@ void show_long_entry(struct ffblk *fb)
     fprintf(stderr,"s_e: fb->name:'%s'\n", fb->ff_name);
 #endif
 
-    printf("%8ld   ",fb->ff_fsize);
+    if ((ls_f.flags & FLAG_Z) == FLAG_Z) {
+	printf("%10s   ", format_size(fb));
+    }
+    else {
+	printf("%10lu   ",fb->ff_fsize);
+    }
 
     if (((fb->ff_attrib & FA_ARCH) == FA_ARCH) && ((fb->ff_attrib & FA_LABEL) != FA_LABEL)) {
 	printf("A");
@@ -228,7 +279,8 @@ int init(int nargs, char *arg[])
 		    printf("\t-d: list DIRECTORIES only\n"
 			   "\t-f: list normal FILES only\n"
 			   "\t-l: show volume label\n"
-			   "\t-w: show file names only (6 per row)\n");
+			   "\t-w: show file names only (6 per row)\n"
+			   "\t-z: show human readable sizes (B, KB, MB, GB)\n");
 		    free(ls_f.patt);
 		    return 1;
 		case 'l':
@@ -237,8 +289,11 @@ int init(int nargs, char *arg[])
 		case 'w':
 		    ls_f.flags += FLAG_W;
 		    break;
+		case 'z':
+		    ls_f.flags += FLAG_Z;
+		    break;
 		case '?':
-		    printf("ls [-a|-d|-f|-h|-l|-w|-?] [d:\\dir\\filename.ext]\n");
+		    printf("ls [-a|-d|-f|-h|-l|-w|-z|-?] [d:\\dir\\filename.ext]\n");
 		    free(ls_f.patt);
 		    return 1;
 		default:
