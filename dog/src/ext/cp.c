@@ -36,6 +36,7 @@ History
 2002-11-25 - Added support for 4] and 5]. -WB
 2024-05-21 - Using Int 21h/AH=01 to read kbd for Yes/No/Cancel/All.
              Added -f flag for force overwrite. -WB
+2024-05-22 - Added -i flag to ask for each file. -WB
 
     1]File Copy:
     ------------
@@ -109,7 +110,7 @@ BYTE read_key(void);
 int main(BYTE n, BYTE *arg[])
 {
     signed char i;
-    int r, nfil = 0, done, j, k, c, attrib;
+    int r, nfil = 0, done, j, k, c, attrib, acc;
     long fskspc;
     BYTE key;
     BYTE sn_fil[MAXPATH+13], st_fil[MAXPATH+13], dn_fil[MAXPATH+13], dt_fil[MAXPATH+13];
@@ -292,14 +293,21 @@ int main(BYTE n, BYTE *arg[])
             break;
         }
 
-        if((access(dn_fil, 0) == 0) && (flag_f == FLAG_UNSET)) {
-            back:
-            fprintf(stderr, "\rReplace %s (Yes/No/Cancel/All)? ", dn_fil);
+        acc = access(dn_fil, 0);
+        if((flag_i == FLAG_SET) || ((acc == 0) && (flag_f == FLAG_UNSET))) {
+        back:
+            if (acc == 0) {
+                fprintf(stderr, "\rReplace %s (Yes/No/Cancel/All)? ", dn_fil);
+	    }
+	    else {
+		fprintf(stderr, "\rCopy %s -> %s (Yes/No/Cancel/All)? ", sn_fil, dn_fil);
+	    }
             while(1){
                 key = read_key();
                 switch(key){
 		case 'A':
 		    flag_f = FLAG_SET;
+		    flag_i = FLAG_UNSET;
 		case 'Y':
 		    printf("\n");
                     goto cont;
@@ -381,13 +389,15 @@ int main(BYTE n, BYTE *arg[])
 
 void print_help(void)
 {
-    fputs("Usage: CP [OPTION]... SOURCE DEST\n  or:  CP [OPTION]... [PATH\\]PATTERN1 [PATH\\]PATTERN2\n\n", stderr);
+    fputs("Usage: CP [OPTION]... SOURCE DEST\n"
+          "   or: CP [OPTION]... [PATH\\]PATTERN1 [PATH\\]PATTERN2\n\n", stderr);
     fputs("CoPy SOURCE to DEST or All files with PATTERN1 [with an optional path]\n"
-                "  to new names with PATTERN2 [with an optionional path]\n\n",stderr);
+          "  to new names with PATTERN2 [with an optionional path]\n\n",stderr);
     fputs("The OPTIONS are:\n",stderr);
     fputs("  -v: verbose: print filename of each copied file\n",stderr);
-    fputs("  -f: force:   force all files to be overwritten\n",stderr);
-    fputs("  -h: help:    display this help and exit\n",stderr);
+    fputs("  -f: force:       force all files to be overwritten\n",stderr);
+    fputs("  -i: interactive: asks before copying every file\n",stderr);
+    fputs("  -h: help:        display this help and exit\n",stderr);
     fputs("\nFILE is a name of a file to write\n", stderr);
     fputs("\nCP is part of DOG (https://dog.zumppe.net/)\n", stderr);
 }
