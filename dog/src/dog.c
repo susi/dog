@@ -1,5 +1,5 @@
 /*
-DOG.C  -  Alternate command processor for (currently) MS-DOS ver 3.30
+DOG.C  -  Alternate command processor for FreeDOS and others like MS-DOS.
 
 Copyright (C) 1999-2002 Wolf Bergenheim
 
@@ -17,8 +17,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-Contact author: internet: dog@users.sourceforge.net
-                          http://dog.sf.net/
+Contact author: internet: wolf@bergenheim.net
+                          https://dog.zumppe.net/
 
 Developers:
 Wolf Bergenheim (WB)
@@ -171,7 +171,7 @@ History
              PROMPT is defined in the ENV. -WB
 2024-05-20 - Fixed init code and setting of the PSP when -P is given.
              Also updated environment and alias blocks setup.
-             Fixed calls to int21/AH=25h, to use DS, not ES for the segment.
+             Fixed calls to int21/AH=25h, to use DS, not ES for the segment. -WB
 */
 
 #include "dog.h"
@@ -181,54 +181,54 @@ History
 BYTE Xit = 0, Xitable = 1, eh = 0, D=0, P[MAXDIR]={0};
 BYTE comline[200]= {0}, *com = comline, *arg[_NARGS], varg[_NARGS][200], *prompt;
 BYTE commands[_NCOMS][3] = {
-	"AL",
-	"CC",
-	"CD",
-	"CT",
-	"EH",
-	"HH",
-	"MD",
-	"RD",
-	"SE",
-	"XX"};
+    "AL",
+    "CC",
+    "CD",
+    "CT",
+    "EH",
+    "HH",
+    "MD",
+    "RD",
+    "SE",
+    "XX"};
 
 BYTE ext_commands[_NECOMS][3] = {
-  "BP",
-	"BR",
-	"CL",
-	"CP",
-	"LS",
-	"MV",
-	"RM",
-	"SZ",
-	"TP",
-	"VF",
-	"VR"};
+    "BP",
+    "BR",
+    "CL",
+    "CP",
+    "LS",
+    "MV",
+    "RM",
+    "SZ",
+    "TP",
+    "VF",
+    "VR"};
 
 BYTE command_des[_NCOMS][21] = {
-	"ALias               ",
-	"Change Codepage     ",
-	"Change Directory    ",
-	"Change Terminal     ",
-	"EcHo                ",
-	"Help                ",
-	"Make Directory      ",
-	"Remove Directory    ",
-	"Set to Environment  ",
-	"eXit                "};
+    "ALias               ",
+    "Change Codepage     ",
+    "Change Directory    ",
+    "Change Terminal     ",
+    "EcHo                ",
+    "Help                ",
+    "Make Directory      ",
+    "Remove Directory    ",
+    "Set to Environment  ",
+    "eXit                "};
 
 BYTE ext_command_des[_NECOMS][21] = {
-  "BeeP                ",
-	"BReak               ",
-	"CLear screen        ",
-	"CoPy                ",
-	"LiSt files          ",
-	"MoVe file (rename)  ",
-	"ReMove files        ",
-	"SiZe of files in dir",
-	"TyPe                ",
-	"VeriFy              ",
-	"VeRsion             "};
+    "BeeP                ",
+    "BReak               ",
+    "CLear screen        ",
+    "CoPy                ",
+    "LiSt files          ",
+    "MoVe file (rename)  ",
+    "ReMove files        ",
+    "SiZe of files in dir",
+    "TyPe                ",
+    "VeriFy              ",
+    "VeRsion             "};
 
 /* BYTE *command_help[_NCOMS]; */
 

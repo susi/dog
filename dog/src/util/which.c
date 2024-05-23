@@ -31,6 +31,10 @@ History
 #define FULL   (1)
 #define NFLAGS 4
 
+#define COM 0
+#define EXE 1
+#define DOG 2
+
 #define _A 0
 #define _E 1
 #define _X 2
@@ -76,8 +80,8 @@ int main(int nargs,char *args[])
                 strcpy(env_name,args[i]);
                 break;
             case _X:
-                puts("DOG is an alternative for COMMAND.COM.\nPlease contact Wolf Bergenheim (dog__@hotmail.com) for more information");
-                strcpy(e[2],".BAT");
+                puts("DOG is an alternative for COMMAND.COM.\nPlease see https://dog.zumppe.net/ for more information");
+                strcpy(e[DOG],".BAT");
                 break;
             case _F:
                 f = FULL;
@@ -87,18 +91,18 @@ int main(int nargs,char *args[])
     }
 
 
-    check(".",0);
-    check(".",1);
-    check(".",2);
+    check(".", COM);
+    check(".", EXE);
+    check(".", DOG);
 
     env_val = getenv(env_name);
     strupr(env_val);
     for(p=strtok(env_val,";");;p=strtok(NULL,";")) {
         if(p==NULL) break;
 
-        check(p,0);
-        check(p,1);
-        check(p,2);
+        check(p, COM);
+        check(p, EXE);
+        check(p, DOG);
     }
 
 
@@ -127,20 +131,16 @@ void check(BYTE *p,BYTE ext)
     if(i==0) {
         printf("%s%c%s",p,c,b.ff_name);
         if(f == FULL) {
-					  asm mov ah,03h
-						asm xor bx,bx
-						asm int 10h
-						asm mov ah,02h
-						asm cmp dl,40
-						asm jbe same_row
-						asm inc dh
-						
-						same_row:
-					
-					  asm mov dl,40
-						asm int 10h
-
-        
+	    asm mov ah,03h;    /* Get Cursor position */
+	    asm xor bx,bx;     /* page=0 */
+	    asm int 10h;
+	    asm mov ah,02h;    /* Set cursor position */
+	    asm cmp dl,40;     /* Is it over col 40? */
+	    asm jbe same_row;  /* no */
+	    asm inc dh;        /* yes, move it down one line */
+	same_row:
+	    asm mov dl,40;     /* set column 40 */
+	    asm int 10h;
 
             printf("%02d.%02d.%4d",b.ff_fdate & 0x1F,(b.ff_fdate >> 5) & 0x0f,(b.ff_fdate>>9)+1980);
             printf(" %2d.%02d ",b.ff_ftime >> 11, (b.ff_ftime & 0x7e0) >> 5);
@@ -149,7 +149,7 @@ void check(BYTE *p,BYTE ext)
             if ((b.ff_attrib & FA_ARCH) == FA_ARCH) printf("A");
             else if((b.ff_attrib & FA_LABEL) == FA_LABEL) printf("L");
             else printf("-");
-                
+
             if ((b.ff_attrib & FA_SYSTEM) == FA_SYSTEM) printf("S");
             else if((b.ff_attrib & FA_LABEL) == FA_LABEL) printf("A");
             else printf("-");
@@ -161,7 +161,7 @@ void check(BYTE *p,BYTE ext)
             if ((b.ff_attrib & FA_HIDDEN) == FA_HIDDEN) printf("H");
             else if((b.ff_attrib & FA_LABEL) == FA_LABEL) printf("E");
             else printf("-");
-                
+
             if ((b.ff_attrib & FA_DIREC) == FA_DIREC) printf("D");
             else if((b.ff_attrib & FA_LABEL) == FA_LABEL) printf("L");
             else printf("-");

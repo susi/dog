@@ -41,18 +41,6 @@ Wolf Bergenheim (WB)
 #define WORD unsigned int
 #define DWORD unsigned long
 
-/* we want to use the ones in dos.h. not in dir.h */
-#if 0
-#define findfirst(A,B,C) _dos_findfirst(A,C,B)
-#define findnext _dos_findnext
-#define ffblk       find_t
-#define ff_attrib   attrib
-#define ff_ftime    wr_time
-#define ff_fdate    wr_date
-#define ff_fsize    size
-#define ff_name	    name
-#endif
-
 #ifdef MK_FP
 #undef MK_FP
 #endif
@@ -63,7 +51,6 @@ Wolf Bergenheim (WB)
 #endif
 
 #define EVER ;;
-
 
 #define FNF 18
 #define PATH_SIZE 80
