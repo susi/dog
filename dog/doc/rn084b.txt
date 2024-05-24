@@ -1,0 +1,22 @@
+Fixes/changes:
+==============
+
+DOG:
+- Fixed init + mkudata (for env and alias blocks).
+- Restored the old DOG prompt as the default when no PROMPT variable is set.
+- Now using Borland C++ 3.1 to build, and Make instead of the batch files
+  in previous versions.
+- HH utilizes HELP to display more thorough help texts.
+- Updated the IF syntax to be more versatile and to be similar with do.
+- Implemented 44 and DO and IN and TI.
+
+External commands:
+- CP: now takes more options: -i (interactive), -f (force)
+- VR: Fixed FreeDOS detection + print FD kernel string. Also added DOSbox detection.
+- LS: -w option to display a wide listing with no details -z to show human readable sizes.
+
+Utilities:
+- HELP - Expanded help to fully document all commands and DOG itself. The manual.txt is
+built with HELP.
+- GENERR - is a silly utility which returns the error code given as arg 1. Used in
+  testbat.dog to have predictable errorlevels.

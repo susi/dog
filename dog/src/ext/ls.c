@@ -275,8 +275,8 @@ int init(int nargs, char *arg[])
 		    ls_f.attrs = FA_NORMAL;
 		    break;
 		case 'h':
-		    printf("The switches are:\n\t-a: List ALL files and directories\n");
-		    printf("\t-d: list DIRECTORIES only\n"
+		    printf("The switches are:\n\t-a: List ALL files and directories\n"
+			   "\t-d: list DIRECTORIES only\n"
 			   "\t-f: list normal FILES only\n"
 			   "\t-l: show volume label\n"
 			   "\t-w: show file names only (6 per row)\n"

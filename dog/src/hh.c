@@ -32,7 +32,7 @@ History
 
 void do_hh(BYTE n)
 {
-    BYTE i;
+    BYTE i, hhh[7], na;
 
     if(n == 1) {
         printf("The internal commands are:\n");
@@ -43,5 +43,10 @@ void do_hh(BYTE n)
         for(i=0;i<_NECOMS;i++) {
             printf("%s %s\n",ext_commands[i],ext_command_des[i]);
         }
+    }
+    else {
+	sprintf(com, "hhh %c%c", arg[1][0], arg[1][1]);
+        na = parsecom(com, strlen(com));
+        do_command(na);
     }
 }

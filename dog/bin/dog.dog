@@ -1,1 +1,25 @@
+# DOG.DOG - Part of DOG a Command interpeter for FreeDOS.
+# -*- sh-mode -*-
+#
+# This file is an example default dog.dog file (like fdauto in FreeDOS).
 
+# This is a default path that should work in many configurations
+# se path c:\dog\bin;c:\freedos\bin;c:\dos;c:\bi
+# se DOG c:\dog
+se DOG d:\bin
+eh Set the variable DOG to %DOG%
+
+# Default flags for certain commands through aliases.
+eh common aliases. Try the AL command to see them!
+al l  ls -w
+al ls ls -z
+al ll ls -a -z
+# Don't ask to overwrite, just do it like on linux
+al cp cp -f -v
+al mv mv -v
+
+# shorthand for utils
+# HH relies on HHH pointing to the HELP.COM utility.
+al hhh %DOG%\help.com
+al hd head
+al wh which -f

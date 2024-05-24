@@ -1,0 +1,425 @@
+DOG is an alternative command interpeter.
+It works similar to COMMAND.COM or 4DOS, but is different.
+Note that DOG is not drop-in compatible with either command
+interpeter, but instead does things differently.
+DOG commands are always just 2 letters, but still easy to remember
+DOG also offers external commands allowing them to be more complex.
+DOG consists of 2 classes of commands: INTERNAL and EXTERNAL.
+The internal commands are built-in to the DOG.COM binary and are
+always in memory and access the internals of DOG.
+There are 2 kinds of internal commands. Regular user commands and 
+the batch file programming commands.
+
+When working with DOG, normally you use the internal commends.
+The batch commands are used to program DOGfiles and cover things like
+loops, forks and user input.
+The external commands are stand-alone executables, but considered
+to be part of DOG, and may access DOG internals where needed.
+
+
+Syntax:DOG [-P|-E envsz|-A aliassz|-C command line]
+Parameters:
+   -P - Makes DOG a PERMANENT shell.
+   -E envsz - Makes the environment to envsz bytes (divisible by 16).
+   -A aliassz - Makes the alias space to aliassz bytes (divisble by 16).
+   -C command line - Executes the command line and exits.
+
+
+
+
+Syntax: AL [ALIAS] [COMMAND]
+Parameters:
+   ALIAS   - The command alias to set/unset
+             The name is UPPERCASED.
+
+   COMMAND - The real command that ALIAS expands to.
+             Without COMMAND, AL unsets ALIAS
+           - Without arguments the command prints all ALIASes to the screen.
+
+Effect: Creates a command ALIAS
+
+Example: 'AL CV CP -v' creates an alias command 'CV' which expands into the
+         command 'CP -v'.
+
+         You can also use AL to create an ALIAS of an existing command.
+         It has the same effect as if you would have typed the expansion.
+         e.g. 'AL CP CP -v' makes it so that whenever you use just 'CP',
+         the '-v' option is used, handy for setting default options.
+
+
+
+
+Syntax: CC [CodePage] -- NOT IMPLEMENTED YET
+Parameters:
+   CodePage - Codepage number to set as current
+            - cc without Args shows available codepages.
+
+Effect: Changes the current codepage to CodePage.
+
+
+
+
+Syntax: CD [Path]
+Parameters:
+   Path - The destination path.
+          The .. directory can be appended directly to cd like in DOS.
+          e.g. cd... The virtual directory ... means ..\.. 
+        - cd without Args prints the current directory on the screen.
+
+Effect: Changes the current directory to Path.
+
+Note:   In DOG directories are executable
+        'dog\src\util' implicitly means 'cd dog\src\util'
+        when 'util' is a directory.
+
+
+
+
+Syntax: CT DEV
+Parameters:
+   DEV - The name of the device that I/O is set to. Eg. CON, AUX, NUL
+
+Effect: Changes the current IO terminal to Device.
+
+
+
+
+Syntax: EH [TEXT]
+Parameters:
+   TEXT - Anything you want to type out from a DOG file.
+        - EH by itself wil put a new line.
+
+Use these special characters to format the text:
+   $$ - the $ sign.
+   $_ - space
+   $b - vertical bar ( ¦ )
+   $e - The ESC character (ASCII 27 = 1b in hex)
+   $l - Left angle ( < )
+   $g - Right angle ( > )
+   $n - New line
+   $r - Carriage return
+   $t - Tabulator
+Effect: Print a (formatted) string to stdout (normally the screen).
+
+
+
+
+Syntax: HH [COMMAND]
+Parameters:
+   COMMAND - Giving the name of a DOG command will display
+             detailed help for that command.
+           - HH alone simply lists the DOG commands.
+Effect: Displays usage information for DOG commands.
+
+
+
+
+Syntax: MD <DIR>
+Parameters:
+   DIR - Name or Path of new directory.
+Effect: Creates a new directory named 'dir'.
+
+
+
+
+Syntax: RD <DIR>
+Parameters:
+   DIR - Name or path of EMPTY directory to remove.
+Effect: Removes directory named 'dir'
+
+
+
+
+Syntax: SE [VARIABLE] [VALUE]
+Parameters:
+   VARIABLE - the name of the environment variable.
+              The name is UPPERCASED.
+
+   VALUE    - The value that VARIABLE should have.
+              Without VALUE, SE unsets VARIABLE
+            - Without arguments the command prints all VARIABLEs to the screen.
+
+ Variables set and used by DOG:
+   COMSPEC - Path to DOG
+   PATH    - A list of directories used to search for commands.
+             Paths in the list are separated by the ';' character.
+   PROMPT  - The string displayed indicating that DOG is waiting for a command
+             You can use these special characters:
+      $$ - the $ sign.
+      $_ - space
+      $b - vertical bar '|'
+      $e - The ESC character (ASCII 27 = 1b in hex)
+      $l - Left angle '<'
+      $g - Right angle '>'
+      $n - New line
+      $r - Carriage return
+      $t - Tabulator
+      $p - Current drive and path
+      $c - Current time
+Effect: Sets the specified VARIABLE to VALUE in the environment.
+
+
+
+Syntax: XX
+Effect: Exit the current DOG shell.
+        Works only if the shell is not a primary shell.
+
+
+
+
+Syntax: BP [FREQ [TIME]]
+Parameters:
+   FREQ - Frequency of the sound.
+   TIME - Duration in milliseconds (1000 ms = 1 second)
+        - Without aparameters BP puts ASCII character 07h into Stdout,
+          causing a beep as long as the ANSI driver is loaded.
+Effect: Makes a constant sound with frequency FREQ for TIME milliseconds
+        through the PC Speaker.
+
+
+
+
+Syntax: BR [ON|OFF]
+Parameters:
+   ON - Set DOS Break flag to ON:
+        Check for break on all DOS calls.
+  OFF - Set DOS Break flag to OFF:
+        Check for break only when reading/writing stdin/stdout/stderr.
+
+Effect: Toggles the DOS Break flag.
+        In case no parameters are given it returns the Break Flag
+
+
+
+
+Syntax: CL
+Effect: Clears the screen. Works on 50 lines/page screens too.
+
+
+
+
+Syntax: CP [OPTION]... SOURCE DEST
+    or: CP [OPTION]... [PATH1\]PATTERN1 [PATH2\]PATTERN2
+Parameters:
+   SOURCE / PATTERN1 - The source file(s) to copy
+   DEST   / PATTERN2 - The target file(s) to create
+
+ OPTION can be one of these (in any order):
+   -v - print filename of each copied file
+   -f - force all files to be overwritten
+   -i - interactive, asks before copying every file
+Effect: Copies one or more files to the destination.
+        CP asks before overwiting a file (can be overriden with -f).
+Examples:
+        cp dog.com wolf.com
+        cp dog.com c:dog
+        cp dog.com c:dogwolf.com
+        cp c:dog
+        cp dog.* wolf.*
+        cp dog.* wolf.*
+        cp *.o *.obj
+
+
+
+
+Syntax: LS [OPTION]... [PATTERN]...
+Parameters:
+   PATTERN - Pattern can be a number of paths including wild characters * and ?
+             ? represents any single character and
+             * represents 0 or more characters
+             e.g. *.dog *.* DO?.COM, *.?
+
+ OPTION can be one of these (in any order, some don't work together):
+   -d - Directories Only
+   -f - Files Only
+   -l - show volume label
+   -w - show file names only (6 per row)
+   -z - show human readable sizes (B, KB, MB, GB)
+search pattern - a list of filenames to find. The * and ? wildcards are OK.
+Effect: List files according to switches and search pattern.
+
+
+
+
+Syntax: MV [OPTION]... SOURCE DEST
+    or: MV [OPTION]... [PATH1\]PATTERN1 [PATH2\]PATTERN2
+Parameters:
+   SOURCE / PATTERN1 - The old file name(s)
+   DEST   / PATTERN2 - The new file name(s)
+
+ OPTION can be one of these (in any order):
+   -v - print filename of each moved file
+Effect: Moves one or more files to the destination.
+        MV asks before overwiting an existing file.
+
+Examples:
+        mv dog.com wolf.com
+        mv dog.com c:dog
+        mv dog.com c:dogwolf.com
+        mv c:dog
+        mv dog.* wolf.*
+        mv dog.* wolf.*
+        mv *.o *.obj
+
+
+
+
+Syntax: RM [OPTION]... <PATTERN>...
+Parameters:
+   PATTERN - Pattern can be a number of paths including wild characters * and ?
+             ? represents any single character and
+             * represents 0 or more characters
+             e.g. *.dog *.* DO?.COM, *.?
+
+ OPTION can be one of these (in any order):
+   -i - prompt (Yes/No/All) for each file or directory
+   -r - recurse into sub-directories.
+        Removes all fines in subdirectories too
+   -v - print filename of each removed file
+Effect: Remove the file(s) and/or directory(ies) matching PATTERN
+
+
+
+
+Syntax: SZ [OPTION]... [PATTERN]...
+Parameters:
+   PATTERN - Pattern can be a number of paths including wild characters * and ?
+             ? represents any single character and
+             * represents 0 or more characters
+             e.g. *.dog *.* DO?.COM, *.?
+
+ OPTION can be one of these (in any order):
+   -k - give sizes in kb
+   -m - give sizes in Mb
+Effect: Prints the size of the files in the current directory.
+
+
+
+
+Syntax: TP FILE...
+Parameters:
+   FILE - A space separated list of files
+Effect: Types the contents of the files in file_list to stdout.
+
+
+
+
+Syntax: VF [ON|OFF]
+Parameters:
+ON  - Set the DOS Verify flag to ON
+OFF - Set the DOS Verify flag to OFF
+Effect: If ON or OFF specified sets Verify flag to this value.
+        Otherwise VF returns the current setting.
+
+
+
+
+Syntax: VR
+Effect: Prints the DOG and DOS version.
+        Tries very hard to identify the flavor of DOS.
+
+
+
+
+Syntax: CA <DOGFILE>
+Parameters:
+   DOGFILE - A DOGfile to call.
+
+Effect: Calls the DOGFILE from another.
+        Once it has finished running, execution continues on the next line
+        in the DOGfile where CA was executed from.
+
+
+Syntax: DO <COMMAND> [WHILE <CONDITION>]  -- NOT IMPLEMENTED YET
+Parameters:
+   COMMAND   - The command to repeat.
+   CONDITION - The condition for repeating the command.
+ CONDITION can take the form:
+      ERROR [IS|NOT] <NUMBER>     - NUMBER compared to the ERRORLEVEL
+      <VARIABLE> [IS|NOT] <VALUE> - VARIABLE is an environment variable
+                                 and is compard to VALUE
+      [NOT] EXIST <FILE>       - Returns true as long as FILE exists.
+     IS - is optional and has no effect other than makes the statement
+          look a little bit more like English.
+    NOT - reverses the condition value in all cases.
+Effect: Repeats COMMAND while CONDITION is true.
+        Without a CONDITION the COMMAND is repeated as long as it returns 0
+        as its exit code.
+
+
+
+
+Syntax: 44 <VAR> IN <SET> DO <COMMAND>  -- NOT IMPLEMENTED YET
+Parameters:
+   VAR     - A variable name, use as %VAR% as a prameter as part of COMMAND
+   SET     - A comma separated list of words.
+
+   COMMAND - The command to repeat. You can use %VAR% as a placeholder for VAR.
+Effect: For each word in SET runs the COMMAND.        Each word in SET will be set to VAR for each repeat of the for loop.
+        This allows the COMMAND to inclide %VAR% which will be replaced
+        with a word from SET.        Without a CONDITION the COMMAND is repeated as long as it returns 0
+        as its exit code.
+
+Example:
+   44 F IN DOG,CAT,WOLF,BEAR DO MV %F%.CC %F%.CPP
+      This command will first run 'MV DOG.CC DOG.CPP'
+      by replacing %F% with 'DOG' in the first iteration,
+      etc for each of the terms in the set.
+
+
+
+Syntax: GO <LABEL>
+Parameters:
+   LABEL - A label in the DOGfile.
+Effect: Jumps the DOGfile processing to the LABEL. A label is identified as
+        line containing 'LABEL:'. DO will jump to the line after the 'LABEL:' line.
+
+
+
+Syntax: IF CONDITION <COMMAND1> [ELSE <COMMAND2>]
+Parameters:
+   COMMAND1  - The command to run if CONDITION is TRUE.
+   COMMAND2  - The optional command to run if CONDITION is FALSE.
+   CONDITION - The condition for repeating the command.
+ CONDITION can take the form:
+      ERROR [IS|NOT] <NUMBER>     - NUMBER compared to the ERRORLEVEL
+      <VARIABLE> [IS|NOT] <VALUE> - VARIABLE is an environment variable
+                                 and is compard to VALUE
+      [NOT] EXIST <FILE>       - Returns true as long as FILE exists.
+    IS  - is optional and has no effect other than makes the statement
+          look a little bit more like English.
+    NOT - reverses the condition value in all cases.
+Efect: If CONDITION is TRUE the COMMAND1 is executed, else COMMAND2 is executed.
+
+
+
+
+Syntax: IN <VARIABLE> [PROMPT]
+Parameters:
+   VARIABLE - The environmet variable to store the user input.
+   PROMPT   - An optional message to display to the user.
+              With no prompt DOG will display 'Enter value for VARIABLE: '
+Effect: Prompts the user for input and saves that input in the environment.
+
+
+
+
+Syntax: SH [NUM]
+Parameters:
+   NUM - A number to indicate how many variables to shift
+Effect: Shifts the DOGfile input arguments by NUM steps.
+Normally A DOGfile can only index 10 arguments at one time (%0 to %9).
+This command allows a DOGfile to shift the variables right so that
+what was previously %1 is now %2, etc.
+By giving the command a number NUM, the arguments are shifted
+NUM steps instead of just one to a maximum of 9.
+
+
+
+
+Syntax: TI [TIME]
+Parameters:
+   TIME - The number of millisenconds to wait.
+Effect: Waits TIME milliseconds before continuin the DOGFile execution
+
+

@@ -1743,6 +1743,7 @@ void do_exe(BYTE n)
       puts("Invalid format.");
       break;
      default :
+      puts("Unknown unexpected program termination.");
       break;
     }
     break;
