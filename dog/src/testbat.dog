@@ -62,3 +62,12 @@ eh test10 really FAIL
 eh test10 PASS
 
 :endiftests
+
+# for looping with 44
+eh test11: 44 loop
+44 animal in dog,cat,bear,wolf,mouse,rat,fox do se animal %%animal%%
+if animal IS fox eh test11 PASS ELSE eh test11 FAIL
+
+eh test12: 44 LOOP with IF
+se animal fox
+44 animal in dog,cat,bear,wolf,mouse,rat,fox do if animal IS %%animal%% eh test12 PASS

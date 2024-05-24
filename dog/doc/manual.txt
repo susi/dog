@@ -349,22 +349,23 @@ Effect: Repeats COMMAND while CONDITION is true.
 
 
 
-Syntax: 44 <VAR> IN <SET> DO <COMMAND>  -- NOT IMPLEMENTED YET
+Syntax: 44 <VAR> IN <SET> DO <COMMAND>
 Parameters:
-   VAR     - A variable name, use as %VAR% as a prameter as part of COMMAND
+   VAR     - A variable name, use as %%VAR%% as a placeholder in COMMAND
    SET     - A comma separated list of words.
 
-   COMMAND - The command to repeat. You can use %VAR% as a placeholder for VAR.
-Effect: For each word in SET runs the COMMAND.        Each word in SET will be set to VAR for each repeat of the for loop.
-        This allows the COMMAND to inclide %VAR% which will be replaced
-        with a word from SET.        Without a CONDITION the COMMAND is repeated as long as it returns 0
-        as its exit code.
+   COMMAND - The command to repeat.
+             You can use %%VAR%% as a placeholder for VAR.
+Effect: For each word in SET runs the COMMAND.
+        Each word in SET will be set to VAR for each repeat of the for loop.
+        This allows the COMMAND to include %%VAR%% which will be replaced
+        with a word from SET.
 
 Example:
-   44 F IN DOG,CAT,WOLF,BEAR DO MV %F%.CC %F%.CPP
+   44 F IN DOG,CAT,WOLF,BEAR DO MV %%F%%.CC %%F%%.CPP
       This command will first run 'MV DOG.CC DOG.CPP'
-      by replacing %F% with 'DOG' in the first iteration,
-      etc for each of the terms in the set.
+      by replacing %%F%% with 'DOG' in the first iteration,
+      etc for each of the terms in SET.
 
 
 

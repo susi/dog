@@ -21,6 +21,7 @@ History
 06.05.99 - BAT.C is a now also ported. -WB
 2024-05-11 - Building as a module. -WB
 2024-05-24 - new syntax for IF -WB
+2024-05-25 - Implemented do_44 for the 44 command. -WB
 
 */
 #include "dog.h"
@@ -280,7 +281,7 @@ void do_batcommand(BYTE n)
 			printf("do_batc:3:command=(%s)\n",batch[i]);
 			return;
 		 case B_C_44 :
-			printf("do_batc:3:command=(%s)\n",batch[i]);
+		     do_44(n);
 			return;
 		 case B_C_GO :
 			do_go(n);
@@ -605,6 +606,62 @@ void do_if(BYTE n)
 }
 
 /***************************************************************************/
+/*
+Syntax: 44 <VAR> IN <SET> DO <COMMAND>
+Parameters:
+   VAR     - A variable name, use as %%VAR%% as a placeholder in COMMAND
+   SET     - A comma separated list of words.
+   COMMAND - The command to repeat.
+             You can use %%VAR%% as a placeholder for VAR.
+*****************************************************************************/
+
+void do_44(BYTE n)
+{
+    BYTE i, *var, *set, com, *varpos, *word, *s, **cc, nn=0;
+
+    if((n < 6) || (stricmp(arg[2], "IN") != 0) || (stricmp(arg[4], "DO") != 0)) {
+	puts("Syntax error:\n"
+	     "Syntax: 44 <VAR> IN <SET> DO <COMMAND>");
+    }
+    var = strupr(arg[1]);
+    set = arg[3];
+    com = 5;
+    s = malloc(strlen(var)+3);
+    sprintf(s, "%%%s%%", var);
+
+    nn = n - com;
+    varpos = malloc(nn);
+    build_cmd(com, n);
+    /* replace %VAR% with a word from SET */
+    for (i=0; i < nn; i++) {
+	/* init varpos */
+	varpos[i] = 0;
+#ifdef BAT_DEBUG
+	printf("do_44():0:arg[%d]=%s s='%s'\n", i, arg[i], s);
+#endif
+	if (stricmp(arg[i], s) == 0) {
+	    /* tag pos i as %VAR% location */
+	    varpos[i] = i;
+	}
+    }
+
+    word = strtok(set, ",");
+    do {
+	for (i=0; i < nn; i++) {
+	    if (varpos[i] != 0) {
+		arg[i] = (BYTE *)word;
+	    }
+#ifdef BAT_DEBUG
+	    printf("do_44():2-%d:arg[%d]=%s '%s'='%s'\n", i, i, arg[i],var, word);
+#endif
+	}
+	do_batcommand(nn);
+    } while((word = strtok(NULL, ",")) != NULL);
+    free(s);
+    free(varpos);
+}
+/***************************************************************************/
+
 static void build_cmd(BYTE start, BYTE end)
 {
     BYTE i;

@@ -315,6 +315,7 @@ void do_ca(BYTE n);
 void do_go(BYTE n);
 void do_sh(BYTE n);
 void do_if(BYTE n);
+void do_44(BYTE n);
 
 /* command processing */
 void do_exe(BYTE n);

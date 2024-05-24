@@ -329,23 +329,22 @@ BYTE *bat_help[_NBCOMS]={
     "        as its exit code."
     "\n\n",
 
-    "\n\nSyntax: 44 <VAR> IN <SET> DO <COMMAND>  -- NOT IMPLEMENTED YET\n"
+    "\n\nSyntax: 44 <VAR> IN <SET> DO <COMMAND>\n"
     "Parameters:\n"
-    "   VAR     - A variable name, use as %VAR% as a prameter as part of COMMAND\n"
+    "   VAR     - A variable name, use as %%VAR%% as a placeholder in COMMAND\n"
     "   SET     - A comma separated list of words.\n"
     "\n"
-    "   COMMAND - The command to repeat. You can use %VAR% as a placeholder for VAR.\n"
-    "Effect: For each word in SET runs the COMMAND."
+    "   COMMAND - The command to repeat.\n"
+    "             You can use %%VAR%% as a placeholder for VAR.\n"
+    "Effect: For each word in SET runs the COMMAND.\n"
     "        Each word in SET will be set to VAR for each repeat of the for loop.\n"
-    "        This allows the COMMAND to inclide %VAR% which will be replaced\n"
-    "        with a word from SET."
-    "        Without a CONDITION the COMMAND is repeated as long as it returns 0\n"
-    "        as its exit code.\n\n"
+    "        This allows the COMMAND to include %%VAR%% which will be replaced\n"
+    "        with a word from SET.\n\n"
     "Example:\n"
-    "   44 F IN DOG,CAT,WOLF,BEAR DO MV %F%.CC %F%.CPP\n"
+    "   44 F IN DOG,CAT,WOLF,BEAR DO MV %%F%%.CC %%F%%.CPP\n"
     "      This command will first run 'MV DOG.CC DOG.CPP'\n"
-    "      by replacing %F% with 'DOG' in the first iteration,\n"
-    "      etc for each of the terms in the set.\n",
+    "      by replacing %%F%% with 'DOG' in the first iteration,\n"
+    "      etc for each of the terms in SET.\n",
 
     "\n\nSyntax: GO <LABEL>\n"
     "Parameters:\n"
