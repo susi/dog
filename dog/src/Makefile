@@ -43,6 +43,11 @@ DEBUG=-D_DOG_DEBUG_ -N -Od
 LINKFLAGS=$(LINKFLAGS) /l /m /s /v
 !endif
 
+!if $(BAT)
+MAKEDEBUG=-DBAT
+DEBUG=-D_BAT_DEBUG_ -N -Od
+LINKFLAGS=$(LINKFLAGS) /l /m /s /v
+!endif
 
 !if $(WARN)
 CFLAGS=$(CFLAGS) -w

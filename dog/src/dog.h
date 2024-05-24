@@ -291,6 +291,7 @@ BYTE isfchar(BYTE c);
 
 void clearbat(void); /* clear the b file linked list*/
 void prevbat(void); /* return to the previous nest-level in bat*/
+BYTE file_exist(const char * filename);
 
 /* ints.c */
 void save_error_ints(void);

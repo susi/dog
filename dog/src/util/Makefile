@@ -27,7 +27,7 @@ DEBUG=-D_DEBUG_ALL_ -N -Od -w
 LINKFLAGS=$(LINKFLAGS) -ll -lm -ls -lv
 !endif
 
-PROGS=head.com help.com which.com
+PROGS=head.com help.com which.com generr.com
 
 .c.com:
 	$(CC) $(CFLAGS) $(DEBUG) $.
@@ -39,6 +39,8 @@ hd: head.com
 hh: help.com
 
 wh: which.com
+
+ge: generr.com
 
 cp: cp.com
 

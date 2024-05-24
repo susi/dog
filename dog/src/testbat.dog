@@ -1,0 +1,64 @@
+# TESTBAT.DOG - Part of DOG.
+# This file tests that DOGfile commands work. Especially the
+
+eh DOGFile test script. This DOGFile tests that the DOGFile
+eh commands work as expected. Especially CA, DO, 44, GO and IF
+eh and labels
+eh
+
+:iftests
+eh test1: IF ERROR IS 7
+generr 7
+if ERROR IS 7 eh Test PASS ELSE eh test1 FAIL
+eh
+
+eh test2: IF ERROR 7
+generr 7
+if ERROR 7 go pass2
+eh Test 2 FAIL
+go end2
+:pass2
+eh Test 2 PASS
+:end2
+eh
+
+eh test3: IF ERROR NOT 7
+generr 0
+if ERROR NOT 7 eh test3 PASS ELSE eh test3 FAIL
+eh
+
+eh test4: IF FOO IS BAR
+se FOO BAR
+IF FOO IS BAR eh test4 PASS ELSE test4 FAIL
+eh
+
+eh test5: IF FOO BAR
+se FOO BAR
+IF FOO BAR eh test5 PASS ELSE test5 FAIL
+eh
+
+eh test6: IF FOO NOT BAR
+se foo bar
+IF FOO NOT BAR eh test6 PASS ELSE test6 FAIL
+eh
+
+eh test7: IF EXIST
+IF EXIST testbat.dog eh test7 PASS ELSE eh test7 FAIL
+eh
+
+eh test8: IF EXIST DIR
+IF EXIST c:\temp eh test8 PASS ELSE eh test8 FAIL
+eh
+
+eh test9: IF NOT EXIST
+IF NOT EXIST GARGAR.GAR eh test9 PASS ELSE eh test9 FAIL
+eh
+
+eh test10: IF ELSE GO
+generr 0
+if ERROR 7 eh test10 FAIL ELSE go test10pass
+eh test10 really FAIL
+:test10pass
+eh test10 PASS
+
+:endiftests

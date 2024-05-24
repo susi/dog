@@ -1,4 +1,4 @@
-/*BAT.C  -  Alternate command processor for (currently) MS-DOS ver 3.30
+/* bat.c  -  Batchfile processing for DOG.
 
 Copyright (C) 1999  Wolf Bergenheim
 
@@ -18,7 +18,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 History
 
-06.05.99 - BAT.C is a now also ported.
+06.05.99 - BAT.C is a now also ported. -WB
+2024-05-11 - Building as a module. -WB
+2024-05-24 - new syntax for IF -WB
 
 */
 #include "dog.h"
@@ -33,6 +35,8 @@ History
 #define B_C_IN 5
 #define B_C_SH 6
 #define B_C_TI 7
+
+static void build_cmd(BYTE start, BYTE end);
 
 BYTE batch[_BAT_COMS][3] = {
     "CA",  /*call */
@@ -406,39 +410,223 @@ void do_sh(BYTE n)
 /****************************************************************************/
 
 
-/* if foo == bar action*/
+/*
+Syntax: IF [CONDITION] <COMMAND1> [ELSE <COMMAND2>]
+
+CONDITION can take the form:
+    ERROR [IS|NOT] <NUMBER>     - NUMBER compared to the ERRORLEVEL
+    <VARIABLE> [IS|NOT] <VALUE> - VARIABLE is an environment variable
+                                and is compard to VALUE
+    [NOT] EXIST <FILE>          - Returns true as long as FILE exists.
+    IS  - is optional and has no effect other than makes the statement
+          look a little bit more like English.
+    NOT - reverses the condition value in all cases.
+*/
+
+#define COND_ERROR 0x1
+#define COND_ERROR_NOT 0x2
+#define COND_EXIST 0x4
+#define COND_EXIST_NOT 0x8
+#define COND_VAR 0x10
+#define COND_VAR_NOT 0x20
+#define IF_ELSE 0x40
+
 void do_if(BYTE n)
 {
-  BYTE i, *p,tr;
+    BYTE i, nn=0, el, if_type, if_cmd=0, else_cmd=0, *filename, *var, *val, exist, eval[80];
 
-  if(n < 5) {
-    printf("syntax error in command if:\n syntax is if foo ! OR = bar somecommand and arguments\n");
+  if(n < 2) {
+      puts("syntax error in command IF:\n"
+	   "Syntax: IF [CONDITION] <COMMAND1> [ELSE <COMMAND2>]");
     return;
   }
+#ifdef BAT_DEBUG
+  printf("do_if:0:n = %d\n",n);
+  for(i=0;i<n;i++)
+      printf("do_if:1:arg[%d]=(%s)\n",i,arg[i]);
+#endif
 
-  tr = 0;
-  if(stricmp(arg[1],"errolevel") == 0) {
-    sprintf(p,"%d",errorlevel);
-    p = arg[1];
+  if(stricmp(arg[1],"ERROR") == 0) {
+#ifdef BAT_DEBUG
+      printf("do_if():2:errorlevel=%u el=%u\n", errorlevel, el);
+#endif
+      if (stricmp(arg[2], "NOT") == 0) {
+	  if_type = COND_ERROR_NOT;
+	  el = atoi(arg[3]);
+	  if_cmd = 4;
+      }
+      else if (stricmp(arg[2], "IS") == 0) {
+	  if_type = COND_ERROR;
+	  el = atoi(arg[3]);
+	  if_cmd = 4;
+#ifdef BAT_DEBUG
+	  printf("do_if():3:errorlevel=%u el=%u arg[3]='%s'\n", errorlevel, el, arg[3]);
+#endif
+      }
+      else {
+	  if_type = COND_ERROR;
+	  el = atoi(arg[2]);
+	  if_cmd = 3;
+#ifdef BAT_DEBUG
+	  printf("do_if():4:errorlevel=%u el=%u arg[2]='%s'\n", errorlevel, el, arg[2]);
+#endif
+      }
   }
-  switch (arg[2][0]) {
-   case '!' :
-    if(stricmp(arg[1],arg[3]) != 0) tr = 1;
-    break;
-   case '=' :
-    if(stricmp(arg[1],arg[3]) == 0) tr = 1;
-    break;
-   default:
-    printf("syntax error in command if:\n syntax is if foo ! OR = bar somecommand and arguments\n");
-    return;
+  else if ((stricmp(arg[1], "EXIST") == 0) || (stricmp(arg[2], "EXIST") == 0)) {
+      if (stricmp(arg[1], "NOT") == 0) {
+	  if_type = COND_EXIST_NOT;
+	  filename = arg[3];
+	  if_cmd = 4;
+      }
+      else {
+	  if_type = COND_EXIST;
+	  filename = arg[2];
+	  if_cmd = 3;
+      }
+  }
+  else {
+      if (stricmp(arg[2], "NOT") == 0) {
+	  var = arg[1];
+	  val = arg[3];
+	  if_cmd = 4;
+	  if_type = COND_VAR_NOT;
+      }
+      else if (stricmp(arg[2], "IS") == 0) {
+	  var = arg[1];
+	  val = arg[3];
+	  if_cmd = 4;
+	  if_type = COND_VAR;
+      }
+      else {
+	  var = arg[1];
+	  val = arg[2];
+	  if_cmd = 3;
+	  if_type = COND_VAR;
+      }
   }
 
-  if (tr == 1) {
-    for (i=4;i<n;i++) {
-      arg[i-4] = arg[i];
-    }
-    do_batcommand(n-4);
+  /* look for an else */
+  for (i=if_cmd+1; i < n; i++) {
+      if (stricmp(arg[i], "ELSE") == 0 && (i < (n-2))) {
+	  /* true when we fine ELSE which is not the last word */
+	  if_type |= IF_ELSE;
+	  else_cmd = i+1;
+	  break;
+      }
+  }
+
+  switch(if_type & 0x3F) {
+  case COND_ERROR:
+#ifdef BAT_DEBUG
+      printf("do_if():5:errorlevel=%u el=%u\n", errorlevel, el);
+#endif
+      if (errorlevel == el) {
+	  /* true, build commandline */
+	  nn = (if_type & IF_ELSE)?else_cmd-1:n;
+	  build_cmd(if_cmd, nn);
+	  nn = nn - if_cmd;
+      } else if (if_type & IF_ELSE) {
+	  /* false, with else, build commandline */
+	  build_cmd(else_cmd, n);
+	  nn = n - else_cmd;
+      }
+      break;
+  case COND_ERROR_NOT:
+      if (errorlevel != el) {
+	  /* true, build commandline */
+	  nn = (if_type & IF_ELSE)?else_cmd-1:n;
+	  build_cmd(if_cmd, nn);
+	  nn = nn - if_cmd;
+      } else if (if_type & IF_ELSE) {
+	  /* false, with else, build commandline */
+	  build_cmd(else_cmd, n);
+	  nn = n - else_cmd;
+      }
+      break;
+  case COND_EXIST:
+      if (file_exist(filename)) {
+	  /* true, build commandline */
+	  nn = (if_type & IF_ELSE)?else_cmd-1:n;
+	  build_cmd(if_cmd, nn);
+	  nn = nn - if_cmd;
+      } else if (if_type & IF_ELSE) {
+	  /* false, with else, build commandline */
+	  build_cmd(else_cmd, n);
+	  nn = n - else_cmd;
+      }
+      break;
+  case COND_EXIST_NOT:
+      if (!file_exist(filename)) {
+	  /* true, build commandline */
+	  nn = (if_type & IF_ELSE)?else_cmd-1:n;
+	  build_cmd(if_cmd, nn);
+	  nn = nn - if_cmd;
+      } else if (if_type & IF_ELSE) {
+	  /* false, with else, build commandline */
+	  build_cmd(else_cmd, n);
+	  nn = n - else_cmd;
+      }
+      break;
+  case COND_VAR:
+      if ((getevar(var, eval, 80) != NULL) && (strncmp(eval, val, 80)==0)) {
+	  /* true, build commandline */
+	  nn = (if_type & IF_ELSE)?else_cmd-1:n;
+	  build_cmd(if_cmd, nn);
+	  nn = nn - if_cmd;
+      } else if (if_type & IF_ELSE) {
+	  /* false, with else, build commandline */
+	  build_cmd(else_cmd, n);
+	  nn = n - else_cmd;
+      }
+      break;
+  case COND_VAR_NOT:
+      if ((getevar(var, eval, 80) == NULL) || (strncmp(eval, val, 80)!=0)) {
+	  /* true, build commandline */
+	  nn = (if_type & IF_ELSE)?else_cmd-1:n;
+	  build_cmd(if_cmd, nn);
+	  nn = nn - if_cmd;
+      } else if (if_type & IF_ELSE) {
+	  /* false, with else, build commandline */
+	  build_cmd(else_cmd, n);
+	  nn = n - else_cmd;
+      }
+      break;
+  default:
+      puts("syntax error in command IF:\n"
+	   "Syntax: IF CONDITION <COMMAND1> [ELSE <COMMAND2>]");
+      return;
+  }
+
+  if (nn > 0) {
+      do_batcommand(nn);
   }
 
   return;
+}
+
+/***************************************************************************/
+static void build_cmd(BYTE start, BYTE end)
+{
+    BYTE i;
+    for (i=start; i < end; i++) {
+	arg[i-start] = arg[i];
+    }
+}
+
+/***************************************************************************/
+
+BYTE file_exist(const char * filename)
+{
+    const char *fn=filename;
+
+    asm mov ax, 4300h; /* Get file attrib */
+    asm mov dx, fn; /* DS:DX: path to file to open */
+    asm push cs;
+    asm pop ds;
+    asm clc;
+    asm int 21h;
+    asm jnc found;
+    return 0;
+found:
+    return 1;
 }
