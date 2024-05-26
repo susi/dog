@@ -312,15 +312,15 @@ BYTE *bat_help[_NBCOMS]={
     "        Once it has finished running, execution continues on the next line\n"
     "        in the DOGfile where CA was executed from.",
 
-    "\n\nSyntax: DO <COMMAND> [WHILE <CONDITION>]  -- NOT IMPLEMENTED YET\n"
+    "\n\nSyntax: DO <COMMAND> [WHILE <CONDITION>]\n"
     "Parameters:\n"
     "   COMMAND   - The command to repeat.\n"
     "   CONDITION - The condition for repeating the command.\n"
     " CONDITION can take the form:\n"
     "      ERROR [IS|NOT] <NUMBER>     - NUMBER compared to the ERRORLEVEL\n"
     "      <VARIABLE> [IS|NOT] <VALUE> - VARIABLE is an environment variable\n"
-    "                                 and is compard to VALUE\n"
-    "      [NOT] EXIST <FILE>       - Returns true as long as FILE exists.\n"
+    "                                    and is compard to VALUE\n"
+    "      [NOT] EXIST <FILE>          - Returns true as long as FILE exists.\n"
     "     IS - is optional and has no effect other than makes the statement\n"
     "          look a little bit more like English.\n"
     "    NOT - reverses the condition value in all cases.\n"

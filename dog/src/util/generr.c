@@ -21,11 +21,19 @@ History
 
 */
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
 int main(int argc, char *argv[]) {
+    int n;
+    randomize();
     if (argc < 2) {
 	return 0;
     } else {
+	if (strcmp(argv[1], "-r") == 0) {
+	    n = atoi(argv[2]);
+	    return random(n+1);
+	}
 	return atoi(argv[1]);
     }
 }

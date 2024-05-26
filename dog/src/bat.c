@@ -22,6 +22,7 @@ History
 2024-05-11 - Building as a module. -WB
 2024-05-24 - new syntax for IF -WB
 2024-05-25 - Implemented do_44 for the 44 command. -WB
+2024-05-25 - Implemented do_do for the DO command. -WB
 
 */
 #include "dog.h"
@@ -38,6 +39,7 @@ History
 #define B_C_TI 7
 
 static void build_cmd(BYTE start, BYTE end);
+static BYTE is_cond(BYTE start, BYTE end);
 
 BYTE batch[_BAT_COMS][3] = {
     "CA",  /*call */
@@ -118,13 +120,12 @@ printf("clearbat:3:bf:%x bf->prev:%x\n",&(*bf),bf->prev);
 
 void do_bat(void)
 {
-
-	BYTE ll,i,na,ch, *p,*q;
-	struct ffblk *fba;
-	FILE *fp;
+    BYTE ll,i,na,*p,*q;
+    struct ffblk *fba;
+    FILE *fp;
 
 #ifdef BAT_DEBUG
-printf("do_bat:0:bf:%x name=|%s|\n",&(*bf),bf->name);
+    printf("do_bat:0:bf:%x name=|%s|\n",&(*bf),bf->name);
 #endif
 
     /*
@@ -134,122 +135,149 @@ printf("do_bat:0:bf:%x name=|%s|\n",&(*bf),bf->name);
     in = 1 means old bfile name is in bf->name
     */
 
-	if(bf->in == 1) {
-		fba = malloc(sizeof(struct ffblk));
-		i=findfirst(bf->name,fba,0);
-		if((i!=0) && (errno==ENOFILE)) {
-			fprintf(stderr,"Dogfile %s missing\n",bf->name);
-			clearbat();
-			bf->nest = 0;
-			bf->in = 0;
-			bf->line = 0;
-			bf->na = 0;
-			free(fba);
-			return;
-		}
-		else if(i==0) {
-			fp = fopen(bf->name,"r");
-			if(fp==NULL) {
-				fprintf(stderr,"Can't open DOGfile %s\n",bf->name);
-				clearbat();
-				bf->nest = 0;
-				bf->in = 0;
-				bf->line = 0;
-				bf->na = 0;
-				return;
-			}
-		}
+    if(bf->in == 1) {
+	fba = malloc(sizeof(struct ffblk));
+	i=findfirst(bf->name,fba,0);
+	if((i!=0) && (errno==ENOFILE)) {
+	    fprintf(stderr,"Dogfile %s missing\n",bf->name);
+	    clearbat();
+	    bf->nest = 0;
+	    bf->in = 0;
+	    bf->line = 0;
+	    bf->na = 0;
+	    free(fba);
+	    return;
 	}
-	free(fba);
+	else if(i==0) {
+	    fp = fopen(bf->name,"r");
+	    if(fp==NULL) {
+		fprintf(stderr,"Can't open DOGfile %s\n",bf->name);
+		clearbat();
+		bf->nest = 0;
+		bf->in = 0;
+		bf->line = 0;
+		bf->na = 0;
+		return;
+	    }
+	}
+    }
+    free(fba);
 
 #ifdef BAT_DEBUG
-printf("do_bat:1:bf->line=%d,bf->nest=%d\n",bf->line,bf->nest);
+    printf("do_bat:1:bf->line=%d,bf->nest=%d\n",bf->line,bf->nest);
 #endif
-
 
 /* Return to the previous line as the batchfile is closed after each line*/
 
-	for(i=0;i<bf->line;i++) {
-		fgets(com,200,fp);
-	}
+    for(i=0;i<bf->line;i++) {
+	fgets(com,200,fp);
+    }
 
     /* end of bfile:
-                    if nest = 0 return
-                    if nest > 0 return one lvl down */
+       if nest = 0 return
+       if nest > 0 return one lvl down */
 
-	if (fgets(com,200,fp) == NULL ) {
-		if(bf->nest == 0) {
-			bf->in = 0;
-			bf->line = 0;
-			bf->na=0;
-			fclose(fp);
-			return;
-		}
-		else {
-			prevbat();
-			fclose(fp);
-			return;
-		}
-
+    if (fgets(com,200,fp) == NULL ) {
+	if(bf->nest == 0) {
+	    bf->in = 0;
+	    bf->line = 0;
+	    bf->na=0;
+	    fclose(fp);
+	    return;
 	}
-
-	/* extract $0..$9 to varg[0]..varg[9] */
-
-	bf->line++;
-
-	parse_vars();
+	else {
+	    prevbat();
+	    fclose(fp);
+	    return;
+	}
+    }
+    /* extract $0..$9 to varg[0]..varg[9] */
+    bf->line++;
+    parse_vars();
 
 #ifdef PARSE_DEBUG
-for(i=0;i<_NARGS;i++)
-printf("do_bat:2:bf->args[%d]=(%s) varg[%d]=(%s)\n",i,bf->args[i],i,varg[i]);
+    for(i=0;i<_NARGS;i++)
+	printf("do_bat:2:bf->args[%d]=(%s) varg[%d]=(%s)\n",i,bf->args[i],i,varg[i]);
 #endif
 
-	if(redir(com)==0) {
-		com[0] = 0;
-		arg[0] = com;
-		return;
-	}
-	ll=strlen(com);
+    if(redir(com)==0) {
+	com[0] = 0;
+	arg[0] = com;
+	return;
+    }
+    ll=strlen(com);
 
-	na = parsecom(com,ll);
-	fclose(fp);
+    na = parsecom(com,ll);
+    fclose(fp);
 
 #ifdef BAT_DEBUG
-printf("do_bat:3:ll=%d com=/%s/\n",i,com);
+    printf("do_bat:3:ll=%d com=/%s/\n",i,com);
 #endif
 
-/* Check for ctrl break */
+    /* Check for ctrl break */
+    if (bat_check_cbreak()) {
+#ifdef BAT_DEBUG
+	puts("C-Break!");
+#endif
+	return;
+    }
 
-	if(cBreak) {
-		if(bf->in) {
-			do {
-				fprintf(stderr,"Abort DOG batch (Y/N)? ");
-				ch = getchar();
-				if((ch=='y') || (ch=='Y')) {
-					clearbat();
-					cBreak = 0;
-					break;
-				}
-				else if((ch=='n') || (ch=='N')) {
-					cBreak = 0;
-					break;
-				}
-			} while (1);
-			fprintf(stderr,"\n");
-			return;
-		}
-		else {
-			cBreak = 0;
-			return;
-		}
-	}
-
-	do_batcommand(na);
+    do_batcommand(na);
 
 #ifdef BAT_DEBUG
 printf("do_bat:7:i=%u\n",i);
 #endif
 	return;
+}
+
+/**************************************************************************/
+
+BYTE bat_check_cbreak(void)
+{
+    BYTE stop=0, key;
+    if(cBreak) {
+#ifdef DOG_DEBUG
+	fprintf(stderr,"Ctrl Break found!\n");
+#endif
+	if(bf->in) {
+	    do {
+		fprintf(stderr, "Abort DOG batch (Y/N)? ");
+		key = read_key();
+		if(key=='Y') {
+		    clearbat();
+		    cBreak = 0;
+		    stop = 1;
+		    break;
+		}
+		else if(key=='N') {
+		    cBreak = 0;
+		    break;
+		}
+	    } while (1);
+	    fputs("", stderr);
+	    return stop;
+	}
+	else {
+	    cBreak = 0;
+	    return stop;
+	}
+    }
+    return 0;
+}
+
+/**************************************************************************/
+
+BYTE read_key(void)
+{
+    BYTE c;
+    asm mov ah, 01h; /* read key with echo */
+    asm int 21h;
+    asm mov c,al;
+
+    if(c >= 'a') {
+	c -= ('a' - 'A'); /* uppercase the character */
+    }
+    return c;
 }
 
 /**************************************************************************/
@@ -278,8 +306,8 @@ void do_batcommand(BYTE n)
 			do_ca( n);
 			return;
 		 case B_C_DO :
-			printf("do_batc:3:command=(%s)\n",batch[i]);
-			return;
+		     do_do(n);
+		     return;
 		 case B_C_44 :
 		     do_44(n);
 			return;
@@ -593,7 +621,7 @@ void do_if(BYTE n)
       }
       break;
   default:
-      puts("syntax error in command IF:\n"
+      puts("Syntax error in command IF:\n"
 	   "Syntax: IF CONDITION <COMMAND1> [ELSE <COMMAND2>]");
       return;
   }
@@ -605,8 +633,194 @@ void do_if(BYTE n)
   return;
 }
 
+/***************************************************************************
+
+Syntax: DO <COMMAND> [WHILE <CONDITION>]
+Parameters:
+   COMMAND   - The command to repeat.
+   CONDITION - The condition for repeating the command.
+ CONDITION can take the form:
+      ERROR [IS|NOT] <NUMBER>     - NUMBER compared to the ERRORLEVEL
+      <VARIABLE> [IS|NOT] <VALUE> - VARIABLE is an environment variable
+                                 and is compard to VALUE
+      [NOT] EXIST <FILE>       - Returns true as long as FILE exists.
+     IS - is optional and has no effect other than makes the statement
+          look a little bit more like English.
+    NOT - reverses the condition value in all cases.
+
+ Without a CONDITION the COMMAND is repeated as long as it returns 0
+ as its exit code.
+
+*****************************************************************************/
+
+void do_do(BYTE n)
+{
+    BYTE i, cond=0, cmd=1, nn=0;
+
+    for(i=1; i < n; i++) {
+	if (stricmp(arg[i], "WHILE") == 0) {
+	    cond = i+1;
+	    break;
+	}
+    }
+#ifdef BAT_DEBUG
+    printf("do_do():1:cond=%d cmd=%d n=%d\n", cond, cmd, n);
+#endif
+
+    if (n < 2) {
+	puts("Syntax error in command DO:\n"
+	     "Syntax: DO <COMMAND> [WHILE <CONDITION>]");
+    }
+#ifdef BAT_DEBUG
+    printf("do_do():2:cond=%d cmd=%d n=%d\n", cond, cmd, n);
+#endif
+
+    /* no condition go by errorlevel of command */
+    if (cond == 0) {
+	nn = n-cmd;
+	build_cmd(cmd, n);
+#ifdef BAT_DEBUG
+	printf("do_do():4:cond=%d cmd=%d nn=%d errorlevel=%d\n", cond, cmd, nn, errorlevel);
+#endif
+	while(errorlevel == 0) {
+	    printf("do_do:5:nn = %d\n",nn);
+	    for(i=0;i<nn;i++)
+		printf("do_do:5:arg[%d]=(%s)\n",i,arg[i]);
+	    /* Check for ctrl break */
+	    if (bat_check_cbreak()) {
+#ifdef BAT_DEBUG
+		puts("C-Break!");
+#endif
+		return;
+	    }
+	    do_batcommand(nn);
+	}
+	return;
+    }
+    nn = n - cmd - (cond-1);
+    build_cmd(cmd, cond-1);
+#ifdef BAT_DEBUG
+    printf("do_do():5:cond=%d cmd=%d n=%d, nn=%d\n", cond, cmd, n, nn);
+#endif
+    /* parse condition */
+    while(is_cond(cond, n)) {
+#ifdef BAT_DEBUG
+	printf("do_do:6:nn = %d\n",nn);
+	for(i=0;i<nn;i++)
+	    printf("do_do:6:arg[%d]=(%s)\n",i,arg[i]);
+#endif
+
+	/* Check for ctrl break */
+	if (bat_check_cbreak()) {
+#ifdef BAT_DEBUG
+	    puts("C-Break!");
+#endif
+	    return;
+	}
+	do_batcommand(nn);
+    }
+}
+
 /***************************************************************************/
-/*
+
+static BYTE is_cond(BYTE start, BYTE end)
+{
+    BYTE cond_type, el=0, *filename=NULL, *var=NULL, *val=NULL, eval[80];
+
+#ifdef BAT_DEBUG
+    printf("is_cond():1:start=%d end=%d\n", start, end);
+#endif
+    if (end < (start + 1)) {
+	puts("Syntax error in command DO:\n"
+	     "Syntax: DO <COMMAND> [WHILE <CONDITION>]");
+	return 0;
+    }
+
+    if(stricmp(arg[start],"ERROR") == 0) {
+	if (stricmp(arg[start+1], "NOT") == 0) {
+	    if  (end >= (start + 2)) {
+		cond_type = COND_ERROR_NOT;
+		el = atoi(arg[start+2]);
+	    }
+	}
+	else if (stricmp(arg[start+1], "IS") == 0) {
+	    if  (end >= (start + 2)) {
+		cond_type = COND_ERROR;
+		el = atoi(arg[start+2]);
+	    }
+	}
+	else {
+	    cond_type = COND_ERROR;
+	    el = atoi(arg[start+1]);
+	}
+#ifdef BAT_DEBUG
+	printf("is_cond():4:errorlevel=%u el=%u cond_type=%02Xh\n",
+	       errorlevel, el, cond_type);
+#endif
+    }
+    else if ((stricmp(arg[start], "EXIST") == 0) || (stricmp(arg[start+1], "EXIST") == 0)) {
+	if (stricmp(arg[start], "NOT") == 0) {
+	    if  (end >= (start + 2)) {
+		cond_type = COND_EXIST_NOT;
+		filename = arg[start+2];
+	    }
+	}
+	else {
+	    cond_type = COND_EXIST;
+	    filename = arg[start+1];
+	}
+    }
+    else {
+	if (stricmp(arg[start+1], "NOT") == 0) {
+	    if (end >= (start + 2)) {
+		var = arg[start];
+		val = arg[start+2];
+		cond_type = COND_VAR_NOT;
+	    }
+	}
+	else if (stricmp(arg[start+1], "IS") == 0) {
+	    if (end >= (start + 2)) {
+		var = arg[start];
+		val = arg[start+2];
+		cond_type = COND_VAR;
+	    }
+	}
+	else {
+	    var = arg[start];
+	    val = arg[start+1];
+	    cond_type = COND_VAR;
+	}
+    }
+
+#ifdef BAT_DEBUG
+    printf("is_cond():5:start=%d end=%d cond_type=%02Xh\n", errorlevel, el, cond_type);
+#endif
+
+    switch(cond_type) {
+    case COND_ERROR:
+#ifdef BAT_DEBUG
+	printf("is_cond():6:errorlevel=%u el=%u\n", errorlevel, el);
+#endif
+	return (errorlevel == el);
+    case COND_ERROR_NOT:
+	return (errorlevel != el);
+    case COND_EXIST:
+	return file_exist(filename);
+    case COND_EXIST_NOT:
+	return !file_exist(filename);
+    case COND_VAR:
+	return ((getevar(var, eval, 80) != NULL) && (strncmp(eval, val, 80)==0));
+    case COND_VAR_NOT:
+	return ((getevar(var, eval, 80) == NULL) || (strncmp(eval, val, 80)!=0));
+    default:
+	puts("Syntax error in command DO:\n"
+	     "Syntax: DO <COMMAND> [WHILE <CONDITION>]");
+	return 0;
+    }
+}
+
+/***************************************************************************
+
 Syntax: 44 <VAR> IN <SET> DO <COMMAND>
 Parameters:
    VAR     - A variable name, use as %%VAR%% as a placeholder in COMMAND
@@ -654,6 +868,13 @@ void do_44(BYTE n)
 #ifdef BAT_DEBUG
 	    printf("do_44():2-%d:arg[%d]=%s '%s'='%s'\n", i, i, arg[i],var, word);
 #endif
+	}
+	/* Check for ctrl break */
+	if (bat_check_cbreak()) {
+#ifdef BAT_DEBUG
+	    puts("C-Break!");
+#endif
+	    break;
 	}
 	do_batcommand(nn);
     } while((word = strtok(NULL, ",")) != NULL);

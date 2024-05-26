@@ -330,15 +330,15 @@ Effect: Calls the DOGFILE from another.
         in the DOGfile where CA was executed from.
 
 
-Syntax: DO <COMMAND> [WHILE <CONDITION>]  -- NOT IMPLEMENTED YET
+Syntax: DO <COMMAND> [WHILE <CONDITION>]
 Parameters:
    COMMAND   - The command to repeat.
    CONDITION - The condition for repeating the command.
  CONDITION can take the form:
       ERROR [IS|NOT] <NUMBER>     - NUMBER compared to the ERRORLEVEL
       <VARIABLE> [IS|NOT] <VALUE> - VARIABLE is an environment variable
-                                 and is compard to VALUE
-      [NOT] EXIST <FILE>       - Returns true as long as FILE exists.
+                                    and is compard to VALUE
+      [NOT] EXIST <FILE>          - Returns true as long as FILE exists.
      IS - is optional and has no effect other than makes the statement
           look a little bit more like English.
     NOT - reverses the condition value in all cases.

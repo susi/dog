@@ -1099,7 +1099,7 @@ void set_psp(void)
 
 int main(int nargs, char *argv[])
 {
-  BYTE i,na,ch;
+  BYTE i,na;
 
 
   printf("_psp: %04Xh _heaplen: %04Xh _stklen: %04Xh DOS: %u.%u\n", _psp, _heaplen, _stklen, _osmajor, _osminor);
@@ -1176,34 +1176,12 @@ int main(int nargs, char *argv[])
     D = getcur(P) + 'A';
 
     /* Check for cBreak                                               **/
-
-    if(cBreak == 1) {
-      if(bf->in) {
-        do {
-          fprintf(stderr,"Abort DOG batch (Y/N)? ");
-          ch = getchar();
-          if((ch=='y') || (ch=='Y')) {
-            clearbat();
-            cBreak = 0;
-            break;
-          }
-          else if((ch=='n') || (ch=='N')) {
-            cBreak = 0;
-            break;
-          }
-        } while (1);
-        fprintf(stderr,"\n");
-        continue;
-      }
-      else {
-#ifdef DOG_DEBUG
-        fprintf(stderr,"Ctrl Break found!\n");
+    if (bat_check_cbreak()) {
+#ifdef BAT_DEBUG
+	puts("C-Break!");
 #endif
-        cBreak = 0;
-        continue;
-      }
+	continue;
     }
-
 
     if (eh == 0) {
 

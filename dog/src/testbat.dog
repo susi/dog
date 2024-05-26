@@ -71,3 +71,23 @@ if animal IS fox eh test11 PASS ELSE eh test11 FAIL
 eh test12: 44 LOOP with IF
 se animal fox
 44 animal in dog,cat,bear,wolf,mouse,rat,fox do if animal IS %%animal%% eh test12 PASS
+
+eh test13: DO WHILE ERROR IS 1
+generr 1
+do generr -r 2 WHILE ERROR IS 1
+eh test13 PASS
+
+eh test14: DO WHILE ERROR 1
+generr 1
+do generr -r 2 WHILE ERROR 1
+eh test14 PASS
+
+eh test15: DO WHILE ERROR NOT 1
+generr 0
+do generr -r 2  WHILE ERROR NOT 1
+eh test15 PASS
+
+eh test16: DO WHILE FOO IS BAR
+se FOO BAR
+do se FOO BAZ WHILE FOO IS BAR
+eh test16 PASS

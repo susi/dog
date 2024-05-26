@@ -351,7 +351,7 @@ void do_ls(void)
 	}
 	printf("Files matching %s\n\n", strupr(ls_f.patt[j]));
 	if ((ls_f.flags & FLAG_W) == 0) {
-	    printf("    size   ASRHD   yyyy-mm-dd   hh:mm.ss   name\n\n");
+	    printf("      size   ASRHD   yyyy-mm-dd   hh:mm.ss   name\n\n");
 	}
 	len = strlen(ls_f.patt[j]);
 #ifdef LS_DEBUG
