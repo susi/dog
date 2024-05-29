@@ -172,14 +172,18 @@ History
 2024-05-20 - Fixed init code and setting of the PSP when -P is given.
              Also updated environment and alias blocks setup.
              Fixed calls to int21/AH=25h, to use DS, not ES for the segment. -WB
+2024-05-27 - Changed getln to use DOS int21h/ah=0Ah to read input. -WB
 */
 
 #include "dog.h"
 #include <mem.h>
 
+static BYTE getln(void);
+
 /* Define Global Variables */
 BYTE Xit = 0, Xitable = 1, eh = 0, D=0, P[MAXDIR]={0};
-BYTE comline[200]= {0}, *com = comline, *arg[_NARGS], varg[_NARGS][200], *prompt;
+struct linebuffer combuffer;
+BYTE *com = NULL, *arg[_NARGS], varg[_NARGS][200], *prompt;
 BYTE commands[_NCOMS][3] = {
     "AL",
     "CC",
@@ -244,7 +248,7 @@ Structure of the flags variable. Tells which flags were given to DOG
 BYTE flags=0;
 BYTE DOG_ma = DOG_MA, DOG_mi = DOG_MI, DOG_re = DOG_RE;
 WORD PSP=0;
-BYTE cBreak = 0;
+BYTE cBreak = 0, in_getln=0;
 WORD my_i22_s, my_i22_o;
 WORD my_i23_s, my_i23_o; /* When making a permanent shell take over */
 WORD my_i24_s, my_i24_o; /* int 23 and int 24. */
@@ -359,10 +363,14 @@ BYTE initialize(int nargs, char *args[])
     set_error_ints();
 
     /* make int D0 point to D0GFunc */
-    make_intd0();
+    /* this should also be int 2fh/ah=d0 */
+    set_intd0();
 
+    /* For now don't grab 2e. It's command.com */
+#ifdef HAVE_2E
     /* make int 2e point to D0GFunc */
     make_int2e();
+#endif
 
     /* point int 22 termination address at DOG loop*/
     /* and save it to i22_s:i22_o */
@@ -373,12 +381,6 @@ BYTE initialize(int nargs, char *args[])
     asm pop ds;
     asm mov my_i22_s,ds;
     asm int 21h;
-
-#if 0
-    for(i=0;i<_NCOMS;i++) { /* TEMPORARY ONLY!!! */
-	command_help[i] = 0;
-    }
-#endif
 
 #ifdef DOG_DEBUG
   printf("initialize():0:PSP = %x PPID = %x\n",_psp,peek(_psp,PSP_PPID_OFS));
@@ -546,30 +548,48 @@ BYTE initialize(int nargs, char *args[])
 
 /**************************************************************************/
 
-
-
-/**************************************************************************/
-
-
-BYTE getln(BYTE *s, BYTE lim)
+void buffered_input(struct linebuffer *buffer)
 {
-  BYTE i;
-
-  memset(s,0,lim);
-
-  gets(s);
-
-  i = strlen(s);
-
 #ifdef DOG_DEBUG
-  fprintf(stderr,"getln:2: i:%d s:!%s!\n",i,s);
+    printf("calling int21h/ah=0Ah buffer size=%d buffer=%p\n",
+	   buffer->size, buffer->buffer);
 #endif
-
-  return i;
+    asm mov dx, buffer;
+    asm mov ah, 0Ah;   /* buffered input */
+    asm int 21h;
+    buffer->buffer[buffer->length] = '\0';
+    puts("");
+#ifdef DOG_DEBUG
+    printf("int21h/ah=0Ah got %d characters = '%s'\n", buffer->length, buffer->buffer);
+#endif
+    return;  /* buffer is populated */
 }
 
 /**************************************************************************/
-BYTE parsecom(BYTE * line,BYTE ll)
+/*
+ * Reads a line of buffered input.
+ * Sets com to point at the input buffer.
+ */
+static BYTE getln(void)
+{
+  combuffer.size=120; /* leaving futture space , for alias expansion and such*/
+  combuffer.length=0;
+  com = combuffer.buffer;
+
+  in_getln = 1;
+  buffered_input(&combuffer);
+  in_getln = 0;
+
+#ifdef DOG_DEBUG
+  fprintf(stderr,"getln:2: cb.size: %d cb.length:%d cb.buffer:!%s!\n",
+	  combuffer.size, combuffer.length, combuffer.buffer);
+#endif
+
+  return combuffer.length;
+}
+
+/**************************************************************************/
+BYTE parsecom(BYTE * line, BYTE ll)
 {
   BYTE i=0,j=0;
   BYTE ename[80],eval[80];
@@ -624,10 +644,9 @@ BYTE parsecom(BYTE * line,BYTE ll)
 
 BYTE getcom(BYTE *com)
 {
-
   BYTE ln,r,i;
 
-  ln = getln(com, 200);
+  ln = getln();
 
   if(redir(com)==0) {
     com[0] = 0;
@@ -916,7 +935,7 @@ void printprompt(void)
       return;
   }
   memset(prompt,'\0',200);
-  memset(eval,'\0',80);
+  memset(eval,'\0',120);
 
   if(getevar("PROMPT",prompt,200) != NULL) {
       k = strlen(prompt);
@@ -1100,17 +1119,20 @@ void set_psp(void)
 int main(int nargs, char *argv[])
 {
   BYTE i,na;
+  com = combuffer.buffer;
 
-
+#ifdef DOG_DEBUG
   printf("_psp: %04Xh _heaplen: %04Xh _stklen: %04Xh DOS: %u.%u\n", _psp, _heaplen, _stklen, _osmajor, _osminor);
-
   printf("Coreleft() = %lu bytes\n",  coreleft());
   printf("PSP:%04Xh _heaplen: %04Xh _stklen: %04Xh\n", _psp, _heaplen, _stklen);
-
   printf("_psp: %04Xh _heaplen: %04Xh _stklen: %04Xh DOS: %u.%u\n", _psp, _heaplen, _stklen, _osmajor, _osminor);
+#endif
 
   na = initialize(nargs, argv);
+
+#ifdef DOG_DEBUG
   printf("_psp: %04Xh _heaplen: %04Xh _stklen: %04Xh DOS: %u.%u\n", _psp, _heaplen, _stklen, _osmajor, _osminor);
+#endif
 
   if((flags & FLAG_P) == FLAG_P) {
       arg[0] = "c:\\dog.dog";
@@ -1126,9 +1148,7 @@ int main(int nargs, char *argv[])
   /*******************************.D.O.G. .L.O.O.P****************************/
 
   for(EVER) {
-
     asm DOG_loop:
-
 
     if(fout.redirect) {
 #ifdef REDIR_DEBUG
@@ -1172,7 +1192,7 @@ int main(int nargs, char *argv[])
     }
 
     for(i=0;i<MAXDIR;i++)
-    P[i] = 0;
+      P[i] = 0;
     D = getcur(P) + 'A';
 
     /* Check for cBreak                                               **/
@@ -1198,7 +1218,7 @@ int main(int nargs, char *argv[])
           arg[0] = com;
         }
 
-        na = parsecom(com,strlen(com));
+        na = parsecom(com, strlen(com));
         do_command(na);
         dup2(IN,fileno(stdin));
         close(pip.phandle);
@@ -1272,16 +1292,10 @@ int main(int nargs, char *argv[])
 
   /*******************************.D.O.G. .L.O.O.P****************************/
 
-  /* restore */
-  asm mov ax,25d0h;
-  asm mov dx,id0_s;
-  asm push dx;
-  asm pop ds;
-  asm mov dx,id0_o;
-  asm int 21h;
+  restore_intd0();
+  restore_error_ints();
 
   return 0;
-
 }
 
 /*****************************
@@ -1661,12 +1675,16 @@ void do_exe(BYTE n)
 #endif
     bf->na = n;
     bf->line = 0;
-    memcpy(bf->cline,comline,200);
+    memcpy(bf->cline, com, 200);
     for(i=0;i<_NARGS;i++) {
-      if(arg[i] != 0) {
-        bf->args[i] = (bf->cline) + (arg[i] - comline);
+      if(arg[i] != NULL) {
+	  /* Transfer the pointers with same offsets.
+	     What could possibly go wrong? >_<
+	   */
+	  bf->args[i] = bf->cline + (arg[i] - com);
 #ifdef BAT_DEBUG
-        printf("do_exe:28:bf->args[%u](%x) =  (bf->cline(%x)) + (arg[%u](%x) - comline(%x))\n",i,bf->args[i],bf->cline,i,arg[i], comline);
+        printf("do_exe:28:bf->args[%u](%x) =  bf->cline(%x) + (arg[%u](%x) - com(%x))\n",
+	       i, bf->args[i], bf->cline, i, arg[i], com);
 	printf("do_exe:29:bf->args[i] = %s\n",bf->args[i]);
 #endif
       }
@@ -1692,10 +1710,10 @@ void do_exe(BYTE n)
       printf("Program %s returned %d.\n",trunam,errorlevel & 0xFF);
     break;
    case 1:
-    printf("%s aborted by Ctrl-C.\n",trunam);
+    printf("\n%s aborted by Ctrl-C.\n",trunam);
     break;
    case 2:
-    printf("%s: critical error abort.\n",trunam);
+    printf("\n%s: critical error abort.\n",trunam);
     return;
    case 3:
     printf("TSR %s loaded in to memory.\n",trunam);

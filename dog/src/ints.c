@@ -23,13 +23,16 @@ History
 2024-05-20 - Fixed calls to int21/AH=25h, to use DS, not ES for the segment.
              Started drafting DOG func 3 - Run command.
              Also in plans Installable commands. - WB
-
+2024-05-29 - Implemented a proper C-c handler. - WB
 */
 #include "dog.h"
 
-void DOGError(void);
+static void DOGCtrlC(void);
+static void DOGError(void);
 void DOGFunc(void);
 
+BYTE cCQuestion[]="\r\nBark! Terminate program (Y/N)? $";
+BYTE cCrn[]="\r\n$";
 
 void save_error_ints(void)
 {
@@ -57,6 +60,8 @@ void set_error_ints(void)
     WORD i23_off, i23_seg;
     WORD i24_off, i24_seg;
 
+    asm xor ah,ah;       /* set inCc to 0 */
+    asm mov cs:inCc, ah
     /* set and save the CBreak handler address */
     asm mov ax,2523h;
     asm mov dx,offset CBreak;
@@ -92,7 +97,31 @@ void set_error_ints(void)
     return;
 }
 
-void make_int2e(void)
+void restore_error_ints(void)
+{
+    /* restore the CBreak handler address */
+    asm mov  ax, 2523h;
+    asm mov  dx, i23_o;
+    asm mov  bx, i23_s;
+    asm push bx;
+    asm pop  ds;
+    asm int 21h;         /* int 21h/ah=25h,al=23h - restore IRQ vector 23 */
+    asm push cs;
+    asm pop  ds;
+
+    /* restore the Critical Error handler address */
+    asm mov  ax, 2524h;
+    asm mov  dx, i24_o;
+    asm mov  bx, i24_s;
+    asm push bx;
+    asm pop  ds;
+    asm int 21h;         /* int 21h/ah=25h,al=24h - restore IRQ vector 24 */
+    asm push cs;
+    asm pop  ds;
+    return;
+}
+
+void set_int2e(void)
 {
     WORD i2eseg, i2eoff;
     WORD my_2e_s, my_2e_o;
@@ -120,7 +149,7 @@ void make_int2e(void)
     return;
 }
 
-void make_intd0(void)
+void set_intd0(void)
 {
     WORD id0seg, id0off;
     WORD my_d0_s, my_d0_o;
@@ -148,39 +177,110 @@ void make_intd0(void)
     return;
 }
 
-void DOGError(void)
+void restore_intd0(void)
 {
-/*********************/
-    asm CBreak:
-    asm push ax;
-    asm push ds;
-    asm push bx;
-    asm MOV ah, 51h;     /* Get PSP / PID */
-    asm INT 21h;
-    asm CMP cs:_psp, bx;
-    asm je localCBreak;
-    asm pop bx;
-    asm pop ds;
-    asm pop ax;
-    asm pop bp;
-    asm stc;
-    asm db 0cbh; /* retf*/
-localCBreak:
-    asm pop bx;
-    asm MOV ax, cs;
-    asm MOV ds, ax;
-    asm push ax;
-    asm MOV al, 01h;
-    asm MOV cBreak, al;
-    asm pop ax;
-    asm pop ds;
-    asm pop ax;
-    asm clc;
-    asm pop bp;
-    asm db 0cah; /* retf 2 */
-    asm dw 0200h;
+  asm mov ax, 25d0h;
+  asm mov dx, id0_o;
+  asm mov bx, id0_s;
+  asm push bx;
+  asm pop ds;
+  asm int 21h;
+  asm push cs;
+  asm pop ds;
+}
 
-/*********************/
+static void DOGCtrlC(void)
+{
+/****************************/
+/*  Ctrl-C handler (int 23h)
+/****************************/
+    asm CBreak:
+    /* first check if we're already working on a C-c, if so, ignore */
+    asm dec cs:inCc;  /* inCc is 1 when handling a C-c. */
+    asm jnz newCc;    /* if inCc was 0, it will now be FF, so not 0 */
+    asm inc cs:inCc;  /* Already handling C-c, inc inCc (back to 1) and ignore C-c */
+    asm clc;
+    asm retf;
+    asm db 0;            /* padding */
+    asm inCc db 0;       /* This is the variable inCc, sneakily in cs */
+newCc:
+    asm push ax;         /* save ax */
+    asm mov ah, 1;
+    asm mov cs:inCc, ah; /* set inCc to 1 */
+    asm push ds;         /* save ds, and set our own ds */
+    asm mov ax, cs;
+    asm mov ds, ax;      /* okay DS is now correct we can continue normally,*/
+                         /* stack is not ours, though. */
+    asm push bx;         /* now check if PPS is DOG or someone else */
+    asm mov  ah, 62h;    /* Get PSP / PID */
+    asm int 21h;
+    asm cmp _psp, bx;
+    asm je  localCBreak;
+    asm push dx;         /* external program, ask question from the user. */
+cCQQ:
+    asm mov ah, 09h;
+    asm mov dx, OFFSET cCQuestion;
+    asm int 21h;         /* Ask the question */
+    asm mov ah, 01h;
+    asm int 21h;         /* read key with echo */
+    asm pop dx;          /* dx no longer needed, pop it */
+    asm cmp al, 'Y';
+    asm jz cCterminate;
+    asm cmp al, 'y';
+    asm jz cCterminate;
+    asm cmp al, 'N';
+    asm jz cCignore;
+    asm cmp al, 'n';
+    asm jz cCignore;
+    asm jmp cCQQ;
+localCBreak:
+    asm mov al, in_getln; /* if reading input (waiting in int21/AH=0ah;) */
+                          /* we need to print a new line and the prompt */
+    asm or al, al;
+    asm jz cCsetFlag;     /* No we're not, set C-c flag */
+    /* We're actually on the command line waiting for input and user pressed C-c */
+    /* save all registers, printprompt migte use them all */
+    asm push ax;
+    asm push bx;
+    asm push cx;
+    asm push dx;
+    asm push bp;
+    asm push si;
+    asm push di;
+    puts("");
+    printprompt();      /* offset 0d81h */
+    asm pop di;
+    asm pop si;
+    asm pop bp;
+    asm pop dx;
+    asm pop cx;
+    asm pop bx;
+    asm pop ax;
+    asm jmp cCignore;   /* we're done. */
+cCsetFlag:
+    asm mov al, 01h;    /* Set C-c flag so that we catch it */
+                        /* and handle it internally, eg DOGfiles, parsing input... */
+    asm mov cBreak, al;
+    asm jmp cCignore;
+cCterminate:
+    asm stc;            /* setc + retf = abort with errorlevel 0, */
+		        /* but termination reason C-c */
+    asm jmp cCret;
+cCignore:
+    asm clc;            /* clc + retf = continue */
+cCret:
+    asm pop bx;
+    asm pop ds;
+    asm pop ax;
+    asm dec cs:inCc;    /* done with C-c set inCc to 0 */
+    asm retf;
+}
+
+static void DOGError(void)
+{
+/***************************************************/
+/*      Critical Error Handler (int 24h)           */
+/***************************************************/
     asm CritErr:
     asm mov al,03; /* FAIL */
     asm iret;
@@ -205,7 +305,7 @@ void DOGFunc(void)
     asm jmp D0G_naf;     /* not our function ignore.. */
 
 D0G_1:
-    asm MOV ax,DOG_VER; /* return the version of DOG loaded */
+    asm MOV ax, DOG_VER; /* return the version of DOG loaded */
     asm jmp D0G_ret;
 
 D0G_2:

@@ -490,7 +490,9 @@ WORD usedbytes(WORD block, WORD bsz)
 BYTE myallocmem(WORD *sz, WORD *seg) {
     WORD s,e,m;
 
+#ifdef DOG_DEBUG
     printf("alloc():1:Trying to allocate %04Xh paragraphs of data\n", *sz);
+#endif
     s = *sz;
     asm clc;
     asm mov ah,48h;    /* DOS Alloc mem */
@@ -498,7 +500,9 @@ BYTE myallocmem(WORD *sz, WORD *seg) {
     asm int 21h;
     asm jc mam_error;
     asm mov s, ax;
+#ifdef DOG_DEBUG
     printf("alloc():2:Allocated %04Xh paragraphs of data in seg %04Xh(%p)\n", *sz, s, seg);
+#endif
     *seg = s;
     return 0;
 

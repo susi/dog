@@ -76,7 +76,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _TAB 0x9;
 #define _SPC 0x32;
 #define _PROMPT "$l$p$g$_"
-#define _DOG_PROMPT "$n$_$_$b\\_$n$_$_$b$_.\\---.$n$_/$_$_$_,__/$n/$_$_$_/$p$_$_"
+#define _DOG_PROMPT "$n$_$_$b\\_$n$_$_$b$_.\\---.$n$_/$_$_$_,__/$n/$_$_$_/$p$_%%"
 #define _DOG_PROMPT2 "$_$_$_$__$n$_$_$_/$_\\__$n$_$_(_'$_$_@\\___$n$_$_/$_$_$_$_$_$_$_$_$_O$n$_/$_$_$_(_____/$n/_____/$_$_$_U$n$p$t$t"
 #define _COW_PROMPT "$t$_$_(__)$n$t$_$_~..~$n$_$_/-------(..)$n$_/$_|$_$_$_$_$_||$n*$_$_||----||$n$_$_$_^^$_$_$_$_^^$n$p$g"
 #define _COW_PROMPT2 "$t$_$_(__)$n$t$_$_(oo)$n$_$_/-------(..)$n$_/$_|$_$_$_$_$_||$n*$_$_||W---||$n$_$_$_^^$_$_$_$_^^$n$p$g"
@@ -86,7 +86,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
   |\_
   | .\---.
  /   ,__/
-/   /C:\DOG  _
+/   /C:\DOG % _
 
     _
    / \__
@@ -179,7 +179,7 @@ C:\DOG>_
 /* Define Global Variables */
 extern BYTE DOG_ma, DOG_mi, DOG_re;
 extern BYTE Xit, Xitable, eh, D, P[];
-extern BYTE comline[200], *com, *arg[_NARGS], varg[_NARGS][200], *prompt;
+extern BYTE *com, *arg[_NARGS], varg[_NARGS][200], *prompt;
 extern BYTE commands[_NCOMS][3];
 extern BYTE ext_commands[_NECOMS][3];
 extern BYTE command_des[_NCOMS][21];
@@ -202,7 +202,7 @@ extern BYTE flags;
 #define C_SE 8
 #define C_XX 9
 
-extern BYTE cBreak;
+extern BYTE cBreak, in_getln;
 extern WORD drvs,errorlevel,PSP;
 extern WORD envseg,envsz;
 extern WORD aliasseg,aliassz;
@@ -230,6 +230,14 @@ struct bfile {
 };
 
 extern struct bfile *bf;
+
+struct linebuffer {
+    BYTE size;        /* always 200, since that's the size of our buffer */
+    BYTE length;      /* number of characters read, set by DOS */
+    BYTE buffer[200]; /* the actual buffer ASCIIZ when coming from buffered_input */
+};
+
+extern struct linebuffer combuffer;
 
 struct red {
     BYTE name[MAXDIR];
@@ -271,6 +279,7 @@ struct pipe{
 void printprompt(void);
 BYTE initialize(int nargs, char* argv[]);
 BYTE parsecom(BYTE * line, BYTE ll);
+void buffered_input(struct linebuffer *buffer);
 BYTE getcom(BYTE *com);
 BYTE redir(BYTE *c);
 BYTE getcur(BYTE *p);
@@ -298,8 +307,10 @@ BYTE read_key(void);
 /* ints.c */
 void save_error_ints(void);
 void set_error_ints(void);
-void make_int2e(void);
-void make_intd0(void);
+void restore_error_ints(void);
+void set_int2e(void);
+void set_intd0(void);
+void restore_intd0(void);
 
 /* internal commands */
 void do_al(BYTE n);
