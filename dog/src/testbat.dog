@@ -91,3 +91,13 @@ eh test16: DO WHILE FOO IS BAR
 se FOO BAR
 do se FOO BAZ WHILE FOO IS BAR
 eh test16 PASS
+
+eh test17: IN FOO
+se FOO BAR
+in FOO
+if FOO NOT BAR eh test17 PASS ELSE eh test17 FAIL (%FOO%)
+
+eh test18: IN FOO Message
+se FOO
+in FOO Please type 'FOO' and press enter.
+if FOO IS FOO eh test18 PASS else eh test18 FAIL (%FOO%)

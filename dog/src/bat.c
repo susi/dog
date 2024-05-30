@@ -23,6 +23,7 @@ History
 2024-05-24 - new syntax for IF -WB
 2024-05-25 - Implemented do_44 for the 44 command. -WB
 2024-05-25 - Implemented do_do for the DO command. -WB
+2024-05-31 - Implemented do_in for the IN command. -WB
 
 */
 #include "dog.h"
@@ -318,7 +319,7 @@ void do_batcommand(BYTE n)
 			do_if(n);
 			return;
 		 case B_C_IN :
-			printf("do_batc:3:command=(%s)\n",batch[i]);
+			do_in(n);
 			return;
 		 case B_C_SH :
 			do_sh(n);
@@ -881,6 +882,7 @@ void do_44(BYTE n)
     free(s);
     free(varpos);
 }
+
 /***************************************************************************/
 
 static void build_cmd(BYTE start, BYTE end)
@@ -908,3 +910,40 @@ BYTE file_exist(const char * filename)
 found:
     return 1;
 }
+
+/***************************************************************************
+Syntax: IN <VARIABLE> [PROMPT]
+Parameters:
+   VARIABLE - The environmet variable to store the user input.
+   PROMPT   - An optional message to display to the user.
+              With no prompt DOG will display 'Enter value for VARIABLE: '
+****************************************************************************/
+
+void do_in(BYTE n)
+{
+    BYTE i, l, *var, prompt[200]={0};
+    struct linebuffer in;
+
+    if (n < 2) {
+	puts("Syntax Error!\nSyntax: IN <VARIABLE> [PROMPT]");
+	return;
+    }
+    in.size=200; /* leaving futture space , for alias expansion and such*/
+    in.length=0;
+
+    var = strupr(arg[1]);
+    if (n > 2) {
+	for (i=2; i<n; i++) {
+	    strcat(prompt, arg[i]);
+	    strcat(prompt, " ");
+	}
+	printf("%s", prompt);
+    } else {
+	printf("Value for %s? ", var);
+    }
+    buffered_input(&in);
+    setevar(var, in.buffer);
+    return;
+}
+
+/***************************************************************************/
