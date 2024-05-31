@@ -29,7 +29,7 @@ DEBUG=-D_DEBUG_ALL_ -N -Od
 LINKFLAGS=$(LINKFLAGS) -ll -lm -ls -lv
 !endif
 
-PROGS=bp.com br.com cl.com cp.com dt.com ls.com mv.com rm.com sz.com tp.com vf.com vr.com
+PROGS=bp.com br.com cl.com cp.com dt.com ls.com mv.com rm.com sz.com tp.com vf.com vr.com rt.com
 
 .c.com:
 	$(CC) $(CFLAGS) $(LINKFLAGS) $(DEBUG) $.
@@ -59,6 +59,11 @@ tp: tp.com
 vf: vf.com
 
 vr: vr.com
+
+rt.com: rm.com cp.com
+	$(CP) rm.com rt.com
+
+rt: rt.com
 
 install: $(PROGS)
 	$(CP) *.com ..\..\bin\

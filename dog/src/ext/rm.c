@@ -23,7 +23,7 @@ Wolf Bergenheim (WB)
 
 History
 18.03.00 - Extracted from DOG.C - WB
-
+2024-06-01 - Made the RT command buildable and documented.
 **************************************************************************/
 #include "ext.h"
 
@@ -285,7 +285,7 @@ void print_help(BYTE mode) {
 		printf("\nDIRECTORY is either a directory OR a filename preceeded by '@',\n");
 	printf(" in which case the file is opened and read, treating every\n"
 				 " line as a file/directory to remove.\n");
-	printf("\nRM is part of DOG (http://dog.sf.net/)\n");
+	printf("\nRM is part of DOG (https://dog.zumppe.net/)\n");
 	return;
 }
 

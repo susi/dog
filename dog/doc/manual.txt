@@ -264,19 +264,36 @@ Examples:
 
 
 
-Syntax: RM [OPTION]... <PATTERN>...
+Syntax: RM [OPTION]... <PATTERN|@FILE>...
 Parameters:
-   PATTERN - Pattern can be a number of paths including wild characters * and ?
+   PATTERN - Pattern can be a number of paths
+             including wild characters * and ?
              ? represents any single character and
              * represents 0 or more characters
              e.g. *.dog *.* DO?.COM, *.?
 
+     @FILE - Filename preceeded by '@' which is read and every line is
+             handled like a PATTERN
  OPTION can be one of these (in any order):
    -i - prompt (Yes/No/All) for each file or directory
    -r - recurse into sub-directories.
         Removes all fines in subdirectories too
    -v - print filename of each removed file
 Effect: Remove the file(s) and/or directory(ies) matching PATTERN
+
+
+
+
+Syntax: RT [OPTION]... <DIRECTORY|@FILE>...
+Parameters:
+   DIRECTORY - The directory(s) to delete.
+     @FILE - Filename preceeded by '@' which is read and every line is
+             handled like a DIRECTORY
+ OPTION can be one of these (in any order):
+   -i - prompt (Yes/No/All) for each file or directory
+   -v - print filename of each removed file
+Effect: Removes the tree(s) indicated by DIRECTORY(s) with all their
+        subfolders and files.
 
 
 

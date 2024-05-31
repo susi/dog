@@ -4,7 +4,7 @@
 
 #define _NCOMS 10
 #define _NBCOMS 8
-#define _NECOMS 11
+#define _NECOMS 12
 
 BYTE *dog_help="\n\nSyntax:DOG [-P|-E envsz|-A aliassz|-C command line]\n"
     "Parameters:\n"
@@ -147,6 +147,7 @@ BYTE ext_commands[_NECOMS][3] = {
     "LS",
     "MV",
     "RM",
+    "RT",
     "SZ",
     "TP",
     "VF",
@@ -160,6 +161,7 @@ BYTE ext_command_des[_NECOMS][21] = {
     "LiSt files          ",
     "MoVe file (rename)  ",
     "ReMove files        ",
+    "Remove Tree         ",
     "SiZe of files in dir",
     "TyPe                ",
     "VeriFy              ",
@@ -240,18 +242,32 @@ BYTE *ext_help[_NECOMS] = {
     "        mv dog.* wolf.*\n"
     "        mv *.o *.obj\n\n",
 
-    "\n\nSyntax: RM [OPTION]... <PATTERN>...\n"
+    "\n\nSyntax: RM [OPTION]... <PATTERN|@FILE>...\n"
     "Parameters:\n"
-    "   PATTERN - Pattern can be a number of paths including wild characters * and ?\n"
+    "   PATTERN - Pattern can be a number of paths\n"
+    "             including wild characters * and ?\n"
     "             ? represents any single character and\n"
     "             * represents 0 or more characters\n"
     "             e.g. *.dog *.* DO?.COM, *.?\n\n"
+    "     @FILE - Filename preceeded by '@' which is read and every line is\n"
+    "             handled like a PATTERN\n"
     " OPTION can be one of these (in any order):\n"
     "   -i - prompt (Yes/No/All) for each file or directory\n"
     "   -r - recurse into sub-directories.\n"
     "        Removes all fines in subdirectories too\n"
     "   -v - print filename of each removed file\n"
     "Effect: Remove the file(s) and/or directory(ies) matching PATTERN\n\n",
+
+    "\n\nSyntax: RT [OPTION]... <DIRECTORY|@FILE>...\n"
+    "Parameters:\n"
+    "   DIRECTORY - The directory(s) to delete.\n"
+    "     @FILE - Filename preceeded by '@' which is read and every line is\n"
+    "             handled like a DIRECTORY\n"
+    " OPTION can be one of these (in any order):\n"
+    "   -i - prompt (Yes/No/All) for each file or directory\n"
+    "   -v - print filename of each removed file\n"
+    "Effect: Removes the tree(s) indicated by DIRECTORY(s) with all their\n"
+    "        subfolders and files.\n\n",
 
     "\n\nSyntax: SZ [OPTION]... [PATTERN]...\n"
     "Parameters:\n"
