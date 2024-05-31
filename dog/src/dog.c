@@ -1148,7 +1148,10 @@ int main(int nargs, char *argv[])
   /*******************************.D.O.G. .L.O.O.P****************************/
 
   for(EVER) {
-    asm DOG_loop:
+      asm DOG_loop:
+#ifdef BAT_DEBUG
+      fprintf(stderr,"main:0 (DOG LOOP):bf:%x  bf->in=%d\n",&(*bf),bf->in);
+#endif
 
     if(fout.redirect) {
 #ifdef REDIR_DEBUG
@@ -1191,14 +1194,16 @@ int main(int nargs, char *argv[])
       ;
     }
 
-    for(i=0;i<MAXDIR;i++)
-      P[i] = 0;
+    for(i=0;i<MAXDIR;i++) {
+	P[i] = 0;
+    }
     D = getcur(P) + 'A';
 
     /* Check for cBreak                                               **/
     if (bat_check_cbreak()) {
 #ifdef BAT_DEBUG
-	puts("C-Break!");
+	printf("%s:%d C-Break!\n",__FILE__, __LINE__);
+	fprintf(stderr,"main:C-b:bf:%x  bf->in=%d\n",&(*bf),bf->in);
 #endif
 	continue;
     }
@@ -1206,10 +1211,16 @@ int main(int nargs, char *argv[])
     if (eh == 0) {
 
 #ifdef BAT_DEBUG
-      fprintf(stderr,"main:1:bf:%x  bf->in=%d\n",&(*bf),bf->nest);
+      fprintf(stderr,"main:1:bf:%x  bf->in=%d\n",&(*bf),bf->in);
 #endif
-      if (bf->in) {
-        do_bat();
+      if (bf->in == 1) {
+#ifdef BAT_DEBUG
+	  fprintf(stderr,"main:2:before do_bat()  bf->in=%d\n",&(*bf),bf->in);
+#endif
+	  do_bat();
+#ifdef BAT_DEBUG
+	  fprintf(stderr,"main:3:after do_bat()  bf->in=%d\n",&(*bf),bf->in);
+#endif
       }
       else if(pip.pstatus == 1) {
         strcpy(com,pip.pcmd);

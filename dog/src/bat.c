@@ -75,17 +75,17 @@ void prevbat(void)
 {
     struct bfile *obf;
 #ifdef BAT_DEBUG
-printf("prevbat:1:bf:%x bf->prev:%x\n",&(*bf),bf->prev);
+    printf("prevbat:1:bf:%x bf->prev:%x\n",&(*bf),bf->prev);
 #endif
     if(bf->prev != NULL) {
-        obf = bf->prev;
-        free(bf);
-        bf = obf;
+	obf = bf->prev;
+	free(bf);
+	bf = obf;
 #ifdef BAT_DEBUG
-printf("prevbat:2:bf:%x bf->prev:%x\n",&(*bf),bf->prev);
+	printf("prevbat:2:bf:%x bf->prev:%x\n",&(*bf),bf->prev);
 #endif
     }
-	return;
+return;
 }
 
 
@@ -95,24 +95,18 @@ void clearbat(void)
 {
     struct bfile *obf;
 #ifdef BAT_DEBUG
-printf("clearbat:1:bf:%x bf->prev:%x\n",&(*bf),bf->prev);
+    printf("clearbat:1:bf:%x bf->prev:%x\n",&(*bf),bf->prev);
 #endif
-    while(1) {
-        if(bf->prev != NULL) {
-            obf = bf->prev;
-            free(bf);
-            bf = obf;
-        }
-        else {
-            break;
-        }
+    while(bf->prev != NULL) {
+	obf = bf->prev;
+	free(bf);
+	bf = obf;
 #ifdef BAT_DEBUG
-printf("clearbat:2:bf:%x bf->prev:%x\n",&(*bf),bf->prev);
+	printf("clearbat:2:bf:%x bf->prev:%x\n",&(*bf),bf->prev);
 #endif
-
     }
 #ifdef BAT_DEBUG
-printf("clearbat:3:bf:%x bf->prev:%x\n",&(*bf),bf->prev);
+    printf("clearbat:3:bf:%x bf->prev:%x\n",&(*bf),bf->prev);
 #endif
     return;
 }
@@ -177,7 +171,7 @@ void do_bat(void)
     /* end of bfile:
        if nest = 0 return
        if nest > 0 return one lvl down */
-
+end_bat:
     if (fgets(com,200,fp) == NULL ) {
 	if(bf->nest == 0) {
 	    bf->in = 0;
@@ -200,6 +194,13 @@ void do_bat(void)
     for(i=0;i<_NARGS;i++)
 	printf("do_bat:2:bf->args[%d]=(%s) varg[%d]=(%s)\n",i,bf->args[i],i,varg[i]);
 #endif
+    /* Check for ctrl break */
+    if (bat_check_cbreak()) {
+#ifdef BAT_DEBUG
+	printf("%s:%d C-Break!\n",__FILE__, __LINE__);
+#endif
+	return;
+    }
 
     if(redir(com)==0) {
 	com[0] = 0;
@@ -218,49 +219,45 @@ void do_bat(void)
     /* Check for ctrl break */
     if (bat_check_cbreak()) {
 #ifdef BAT_DEBUG
-	puts("C-Break!");
+	printf("%s:%d C-Break!\n",__FILE__, __LINE__);
 #endif
 	return;
     }
-
     do_batcommand(na);
 
 #ifdef BAT_DEBUG
-printf("do_bat:7:i=%u\n",i);
+    printf("do_bat:7:i=%u\n",i);
 #endif
-	return;
+    return;
 }
 
 /**************************************************************************/
 
 BYTE bat_check_cbreak(void)
 {
-    BYTE stop=0, key;
+    BYTE key;
     if(cBreak) {
 #ifdef DOG_DEBUG
 	fprintf(stderr,"Ctrl Break found!\n");
 #endif
 	if(bf->in) {
 	    do {
-		fprintf(stderr, "Abort DOG batch (Y/N)? ");
+		fprintf(stderr, "\nAbort DOG batch (Y/N)? ");
 		key = read_key();
 		if(key=='Y') {
 		    clearbat();
 		    cBreak = 0;
-		    stop = 1;
-		    break;
+		    bf->in = 0;
+		    return 1;
 		}
 		else if(key=='N') {
 		    cBreak = 0;
-		    break;
+		    return 0;
 		}
 	    } while (1);
-	    fputs("", stderr);
-	    return stop;
 	}
 	else {
 	    cBreak = 0;
-	    return stop;
 	}
     }
     return 0;
@@ -628,6 +625,13 @@ void do_if(BYTE n)
   }
 
   if (nn > 0) {
+      /* Check for ctrl break */
+      if (bat_check_cbreak()) {
+#ifdef BAT_DEBUG
+	  printf("%s:%d C-Break!\n",__FILE__, __LINE__);
+#endif
+	  return;
+      }
       do_batcommand(nn);
   }
 
@@ -690,7 +694,7 @@ void do_do(BYTE n)
 	    /* Check for ctrl break */
 	    if (bat_check_cbreak()) {
 #ifdef BAT_DEBUG
-		puts("C-Break!");
+		printf("%s:%d C-Break!\n",__FILE__, __LINE__);
 #endif
 		return;
 	    }
@@ -714,7 +718,7 @@ void do_do(BYTE n)
 	/* Check for ctrl break */
 	if (bat_check_cbreak()) {
 #ifdef BAT_DEBUG
-	    puts("C-Break!");
+	    printf("%s:%d C-Break!\n",__FILE__, __LINE__);
 #endif
 	    return;
 	}
@@ -873,7 +877,7 @@ void do_44(BYTE n)
 	/* Check for ctrl break */
 	if (bat_check_cbreak()) {
 #ifdef BAT_DEBUG
-	    puts("C-Break!");
+	    printf("%s:%d C-Break!\n",__FILE__, __LINE__);
 #endif
 	    break;
 	}
@@ -928,7 +932,7 @@ void do_in(BYTE n)
 	puts("Syntax Error!\nSyntax: IN <VARIABLE> [PROMPT]");
 	return;
     }
-    in.size=200; /* leaving futture space , for alias expansion and such*/
+    in.size=200;
     in.length=0;
 
     var = strupr(arg[1]);
