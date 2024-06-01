@@ -437,7 +437,9 @@ NUM steps instead of just one to a maximum of 9.
 
 Syntax: TI [TIME]
 Parameters:
-   TIME - The number of millisenconds to wait.
-Effect: Waits TIME milliseconds before continuin the DOGFile execution
+   TIME - The number of seconds to wait.
+        - Without an argument TI waits forever for a key stroke
+Effect: Waits TIME seconds or for a key press before continuing the
+        DOGFile execution
 
 

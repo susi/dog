@@ -322,7 +322,7 @@ void do_batcommand(BYTE n)
 			do_sh(n);
 			return;
 		 case B_C_TI :
-			printf("do_batc:3:command=(%s)\n",batch[i]);
+			do_ti(n);
 			return;
 		 default :
 			do_command(n);
@@ -702,7 +702,7 @@ void do_do(BYTE n)
 	}
 	return;
     }
-    nn = n - cmd - (cond-1);
+    nn = cond-1-cmd;
     build_cmd(cmd, cond-1);
 #ifdef BAT_DEBUG
     printf("do_do():5:cond=%d cmd=%d n=%d, nn=%d\n", cond, cmd, n, nn);
@@ -950,4 +950,26 @@ void do_in(BYTE n)
     return;
 }
 
-/***************************************************************************/
+/***************************************************************************
+Syntax: TI [TIME]
+Parameters:
+   TIME - The number of seconds to wait.
+
+***************************************************************************/
+
+void do_ti(BYTE n)
+{
+    BYTE t;
+
+    if (n > 2) {
+	puts("Syntax Error!\nSyntax: TI [TIME]");
+	return;
+    }
+    if (n == 1) {
+	read_key();
+	return;
+    }
+    t = atoi(arg[1]);
+    sleep(t);
+    return;
+}

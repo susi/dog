@@ -402,8 +402,10 @@ BYTE *bat_help[_NBCOMS]={
 
     "\n\nSyntax: TI [TIME]\n"
     "Parameters:\n"
-    "   TIME - The number of millisenconds to wait.\n"
-    "Effect: Waits TIME milliseconds before continuin the DOGFile execution\n\n",
+    "   TIME - The number of seconds to wait.\n"
+    "        - Without an argument TI waits forever for a key stroke\n"
+    "Effect: Waits TIME seconds or for a key press before continuing the\n"
+    "        DOGFile execution\n\n",
 };
 
 BYTE *whatisdog = "DOG is an alternative command interpeter.\n"

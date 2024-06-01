@@ -331,6 +331,7 @@ void do_if(BYTE n);
 void do_44(BYTE n);
 void do_do(BYTE n);
 void do_in(BYTE n);
+void do_ti(BYTE n);
 
 /* command processing */
 void do_exe(BYTE n);
