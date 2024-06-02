@@ -1,5 +1,5 @@
 /*
-DOG.H   -  Alternate command processor for (currently) MS-DOS ver 3.30
+DEBUG.H   -  DEBUG definitions
 
 Copyright (C) 2024  Wolf Bergenheim
 
@@ -17,7 +17,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-
 
 #ifndef __DOG_DEBUG__
 #define __DOG_DEBUG__

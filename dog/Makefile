@@ -15,21 +15,84 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
+RM=bin\rm -v -f
+RT=bin\rt -v
+CP=bin\cp -v -f
+ZIP=zip -9
+VERSION=084b
+BIN=DOG$(VERSION)x.zip
+SRC=DOG$(VERSION)s.zip
+
+!if $(BORLAND)
+BCCDIR=$(BORLAND)\BIN
+!else
+BCCDIR=C:\BORLANDC\BIN
+!endif
+
+MAKE=$(MAKE) -DBORLAND=$(BORLAND)
+
 dog: src
 
 all: src
 
 src:
 	cd src
-	make all
+	$($(MAKE)) all
 	cd ..
 
 install:
 	cd src
-	make install
+	$(MAKE) -DCC=$(CC) -DLD=(LD) -DASM=$(ASM) install
 	cd ..
 
+bindist: install
+	$(ZIP) -@ tmp.zip <<!
+bin\*.com
+doc\manual.txt
+doc\readme_x.txt
+doc\rn080b.txt
+doc\rn081b.txt
+doc\rn082b.txt
+doc\rn083b.txt
+doc\rn084b.txt
+doc\ggpl.txt
+!
+	mkdir DOG
+	unzip tmp.zip -d DOG
+	$(RM) tmp.zip
+	$(ZIP) -r -m $(BIN) DOG
+
+srcdist:
+	$(ZIP) -@ tmp.zip <<!
+src\Makefile
+src\*.c
+src\*.h
+src\ext\Makefile
+src\ext\*.c
+src\ext\*.h
+src\util\Makefile
+src\util\*.c
+src\util\*.h
+Makefile
+doc\readme_s.txt
+doc\rn080b.txt
+doc\rn081b.txt
+doc\rn082b.txt
+doc\rn083b.txt
+doc\rn084b.txt
+doc\ggpl.txt
+bin
+!
+	mkdir DOG
+	unzip tmp.zip -d DOG
+	$(RM) tmp.zip
+	$(ZIP) -r -m $(SRC) DOG
+
+dist: install bindist srcdist
+
+.ignore
 clean:
 	cd src
-	make clean
+	$(MAKE) -DCC=$(CC) -DLD=(LD) -DASM=$(ASM) clean
 	cd ..
+	$(RM) $(BIN) $(SRC)

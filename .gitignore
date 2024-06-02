@@ -1,6 +1,10 @@
 *.EXE
 *.COM
 *.OBJ
+*.com
+*.exe
+*.obj
+*.map
 .gitignore
 *~
 *.MAP

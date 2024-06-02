@@ -33,9 +33,12 @@ Wolf Bergenheim (WB)
 #include <io.h>
 #include <process.h>
 
+/* TURBO C 2.01 doesn't like our debug file */
+#ifndef TC201
 /* See ..\debug.h for all the possible debugs. ext.h includes it
    _DEBUG_ALL_ turns all all debugging and turns off optimization */
 #include "debug.h"
+#endif
 
 #define BYTE unsigned char
 #define WORD unsigned int

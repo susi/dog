@@ -6,14 +6,19 @@ DOG:
 - Restored the old DOG prompt as the default when no PROMPT variable is set.
 - Now using Borland C++ 3.1 to build, and Make instead of the batch files
   in previous versions.
-- HH utilizes HELP to display more thorough help texts.
+- HH utilizes HELP to display more thorough help texts, through the alias HHH.
+  The example DOG.DOG file sets up the alias:
+  al hhh %DOGDIR%\bin\help.com
 - Updated the IF syntax to be more versatile and to be similar with do.
 - Implemented 44 and DO and IN and TI.
+- Fixed the Control-C implementation. Now it asks the user if they want to
+  abort the program.
 
 External commands:
 - CP: now takes more options: -i (interactive), -f (force)
 - VR: Fixed FreeDOS detection + print FD kernel string. Also added DOSbox detection.
 - LS: -w option to display a wide listing with no details -z to show human readable sizes.
+- RT: Is now built from the rm.c file in addition to RM.
 
 Utilities:
 - HELP - Expanded help to fully document all commands and DOG itself. The manual.txt is

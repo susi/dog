@@ -14,56 +14,61 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-CC=C:\BORLANDC\BIN\BCC
-LINK=C:\BORLANDC\BIN\TLINK
 CP=cp -v -f
+!ifndef BORLAND
+BORLAND=C:\BORLANDC
+!endif
+BCCDIR=$(BORLAND)\BIN
 
-#-w turn on all warnings
-CFLAGS=-B -d -mt -O1 -Z -Fs -f- -g15 -tDc -Fc -Tq -Tml -Tmx -Tt
-LINKFLAGS=/c /d /t /Tdc
+MAKE=$(MAKE) -DBORLAND=$(BORLAND)
+CC=$(BCCDIR)\BCC.EXE
+LD=$(BCCDIR)\TLINK.EXE
+ASM=$(BCCDIR)\TASM.EXE
+
+CFLAGS=-B -E$(ASM) -d -mt -O1 -Z -Fs -f- -g15 -tDc -Fc -Tq -Tml -Tmx -Tt
+LDFLAGS=/c /d /t /Tdc
 
 # See debug.h for all the possible debugs.
 # _DEBUG_ALL_ turns all all debugging and durns off optimization
 !if $(DEBUG)
 MAKEDEBUG=-DDEBUG
 DEBUG=-D_DEBUG_ALL_ -N -Od
-LINKFLAGS=$(LINKFLAGS) /l /m /s /v
+LDFLAGS=$(LDLAGS) /l /m /s /v
 !endif
 
 !if $(ED)
 MAKEDEBUG=-DED
 DEBUG=-D_ENV_DEBUG_ -N -Od
-LINKFLAGS=$(LINKFLAGS) /l /m /s /v
+LDFLAGS=$(LDFLAGS) /l /m /s /v
 !endif
 
 !if $(OG)
 MAKEDEBUG=-DOG
 DEBUG=-D_DOG_DEBUG_ -N -Od
-LINKFLAGS=$(LINKFLAGS) /l /m /s /v
+LDFLAGS=$(LDFLAGS) /l /m /s /v
 !endif
 
 !if $(BAT)
 MAKEDEBUG=-DBAT
 DEBUG=-D_BAT_DEBUG_ -N -Od
-LINKFLAGS=$(LINKFLAGS) /l /m /s /v
+LDFLAGS=$(LDFLAGS) /l /m /s /v
 !endif
 
 !if $(WARN)
 CFLAGS=$(CFLAGS) -w
-LINKFLAGS=$(LINKFLAGS)
+LDFLAGS=$(LDFLAGS)
 !endif
 
 DOG=dog.com
 PROGS=$(DOG)
-COMOBJ=c:\borlandc\lib\c0t.obj
+COMOBJ=$(BORLAND)\lib\c0t.obj
 OBJS=dog.obj bat.obj ints.obj alse.obj cc.obj cmrd.obj ct.obj eh.obj hh.obj xx.obj
 
 .c.obj:
 	$(CC) $(CFLAGS) -c $(DEBUG) $.
 
 dog.com: $(OBJS) dog.h debug.h
-	$(LINK) $(LINKFLAGS) @&&!
+	$(LD) $(LDFLAGS) @&&!
 $(COMOBJ) $(OBJS)
 $*
 $*

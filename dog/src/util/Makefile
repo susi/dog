@@ -14,23 +14,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-CC=C:\BORLANDC\BIN\BCC
 CP=cp -v -f
-CFLAGS=-B -d -mt -O1 -Z -Fs -f- -g15 -tDc -Fc -Tq -Tml -Tmx -Tt -I..
-LINKFLAGS=-lc -ld -lt -lTdc
+
+!ifndef BORLAND
+BORLAND=C:\BORLANDC
+!endif
+
+BCCDIR=$(BORLAND)\BIN
+
+CC=$(BCCDIR)\BCC.EXE
+LD=$(BCCDIR)\TLINK.EXE
+ASM=$(BCCDIR)\TASM.EXE
+CFLAGS=-B -E$(ASM) -d -mt -O1 -Z -Fs -f- -g15 -tDc -Fc -Tq -Tml -Tmx -Tt -I..
+LDFLAGS=-lc -ld -lt -lTdc
 
 # See debug.h for all the possible debugs. ext.h includes it
 # _DEBUG_ALL_ turns all all debugging and durns off optimization
 !if $(DEBUG)
 DEBUG=-D_DEBUG_ALL_ -N -Od -w
-LINKFLAGS=$(LINKFLAGS) -ll -lm -ls -lv
+LDFLAGS=$(LDFLAGS) -ll -lm -ls -lv
 !endif
 
 PROGS=head.com help.com which.com generr.com
 
 .c.com:
-	$(CC) $(CFLAGS) $(DEBUG) $.
+	$(CC) $(CFLAGS) $(LDFLAGS) $(DEBUG) $.
 
 all: $(PROGS)
 
@@ -61,7 +69,10 @@ rm.com: cp
 	cd ..\util
 
 install: cp.com $(PROGS)
-	$(CP) *.com ..\..\bin
+	$(CP) head.com ..\..\bin
+	$(CP) help.com ..\..\bin
+	$(CP) which.com ..\..\bin
+	$(CP) generr.com ..\..\bin
 
 .ignore
 clean: rm
