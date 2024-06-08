@@ -24,15 +24,61 @@ History
              Started drafting DOG func 3 - Run command.
              Also in plans Installable commands. - WB
 2024-05-29 - Implemented a proper C-c handler. - WB
+2024-06-08 - Implemented a proper Critical Error handler. - WB
 */
 #include "dog.h"
 
 static void DOGCtrlC(void);
-static void DOGError(void);
-void DOGFunc(void);
+void interrupt DOGError(WORD bp, WORD di, WORD si,
+			WORD ds, WORD es, WORD dx,
+			WORD ex, WORD bx, WORD ax);
+static BYTE ce_resolve(BYTE err, BYTE d, WORD driver_type, WORD error_code);
 
 BYTE cCQuestion[]="\r\nBark! Terminate program (Y/N)? $";
-BYTE cCrn[]="\r\n$";
+
+BYTE *ceDiskArea[]={
+    /* 00h */ "DOS area",
+    "--CODE ERROR--",
+    /* 02h */ "FAT",
+    "--CODE ERROR--",
+    /* 04h */ "root directory",
+    "--CODE ERROR--",
+    /* 06h */ "data area",
+};
+
+#define CE_IS_WRITE(ERR) (ERR & 0x01)
+#define CE_DISK_AREA(ERR) (ERR & 0x06)
+#define CE_FAIL_OK(ERR) (ERR & 0x08)
+#define CE_RETRY_OK(ERR) (ERR & 0x10)
+#define CE_IGNORE_OK(ERR) (ERR & 0x20)
+#define CE_IS_DISK_IO(ERR) ((ERR & 0x80) == 0x00)
+#define CE_DEV_IS_CHAR(DEV) ((DEV & 0x8000) == 0x8000)
+#define CE_IS_BAD_FAT(ERR, DEV) (!(CE_IS_DISK_IO(ERR)) && !(CE_DEV_IS_CHAR(DEV)))
+
+BYTE *ceCodeTable[] = {
+    /* 00h */ "write-protection violation attempted",
+    /* 01h */ "unknown unit for driver",
+    /* 02h */ "drive not ready",
+    /* 03h */ "unknown command given to driver",
+    /* 04h */ "data error (bad CRC)",
+    /* 05h */ "bad device driver request structure length",
+    /* 06h */ "seek error",
+    /* 07h */ "unknown media type (non-DOS disk)",
+    /* 08h */ "sector not found",
+    /* 09h */ "printer out of paper",
+    /* 0Ah */ "write fault",
+    /* 0Bh */ "read fault",
+    /* 0Ch */ "general failure",
+    /* 0Dh */ "sharing violation",
+    /* 0Eh */ "lock violation",
+    /* 0Fh */ "invalid disk change / wrong disk",
+    /* 10h */ "FCB unavailable",
+    /* 11h */ "sharing buffer overflow",
+    /* 12h */ "code page mismatch",
+    /* 13h */ "out of input",
+    /* 14h */ "insufficient disk space",
+};
+static BYTE err_msg[90], afir[40];
 
 void save_error_ints(void)
 {
@@ -63,21 +109,21 @@ void set_error_ints(void)
     asm xor ah,ah;       /* set inCc to 0 */
     asm mov cs:inCc, ah
     /* set and save the CBreak handler address */
-    asm mov ax,2523h;
     asm mov dx,offset CBreak;
     asm mov i23_off, dx; /* save the offset */
-    asm push cs;
-    asm pop ds;
-    asm mov i23_seg, ds;   /* save the segment */
+    asm mov ax, cs;
+    asm mov ds, ax;
+    asm mov i23_seg, ax; /* save the segment */
+    asm mov ax,2523h;
     asm INT 21h;         /* int 21h/ah=25h,al=23h - set IRQ vector 23 */
 
     /* set and save the CritError handler address */
-    asm mov ax,2524h;
-    asm mov dx,offset CritErr;
+    asm mov dx,offset DOGError;
     asm mov i24_off, dx; /* save the offset */
-    asm push cs;
-    asm pop ds;
-    asm mov i24_seg, ds;   /* save the segment */
+    asm mov ax, cs;
+    asm mov ds, ax;
+    asm mov i24_seg, ax; /* save the segment */
+    asm mov ax,2524h;
     asm INT 21h;         /* int 21h/ah=25h,al=24h - set IRQ vector 24 */
 
     /* save to global variables */
@@ -276,15 +322,144 @@ cCret:
     asm retf;
 }
 
-static void DOGError(void)
-{
+
 /***************************************************/
 /*      Critical Error Handler (int 24h)           */
 /***************************************************/
-    asm CritErr:
-    asm mov al,03; /* FAIL */
-    asm iret;
+/* called with
+   AH = Error type
+   7 6 5 4 3 2 1 0   BitMask:
+   | | | | | | | +-- 01h: 1 = write, 0 = read
+   | | | | | | +---  06h: Disk area: 00h=DOS area 02h=FAT
+   | | | | | +/                      04h=root dir 06h=data area
+   | | | | |
+   | | | | +-------- 08h: 08h = fail allowed
+   | | | +---------- 10h: 10h = retry allowed
+   | | +------------ 20h: 20h = ignore allowed
+   | +-------------- ---: unused
+   +---------------- 80h: 00h = disk I/O error
+                          80h = if block device -> bad FAT in memory
+			        if char  device -> error code in DI
+   AL = Drive number if AH[.7] == 0
+   BP:SI = device driver header BP:[SI+4] bit 15 set if char
+   DI = Error code if AH & 80h == 80h and BP:[SI+4] & 8000h = 8000h
+*/
+#pragma argsused
+void interrupt DOGError(WORD bp, WORD di, WORD si,
+			WORD ds, WORD es, WORD dx,
+			WORD ex, WORD bx, WORD ax)
+{
+    WORD driver_type, error_code;
+    BYTE err, d;
 
+    d = (BYTE)ax;
+    err = (BYTE)(ax >> 8);
+    driver_type = (WORD) peek(bp, si+4);
+    error_code = di;
+    ax = ce_resolve(err, d, driver_type, error_code);
+    return;
+}
+
+/**************************************************************************/
+
+void display_string(char *sd)
+{
+    asm mov ax, cs;
+    asm mov ds, ax;
+    asm mov ah, 09h;
+    asm mov dx, OFFSET sd;
+    asm int 21h;
+}
+
+/**************************************************************************/
+
+BYTE read_key(void)
+{
+    BYTE c;
+    asm mov ah, 01h; /* read key with echo */
+    asm int 21h;
+    asm mov c,al;
+
+    if(c >= 'a') {
+	c -= ('a' - 'A'); /* uppercase the character */
+    }
+    return c;
+}
+
+/**************************************************************************/
+
+/* Displays error message and gets user input.
+   Returns a resolution (Abort, Fail, Ignore, Retry)
+ */
+static BYTE ce_resolve(BYTE err, BYTE d, WORD driver_type, WORD error_code)
+{
+    BYTE drive='A', key, l;
+
+    asm mov ax, cs;
+    asm mov ds, ax;
+
+    /* Build options */
+    strcpy(afir, " (Abort");
+    if (CE_FAIL_OK(err))
+	strcat(afir, "/Fail");
+    if (CE_IGNORE_OK(err))
+	strcat(afir, "/Ignore");
+    if (CE_RETRY_OK(err))
+	strcat(afir, "/Retry");
+    strcat(afir, ")? $");
+
+    /* Build Error message */
+    strcpy(err_msg, "\r\n");
+
+    if (CE_IS_DISK_IO(err)) {
+	if (CE_IS_WRITE(err)) {
+	    strcat(err_msg, "Write error drive X: ");
+	}
+	else {
+	    strcat(err_msg, "Read error drive X: ");
+	}
+	drive += d;
+	l = strlen(err_msg);
+	err_msg[l-3] = drive;
+	strcat(err_msg, ceDiskArea[CE_DISK_AREA(err)]);
+    }
+    else if (CE_IS_BAD_FAT(err, driver_type)) {
+	if (CE_IS_WRITE(err)) {
+	    strcat(err_msg, "Write error: FAT in memory corrupt");
+	}
+	else {
+	    strcat(err_msg, "Read error: FAT in memory corrupt");
+	}
+    } else {
+	/* character device error_code gives details */
+	if (CE_IS_WRITE(err)) {
+	    strcat(err_msg, "Write error: ");
+	}
+	else {
+	    strcat(err_msg, "Read error: ");
+	}
+	strcat(err_msg, ceCodeTable[error_code]);
+    }
+    strcat(err_msg, afir);
+
+    do {
+	display_string(err_msg);
+	key = read_key();
+	display_string("\r\n$");
+	if (key == 'A') { /* Abort is always allowed */
+	    return 0x02; /* Abort */
+	}
+	else if(key == 'F' && CE_FAIL_OK(err)) {
+	    return 0x03; /* Fail */
+	}
+	else if(key == 'I' && CE_IGNORE_OK(err)) {
+	    return 0x00; /* Ignore */
+	}
+	else if(key == 'R' && CE_RETRY_OK(err)) {
+	    return 0x01; /* Retry */
+	}
+	display_string("Invalid option.$");
+    } while(1);
 }
 
 void DOGFunc(void)

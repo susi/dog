@@ -265,21 +265,6 @@ BYTE bat_check_cbreak(void)
 
 /**************************************************************************/
 
-BYTE read_key(void)
-{
-    BYTE c;
-    asm mov ah, 01h; /* read key with echo */
-    asm int 21h;
-    asm mov c,al;
-
-    if(c >= 'a') {
-	c -= ('a' - 'A'); /* uppercase the character */
-    }
-    return c;
-}
-
-/**************************************************************************/
-
 void do_batcommand(BYTE n)
 {
 	BYTE i;

@@ -302,7 +302,6 @@ void clearbat(void); /* clear the b file linked list*/
 void prevbat(void); /* return to the previous nest-level in bat*/
 BYTE file_exist(const char * filename);
 BYTE bat_check_cbreak(void);
-BYTE read_key(void);
 
 /* ints.c */
 void save_error_ints(void);
@@ -311,6 +310,9 @@ void restore_error_ints(void);
 void set_int2e(void);
 void set_intd0(void);
 void restore_intd0(void);
+void display_string(char *sd);
+void DOGFunc(void);
+BYTE read_key(void);
 
 /* internal commands */
 void do_al(BYTE n);

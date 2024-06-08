@@ -25,8 +25,9 @@ CC=$(BCCDIR)\BCC.EXE
 LD=$(BCCDIR)\TLINK.EXE
 ASM=$(BCCDIR)\TASM.EXE
 
-CFLAGS=-B -E$(ASM) -d -mt -O1 -Z -Fs -f- -g15 -tDc -Fc -Tq -Tml -Tmx -Tt
-LDFLAGS=/c /d /t /Tdc
+CFLAGS=-B -d -f- -mt -O1 -Tml -Tc
+LDFLAGS=/m /t /Tdc
+COMOBJ=$(BORLAND)\lib\c0t.obj
 
 # See debug.h for all the possible debugs.
 # _DEBUG_ALL_ turns all all debugging and durns off optimization
@@ -34,38 +35,43 @@ LDFLAGS=/c /d /t /Tdc
 MAKEDEBUG=-DDEBUG
 DEBUG=-D_DEBUG_ALL_ -N -Od
 LDFLAGS=$(LDLAGS) /l /m /s /v
+COMOBJ=$(BORLAND)\lib\c0s.obj
 !endif
 
 !if $(ED)
 MAKEDEBUG=-DED
 DEBUG=-D_ENV_DEBUG_ -N -Od
 LDFLAGS=$(LDFLAGS) /l /m /s /v
+COMOBJ=$(BORLAND)\lib\c0s.obj
 !endif
 
 !if $(OG)
 MAKEDEBUG=-DOG
 DEBUG=-D_DOG_DEBUG_ -N -Od
 LDFLAGS=$(LDFLAGS) /l /m /s /v
+COMOBJ=$(BORLAND)\lib\c0s.obj
 !endif
 
 !if $(BAT)
 MAKEDEBUG=-DBAT
 DEBUG=-D_BAT_DEBUG_ -N -Od
 LDFLAGS=$(LDFLAGS) /l /m /s /v
+COMOBJ=$(BORLAND)\lib\c0s.obj
 !endif
 
 !if $(WARN)
 CFLAGS=$(CFLAGS) -w
 LDFLAGS=$(LDFLAGS)
+COMOBJ=$(BORLAND)\lib\c0s.obj
 !endif
 
 DOG=dog.com
 PROGS=$(DOG)
-COMOBJ=$(BORLAND)\lib\c0t.obj
 OBJS=dog.obj bat.obj ints.obj alse.obj cc.obj cmrd.obj ct.obj eh.obj hh.obj xx.obj
 
 .c.obj:
-	$(CC) $(CFLAGS) -c $(DEBUG) $.
+	$(CC) $(CFLAGS) $(DEBUG) -c $.
+
 
 dog.com: $(OBJS) dog.h debug.h
 	$(LD) $(LDFLAGS) @&&!
@@ -75,9 +81,14 @@ $*
 cs.lib
 !
 
-all: ext util dog
+tint24.com: tint24.c ints.c
+	$(CC) -B -d -mt -f- -tDc -Tt -lt tint24.c ints.c
+
+all: ext util dog tint24
 
 dog: $(DOG) dog.h debug.h
+
+tint24: tint24.com
 
 ext:
 	cd ext
@@ -124,5 +135,6 @@ clean: rm.com
 	cd util
 	$(MAKE) clean
 	cd..
+	rm *.asm
 	rm *.obj
 	rm *.com
