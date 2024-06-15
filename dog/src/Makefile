@@ -26,7 +26,7 @@ LD=$(BCCDIR)\TLINK.EXE
 ASM=$(BCCDIR)\TASM.EXE
 
 CFLAGS=-B -d -f- -mt -O1 -Tml -Tc
-LDFLAGS=/m /t /Tdc
+LDFLAGS=/c /m /t /Tdc
 COMOBJ=$(BORLAND)\lib\c0t.obj
 
 # See debug.h for all the possible debugs.
@@ -75,10 +75,7 @@ OBJS=dog.obj bat.obj ints.obj alse.obj cc.obj cmrd.obj ct.obj eh.obj hh.obj xx.o
 
 dog.com: $(OBJS) dog.h debug.h
 	$(LD) $(LDFLAGS) @&&!
-$(COMOBJ) $(OBJS)
-$*
-$*
-cs.lib
+$(COMOBJ) $(OBJS),$*,$*,$(BORLAND)\lib\cs.lib
 !
 
 tint24.com: tint24.c ints.c

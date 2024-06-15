@@ -39,7 +39,12 @@ LDFLAGS=$(LDFLAGS) -ll -lm -ls -lv
 PROGS=bp.com br.com cl.com cp.com dt.com ls.com mv.com rm.com sz.com tp.com vf.com vr.com rt.com
 
 .c.com:
-	$(CC) $(CFLAGS) $(LDFLAGS) $(DEBUG) $.
+	$(CC) @&&!
+$(CFLAGS)
+$(LDFLAGS)
+$(DEBUG)
+$.
+!
 
 all: $(PROGS)
 

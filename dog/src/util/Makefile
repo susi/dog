@@ -38,7 +38,12 @@ LDFLAGS=$(LDFLAGS) -ll -lm -ls -lv
 PROGS=head.com help.com which.com generr.com
 
 .c.com:
-	$(CC) $(CFLAGS) $(LDFLAGS) $(DEBUG) $.
+	$(CC) @&&!
+$(CFLAGS)
+$(LDFLAGS)
+$(DEBUG)
+$.
+!
 
 all: $(PROGS)
 
