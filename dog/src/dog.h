@@ -171,10 +171,10 @@ C:\DOG>_
 #define BLOCKSZ(segment) (peek(segment-1,3) << 4)
 
 /* VERSION */
-#define DOG_VER 083bh
+#define DOG_VER 084bh
 #define DOG_MA 0
 #define DOG_MI 8
-#define DOG_RE 0x3b
+#define DOG_RE 0x4b
 
 /* Define Global Variables */
 extern BYTE DOG_ma, DOG_mi, DOG_re;

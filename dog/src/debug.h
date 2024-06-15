@@ -22,8 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define __DOG_DEBUG__
 
 #ifdef _ENV_DEBUG_
-#define DOG_DEBUG
-#define EXE_DEBUG
 #define ENV_DEBUG
 #endif
 
