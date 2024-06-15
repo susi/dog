@@ -384,8 +384,10 @@ BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg)
   if((found == 1) && (value == NULL)) {
       /*the env var will be owerwritten with rest.*/
       /*rewind evalue to beginning of var name */
+#ifdef ENV_DEBUG
       printf("setudata:B:rest:%Fs (%Fp) evalue=%Fp nlen=%u vername=%s\n",
 	     rest, rest, evalue, nlen, varname);
+#endif
       evalue -= nlen + 1;
       rest = evalue;
   }
@@ -400,7 +402,9 @@ BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg)
 	  *rest = '=';
 	  rest++;
 	  evalue=rest;
+#ifdef ENV_DEBUG
 	  printf("setudata:C:rest:%Fs (%Fp) evar=%Fp\n", rest, rest, evalue);
+#endif
       }
       _fmemcpy(evalue, (char far *)value, vlen+1); /* also copy the terminating \0 */
       evalue += vlen+1;

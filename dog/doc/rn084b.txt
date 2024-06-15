@@ -13,6 +13,9 @@ DOG:
 - Implemented 44 and DO and IN and TI.
 - Fixed the Control-C implementation. Now it asks the user if they want to
   abort the program.
+- Implemented a proper Critical Error handler.
+- Fixed environment initialization and management.
+- Default dog.dog is used to set up the basic environment, edit this to suit your needs.
 
 External commands:
 - CP: now takes more options: -i (interactive), -f (force)
@@ -25,3 +28,4 @@ Utilities:
 built with HELP.
 - GENERR - is a silly utility which returns the error code given as arg 1. Used in
   testbat.dog to have predictable errorlevels.
+- TINT24 - test utility for testing the critical error handler.

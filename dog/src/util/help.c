@@ -421,9 +421,11 @@ BYTE *dogcommands =
     "always in memory and access the internals of DOG.\n"
     "There are 2 kinds of internal commands. Regular user commands and \n"
     "the batch file programming commands.\n\n"
-    "When working with DOG, normally you use the internal commends.\n"
-    "The batch commands are used to program DOGfiles and cover things like\n"
-    "loops, forks and user input.\n"
+    "When working with DOG in the prompty you typically use the internal\n"
+    "and external commends, and other programs.\n"
+    "The batch commands are used to program batch files, called DOGfiles,\n"
+    "and cover things like loops, forks and user input. They aren't available\n"
+    "when working on the prompt.\n"
     "The external commands are stand-alone executables, but considered\n"
     "to be part of DOG, and may access DOG internals where needed.";
 
@@ -438,8 +440,10 @@ main(int argc, char ** argv)
 	     "you to learn how to use DOG. In fact, you dont even need to\n"
 	     "know how to spell 'compewter'.\n");
 	puts(whatisdog);
+	puts("\n<<<Press any key to continue...>>>");
+	read_key();
 	puts(dogcommands);
-	puts("<<<Press any key to see the internal commands available in DOG>>>");
+	puts("\n<<<Press any key to see the internal commands available in DOG>>>");
 	read_key();
 	puts("\n");
 	for(i=0;i < _NCOMS;i++) {
@@ -452,7 +456,7 @@ main(int argc, char ** argv)
 	    printf("%s - %s\n", ext_commands[i], ext_command_des[i]);
 	}
 
-	puts("\n<<<Press any key to see the external commands available in DOG>>>");
+	puts("\n<<<Press any key to see the dogfile commands available in DOG>>>");
 	read_key();
 	puts("\n");
 	for(i=0;i < _NBCOMS;i++) {

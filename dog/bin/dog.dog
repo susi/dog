@@ -1,13 +1,19 @@
 # DOG.DOG - Part of DOG a Command interpeter for FreeDOS.
-# -*- sh-mode -*-
 #
-# This file is an example default dog.dog file (like fdauto in FreeDOS).
+# This file is an example default dog.dog file
+# (like fdauto.bat in FreeDOS).
 
 # This is a default path that should work in many configurations
-# se path c:\dog\bin;c:\freedos\bin;c:\dos;c:\bi
-# se DOG c:\dog
-se DOG d:\bin
-eh Set the variable DOG to %DOG%
+se DOG c:\dog
+se DOSDIR c:\FreeDOS
+se LANG EN
+se TC UTC
+se path %DOG%\bin;%DOSDIR%\bin;c:\dos;c:\bin
+se TEMP %DOSDIR%\TEMP
+se TMP %TEMP%
+se BLASTER A220 I5 D1 H5 P330
+se EMACS C:\APPS\EMACS
+if EXIST %EMACS%\emacs.exe se PATH %PATH%;%EMACS%
 
 # Default flags for certain commands through aliases.
 eh common aliases. Try the AL command to see them!
@@ -20,6 +26,36 @@ al mv mv -v
 
 # shorthand for utils
 # HH relies on HHH pointing to the HELP.COM utility.
-al hhh %DOG%\help.com
+al hhh %DOG%\bin\help.com
 al hd head
 al wh which -f
+
+# freedos aliases
+se dogfile C:\dog.dog
+se cfgfile C:\FDCONFIG.SYS
+
+al cfg edit %cfgfile%
+al audo edit %dogfile%
+al reboot fdapm warmboot
+al reset fdisk /reboot
+al halt fdapm poweroff
+al shutdown fdapm poweroff
+
+IN APM Do you want APM (Y/N)?
+IF APM IS Y FDAPM APMDOS ELSE IF APM IS y FDAPM APMDOS
+se APM
+IN MOUSE Do you want mouse support (Y/N)?
+IF MOUSE IS Y CTMOUSE ELSE IF MOUSE IS y CTMOUSE
+se mouse
+
+IN KEYB What keyboard layout do you want?
+mkeyb %KEYB%
+# mkeyb SU
+
+MEM /C /N
+
+eh
+in DOGHELP Do you want to see dog help (Y/N)?
+if DOGHELP IS y help
+if DOGHELP IS Y help
+se DOGHELP
