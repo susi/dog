@@ -291,12 +291,13 @@ BYTE *getalias(BYTE *varname, BYTE *value, WORD vlen);
 void setalias(BYTE *varname, BYTE *value);
 BYTE *getudata(BYTE *varname, BYTE *value, WORD blockseg, WORD vlen);
 BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg);
-WORD mkudata(WORD oldseg, WORD *nseg, WORD bsz, WORD nbsz);
+WORD mkudata(WORD oldseg, WORD *nseg, WORD bsz, WORD nbsz, BYTE *comspec);
 BYTE myallocmem(WORD *sz, WORD *seg);
 BYTE myfreemem(WORD seg);
 BYTE aliasreplace(BYTE *com);
 void evarreplace(BYTE *com, BYTE ln);
 BYTE isfchar(BYTE c);
+void get_block_owner(WORD seg, BYTE *owner, BYTE size);
 
 void clearbat(void); /* clear the b file linked list*/
 void prevbat(void); /* return to the previous nest-level in bat*/

@@ -38,7 +38,15 @@ History
              Also updated do_se and setudata to use standard functions.
 2024-05-11 - Building as a module.
 2024-05-19 - Fixed mkudata(), basically rewrote it, also using myallocmem and myfreemem. -WB
-
+2024-06-09 - Fixed setudata() to also honor the "owner string" after the env
+             values. Also using _fmemcpy instead of hend-written copy function.
+             ENV (and Alias) structure: The N for the number of extra strings is
+             basically always 1, and the string is the full name of the program
+             owning the block.
+             KEY=VALUE\0...KEYN=VALUEN\0\0
+             WORD<N strings>string\0...stringN -WB
+2024-06-11 - updated mkudata() to set up an env block including a comspec at the end.
+             setudata() also works correctly when setting the first value. -WB
 **************************************************************************/
 #include <mem.h>
 #include "dog.h"
@@ -247,110 +255,107 @@ void setalias(BYTE *varname, BYTE *value)
 
 BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg)
 {
-  BYTE t[512],far *rest,*p,*b,i,far *eoe, far *evalue,found=0;
-  WORD w,ss,writesize,nlen,vlen,envleft,blocksz;
+  BYTE far *rest,*p,i, far *evalue, found=0;
+  WORD w,ss,writesize,nlen,vlen,envleft,blocksz,ovlen=0,used;
   BYTE  far *block;
 
   block = MK_FP(blockseg,0);
   nlen = strlen(varname);
   vlen = strlen(value);
-#ifdef B_DEBUG
+#ifdef ENV_DEBUG
   printf("setudata:0:'%s'='%s' block@%04X:0000h\n", varname, value, blockseg);
 #endif
 
   writesize = nlen+vlen+2; /* = strings + 0 + '=' */
-  b=malloc(writesize);
-  memset(b, '\0', writesize);
-#ifdef B_DEBUG
-  printf("setudata:1:writesize=%d\n", writesize);
-#endif
-
   strupr(varname);
-#ifdef B_DEBUG
-  printf("setudata:2:b:'%s', varname='%s'\n", b, varname);
-#endif
-  strncpy(b,varname,nlen);
-#ifdef B_DEBUG
-  printf("setudata:3:b:'%s', varname='%s'\n", b, varname);
-#endif
-  b[nlen] = '=';
-#ifdef B_DEBUG
-  printf("setudata:4:b:'%s', varname='%s'\n", b, varname);
-#endif
-#ifdef B_DEBUG
-  printf("setudata:5:b:'%s', varname='%s'\n", b, varname);
-#endif
-
-  if (value != NULL) strcat((b+nlen+1),value);
-#ifdef B_DEBUG
-  printf("setudata:6:b:'%s', value='%s'\n", b, value);
-#endif
   blocksz = BLOCKSZ(blockseg);
 
-  evalue = eoe = rest = block;
+  evalue = rest = block;
+#ifdef ENV_DEBUG
+  printf("setudata:1:evalue=%Fp, rest=%Fp, block=%Fp\n", evalue, rest, block);
+#endif
 
-
-  /* make eoe point to last byte of used env */
-
-  for(w=0;w<blocksz;w++,eoe++) {
-    if(*eoe== 0) {
-      if(*(++eoe) == 0) {
-        i = *(++eoe);
-        eoe+=2;
-        while(i>0) {
-          while(*(eoe++) != '\0');
-          i--;
-        }
-
-        break;
-      }
-
-    }
-    else {
-    }
-  }
+  /* calculate number of bytes used */
+  used = usedbytes(blockseg, (blocksz>>4));
+#ifdef ENV_DEBUG
+  printf("setudata:1: block=%Fp uses %u bytes\n", block, used);
+#endif
+  /* used is now the amount of bytes needed by the env variables and special strings */
 
   /* check if var exists, if it does write new value in place of old
    if not then write new var to end of env */
-
-#ifdef B_DEBUG
-    printf("rest=%Fp\n",rest);
-#endif
-
   while(*rest!='\0') {
-    if(*(rest+nlen) == '=') { /*possible match */
-#ifdef B_DEBUG
-    printf("rest+nlen=%Fp\n",(rest+nlen));
+#ifdef ENV_DEBUG
+      printf("setudata:2: rest=%Fs (%Fp) rest[%d] is '=': %c\n",
+	     rest, rest, nlen, rest[nlen]);
 #endif
-      *(rest+nlen) = '\0';
-      sprintf(t,"%Fs",rest);
-      *(rest+nlen) = '=';
-      if(stricmp(varname,t) == 0) { /*found it! */
-        /*save pos*/
-        evalue = rest;
-        /* make rest point to next var */
-        while(*(rest++)!='\0');
-        /*bail out */
-        found = 1;
-        break;
+    if(rest[nlen] == '=') { /*possible match */
+#ifdef ENV_DEBUG
+	printf("setudata:3: Found possible match: '%Fs'\n", rest);
+#endif
+      if(_fstrnicmp((char far *)varname, rest, nlen) == 0) { /*found it! */
+	  /*save pos*/
+	  evalue = rest+nlen+1; /* evalue points now at the char after the = */
+#ifdef ENV_DEBUG
+	  printf("setudata:4:evalue=%Fp, rest=%Fp, block=%Fp\n", evalue, rest, block);
+#endif
+	  /* make rest point to next var */
+	  while(*(rest++)!='\0');
+	  ovlen = FP_OFF(rest) - FP_OFF(evalue) - 1;
+	  /*bail out */
+	  found = 1;
+#ifdef ENV_DEBUG
+	  printf("setudata:5:evalue=%Fs %Fp, rest=%Fp, ovlen=%u\n", evalue, evalue, rest, ovlen);
+#endif
+	  break;
       }
       else { /* no match; point rest to next */
-        while(*(rest++));
+	  while(*(rest++));
       }
     }
-    else { /*no match */
-      while(*(rest++)!='\0');
+    else { /*no match, go to the next */
+	while(*(rest++)!='\0');
     }
   } /* rest points to '\0' if end of env */
-  if(found==0) evalue = rest;
 
-#ifdef B_DEBUG
-    printf("evalue=%Fp\n",evalue);
+  if(found == 0) {
+      if (rest == block) {
+	  /* empty environment */
+	  evalue = block;
+	  ovlen = 0;
+	  rest++;
+#ifdef ENV_DEBUG
+	  printf("setudata:6a:evalue=%Fp, rest=%Fp, block=%Fp\n", evalue, rest, block);
+#endif
+      } else {
+	  evalue = rest;
+	  ovlen=0;
+#ifdef ENV_DEBUG
+	  printf("setudata:6b:evalue=%Fp, rest=%Fp, block=%Fp\n", evalue, rest, block);
+#endif
+      }
+  }
+
+#ifdef ENV_DEBUG
+  printf("setudata:7:evalue=%Fp, rest=%Fp, block=%Fp\n", evalue, rest, block);
 #endif
 
-  sprintf(t,"%Fs",evalue);
   /* calculate the number of bytes left in the env. */
-  envleft = blocksz - FP_OFF(eoe) + (found * strlen(t));
+  envleft = blocksz - used + ((nlen + ovlen + 2)*found);
+#ifdef ENV_DEBUG
+  printf("setudata:8:envleft=%u, blocksz=%u, used=%u, writesize=%u vlen=%u ovlen=%d\n",
+	 envleft, blocksz, used, writesize, vlen, ovlen);
+#endif
+
+  /* check if new value is of same size as old */
+  if (vlen == ovlen) {
+      _fstrncpy(evalue, (char far *)value, vlen);
+#ifdef ENV_DEBUG
+      printf("setudata:=:evalue=%Fs (%Fp), value='%s', vlen=%u\n",
+	     evalue, evalue, value, vlen);
+#endif
+      return 0;
+  }
 
   if(writesize > envleft) {
     printf("Memoryblock at segment 0x%x is to small to fit variable\n", blockseg);
@@ -358,45 +363,65 @@ BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg)
   }
 
   /*calc save size */
-  ss = FP_OFF(eoe) - FP_OFF(rest) + 1;
+  ss = used - FP_OFF(rest);
+#ifdef ENV_DEBUG
+  printf("setudata:9:envleft=%u, writesize=%u ss=%u used=%u rest:%Fp\n",
+	 envleft, writesize, ss, used, rest);
+#endif
 
   /*save rest of environment*/
   p=malloc(ss);
-  for(w=0;w<ss;w++) {
-    *(p+w) = *(rest+w);
+  if (p == NULL) {
+      puts("setudata: Out of memory");
+      return 1;
   }
+  _fmemcpy((char far *)p, rest, ss);
+#ifdef ENV_DEBUG
+  printf("setudata:A:copied %u bytes from %Fp\n",
+	 ss, rest);
+#endif
 
   if((found == 1) && (value == NULL)) {
-        w=0;
-    /*the env var will be owerwritten with rest.*/
+      /*the env var will be owerwritten with rest.*/
+      /*rewind evalue to beginning of var name */
+      printf("setudata:B:rest:%Fs (%Fp) evalue=%Fp nlen=%u vername=%s\n",
+	     rest, rest, evalue, nlen, varname);
+      evalue -= nlen + 1;
+      rest = evalue;
   }
   else { /*write value to environment. evalue points*/
-#ifdef B_DEBUG
-    printf("b=(%s)\n",b);
-#endif
-    for(w=0;w<writesize;w++) {
-      *(evalue+w) = *(b+w);
-#ifdef B_DEBUG_DISABLED
-      printf("*(b+w)=(%c)\n",*(b+w));
-#endif
-    }
+      if (found == 0) {
+	  if (evalue == block) {
+	      rest = block;
+	  }
+	  /* write env name and = before value, update evalue pointer */
+	  _fmemcpy(rest, (char *)varname, nlen);
+	  rest += nlen;
+	  *rest = '=';
+	  rest++;
+	  evalue=rest;
+	  printf("setudata:C:rest:%Fs (%Fp) evar=%Fp\n", rest, rest, evalue);
+      }
+      _fmemcpy(evalue, (char far *)value, vlen+1); /* also copy the terminating \0 */
+      evalue += vlen+1;
+      rest = evalue;
   }
-  evalue += w;
+#ifdef ENV_DEBUG
+  printf("setudata:10:envleft=%u, writesize=%u ss=%u used=%u rest:%Fp\n",
+	 envleft, writesize, ss, used, rest);
+#endif
 
   /*put the rest back*/
-  for(w=0;w<ss;w++) {
-    *(evalue+w) = *(p+w);
-  }
+  _fmemcpy(rest, (char far *)p, ss);
 
   free(p);
-  free(b);
 
   return 0;
 }
 
 /****************************************************************************/
 
-WORD mkudata(WORD oldseg, WORD *nseg, WORD bsz, WORD nbsz)
+WORD mkudata(WORD oldseg, WORD *nseg, WORD bsz, WORD nbsz, BYTE *comspec)
 {
     WORD w, minspace;
     BYTE far *p,far *s,far *d;
@@ -439,8 +464,17 @@ WORD mkudata(WORD oldseg, WORD *nseg, WORD bsz, WORD nbsz)
 #ifdef ENV_DEBUG
       printf("mkudata():3:p=%Fp (%04X:0000)\n", p, *nseg);
 #endif
-      *(p) = 0;
-      *(++p) = 0;
+      p[0] = 0;
+      p[1] = 0;
+      if (comspec != NULL) {
+	  p[2] = 1;
+	  p[3] = 0;
+	  _fmemcpy(&p[4], (char far *)comspec, strlen(comspec)+1);
+      }
+      else {
+	  p[2] = 0;
+	  p[3] = 0;
+      }
       return nbsz;
   }
   /* copy stuff from oldseg to newseg */
@@ -463,26 +497,55 @@ WORD mkudata(WORD oldseg, WORD *nseg, WORD bsz, WORD nbsz)
 
 WORD usedbytes(WORD block, WORD bsz)
 {
-    BYTE i;
+    WORD i, e;
     char far *p;
     WORD mbsz, blocksize=0, l, n=0;
+#ifdef ENV_DEBUG
+    WORD envsize=0;
+#endif
 
     mbsz = BLOCKSZ(block) >> 4;
     p = MK_FP(block, 0);
-    printf("Block @ %Fp size %04Xh =? %04Xh bytes\n", p, bsz, mbsz);
+#ifdef ENV_DEBUG
+    printf("usedbytes:0:Block @ %Fp size %04Xh =? %04Xh bytes\n", p, bsz, mbsz);
+#endif
     if(bsz > mbsz) {
 	printf("WARNING WARNING SUS block size! %04Xh > %04Xh bytes\n", bsz, mbsz);
 	bsz = mbsz;
     }
     while(*p != '\0') {
 	l = _fstrlen(p);
-	printf("%Fs (%04Xh)\n",p, l);
+#ifdef ENV_DEBUG_DISABLED
+	printf("usedbytes:1:%Fs (%04Xh)\n",p, l);
+#endif
 	p+=l+1; /* point to the next string, or NUL if end of block */
 	n++; /* count strings, because why not */
 	blocksize += l + 1; /* the NUL char also takes up memory space */
     }
     blocksize++; /* the last NUL */
-    printf("Block @ %04X:0000 has %u strings and uses %u bytes.\n", block, n, blocksize);
+#ifdef ENV_DEBUG
+    envsize=blocksize;
+#endif
+    /* look for the additional strings after the env area */
+    p++; /* point to the number of extra strings */
+    e = *((WORD far *)p);
+#ifdef ENV_DEBUG
+    printf("usedbytes:2:p=%d (%Fp)\n", e, p);
+#endif
+    p+=2; /* point to the first extra string */
+    blocksize += 2;
+    for(i=0; i < e; i++) {
+	l = _fstrlen(p);
+#ifdef ENV_DEBUG_DISABLED
+	printf("'%Fs' (%04Xh)\n", p, l);
+#endif
+	p+=l+1; /* point to the next string */
+	blocksize+=l+1; /* the NUL char also takes up memory space */
+    }
+#ifdef ENV_DEBUG
+    printf("Block @ %04X:0000 has %u strings and uses %u bytes.\n", block, n, envsize);
+    printf("Block also has %d system strings and uses %u bytes total\n", e, blocksize);
+#endif
     return blocksize;
 }
 
@@ -632,4 +695,29 @@ void evarreplace(BYTE *com, BYTE ln)
         printf("evarreplace:6:com=(%s)\n",com);
 #endif
   return;
+}
+
+/****************************************************************************/
+
+void get_block_owner(WORD seg, BYTE *owner, BYTE size)
+{
+    BYTE far *p;
+    WORD e, l;
+
+    p = MK_FP(seg, 0);
+    while(*p != '\0') {
+	l = _fstrlen(p);
+#ifdef ENV_DEBUG_DISABLED
+	printf("get_block_owner:1:%Fs (%04Xh)\n",p, seg);
+#endif
+	p+=l+1; /* point to the next string, or NUL if end of block */
+    }
+    /* p points to end of env now */
+    p++; /* point to the number of extra strings */
+    p+=2; /* point to the first extra string */
+#ifdef ENV_DEBUG
+    printf("get_block_owner:2:p=%Fs (%Fp)\n", p, p);
+#endif
+    _fstrncpy((char far*)owner, p, size);
+    return;
 }

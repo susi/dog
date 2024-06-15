@@ -173,6 +173,9 @@ History
              Also updated environment and alias blocks setup.
              Fixed calls to int21/AH=25h, to use DS, not ES for the segment. -WB
 2024-05-27 - Changed getln to use DOS int21h/ah=0Ah to read input. -WB
+2024-06-11 - Fixed initialize so that if initial env is 0,
+             a new env block of 512 bytes is created, if -E is not given. -WB
+2024-06-15 - Fixed setting up the ENV and COMSPEC when MS-DOS gives us no initial env. -WB
 */
 
 #include "dog.h"
@@ -184,6 +187,9 @@ static BYTE getln(void);
 BYTE Xit = 0, Xitable = 1, eh = 0, D=0, P[MAXDIR]={0};
 struct linebuffer combuffer;
 BYTE *com = NULL, *arg[_NARGS], varg[_NARGS][200], *prompt;
+BYTE comspec[128]={0};
+#define COMSPEC_SZ 127
+
 BYTE commands[_NCOMS][3] = {
     "AL",
     "CC",
@@ -277,11 +283,12 @@ extern unsigned _stklen;
 extern BYTE _osmajor;
 extern BYTE _osminor;
 
-void make_permanent(char * argv0);
+void make_permanent(char * dogsspec);
+BYTE find_dog(void);
 
 /* This function is called when the -P flag is set.
    It sets the DOG interrupt handlers and makes DOG its own parent. */
-void make_permanent(char * argv0)
+void make_permanent(char * dogsspec)
 {
     BYTE path[200]={0}, *p;
     /* Install the error interrupt vectors in the PSP */
@@ -323,18 +330,42 @@ void make_permanent(char * argv0)
 #endif
 
     Xitable = 0;
-    setevar("COMSPEC",argv0);
+#ifdef ENV_DEBUG
+    printf("make_permanent:a:_env:%Fp(%04Xh) Setting COMSPEC=%s\n",_env, envseg, dogsspec);
+#endif
+    setevar("COMSPEC",dogsspec);
 
     /* Make sure there is at least a path to the directory from where DOG was run. */
     p = getevar("PATH", path, 200);
     if (p == NULL) {
-	for(p = & argv0[strlen(argv0)];*p != '\\';p--);
+	for(p = & dogsspec[strlen(dogsspec)];*p != '\\';p--);
 	*p = '\0';
-	setevar("PATH", argv0);
-    }
-#ifdef DOG_DEBUG
-    printf("make_permanent():4:_env=%Fp envz:%p PATH:'%s', p='%s'\n", _env, envsz, path, p);
+#ifdef ENV_DEBUG
+	printf("make_permanent:b:_env:%Fp(%04Xh) Setting PATH=%s\n",_env, envseg, dogsspec);
 #endif
+	setevar("PATH", dogsspec);
+	*p = '\\';
+    }
+#ifdef ENV_DEBUG
+    printf("make_permanent:c:_env=%Fp envz:%p PATH:'%s', p='%s'\n", _env, envsz, path, p);
+#endif
+}
+
+BYTE find_dog(void)
+{
+    BYTE *dog_paths[3] = {"", "DOG\\", "BIN\\"}, i;
+
+    for(i=0; i < 3; i++) {
+	if (i > 0) {
+	    strcpy(&comspec[3+4*i], "DOG.COM");
+	    memcpy(&comspec[3+4*(i-1)], dog_paths[i], 4);
+	}
+	if(access(comspec, 0) == 0) {
+	    return 0; /* found dog */
+	}
+    }
+    comspec[0] = '\0';
+    return 0xff;
 }
 
 BYTE initialize(int nargs, char *args[])
@@ -405,9 +436,38 @@ BYTE initialize(int nargs, char *args[])
 
   /* get the segment of the environment from the PSP*/
   envseg = peek(_psp, PSP_ENVSEG_OFS);
-  _env = MK_FP(envseg,0);
-  envsz = BLOCKSZ(envseg); /*get size of block allocated from MCB*/
-  aliassz = 2048;
+  if (envseg == 0) {
+      _env = NULL;
+      envsz = 0;
+      nenvsz = 512;
+      if (args[0][0] == '\0') {
+	  comspec[0] = D;
+	  comspec[1] = ':';
+	  comspec[2] = '\\';
+	  strcpy(&comspec[3], "DOG.COM");
+	  if (find_dog() == 0) {
+	      args[0] = comspec;
+	  }
+      }
+  } else {
+      if (args[0][0] == '\0') {
+	  get_block_owner(envseg, comspec, COMSPEC_SZ);
+	  if (comspec[0] == '\0') {
+	      comspec[0] = D;
+	      comspec[1] = ':';
+	      comspec[2] = '\\';
+	      strcpy(&comspec[3], "DOG.COM");
+	      find_dog();
+	  }
+	  args[0] = comspec;
+      } else {
+	  strncpy(comspec, args[0], COMSPEC_SZ);
+	  comspec[COMSPEC_SZ] = '\0';
+      }
+      _env = MK_FP(envseg,0);
+      envsz = BLOCKSZ(envseg); /*get size of block allocated from MCB*/
+  }
+  aliassz = 1024;
 
 #ifdef ENV_DEBUG
   printf("initialize():1:nargs=%u\n",nargs);
@@ -468,7 +528,7 @@ BYTE initialize(int nargs, char *args[])
           /* Accept all strings beginning with -P, ignore also numbers */
           while((!isdigit(*p))&&(*p!='\0')&&(*p!='-')) p++;
 #ifdef ENV_DEBUG
-          printf("initialize():2:envseg=04X%h envsz=04X%h\n",envseg,envsz);
+          printf("initialize():2:envseg=%04Xh envsz=%04Xh\n",envseg,envsz);
 #endif
 #if 0
           nenvsz = 0;
@@ -497,13 +557,13 @@ BYTE initialize(int nargs, char *args[])
 #ifdef ENV_DEBUG
   printf("initialize():3:naliassz=%04Xh para (%d bytes) aliasseg=%04Xh\n", naliassz, naliassz<<4, aliasseg);
 #endif
-  aliassz = mkudata(0, &aliasseg, 0, naliassz);
+  aliassz = mkudata(0, &aliasseg, 0, naliassz, args[0]);
 
 #ifdef ENV_DEBUG
   printf("initialize():4:aliassz=%04Xh para (%u bytes) aliasseg=%04Xh\n",aliassz, aliassz<<4,aliasseg);
 #endif
 
-  if((flags & FLAG_E ) == FLAG_E) {
+  if(envseg == 0 || ((flags & FLAG_E ) == FLAG_E)) {
     nenvsz = nenvsz >> 4; /* paragraphs */
     envsz = envsz >> 4; /* paragraphs */
     if(nenvsz < 0x5) nenvsz=0x5;
@@ -514,7 +574,7 @@ BYTE initialize(int nargs, char *args[])
     printf("initialize():5:envsz=%04Xh para (%d bytes) envseg=%04Xh\n",envsz,envsz<<4,envseg);
     printf("initialize():5:nenvsz=%04Xh para (%d bytes) nenvseg=%04Xh\n",nenvsz,nenvsz<<4,nenvseg);
 #endif
-    nenvsz = mkudata(envseg, &nenvseg, envsz, nenvsz);
+    nenvsz = mkudata(envseg, &nenvseg, envsz, nenvsz, args[0]);
 #ifdef ENV_DEBUG
     printf("initialize():6:envsz=%04Xh para (%d bytes) envseg=%04Xh\n",envsz,envsz<<4,envseg);
     printf("initialize():6:nenvsz=%04Xh para (%d bytes) nenvseg=%04Xh\n",nenvsz,nenvsz<<4,nenvseg);
@@ -540,9 +600,8 @@ BYTE initialize(int nargs, char *args[])
   }
 
   if((flags & FLAG_P) == FLAG_P) {
-      make_permanent(args[0]);
+      make_permanent(comspec);
   }
-
   return j;
 }
 
