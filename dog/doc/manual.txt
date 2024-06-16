@@ -1,7 +1,7 @@
-DOG is an alternative command interpeter.
+DOG is an alternative command interpreter.
 It works similar to COMMAND.COM or 4DOS, but is different.
 Note that DOG is not drop-in compatible with either command
-interpeter, but instead does things differently.
+interpreter, but instead does things differently.
 DOG commands are always just 2 letters, but still easy to remember
 DOG also offers external commands allowing them to be more complex.
 DOG consists of 2 classes of commands: INTERNAL and EXTERNAL.
@@ -10,9 +10,11 @@ always in memory and access the internals of DOG.
 There are 2 kinds of internal commands. Regular user commands and 
 the batch file programming commands.
 
-When working with DOG, normally you use the internal commends.
-The batch commands are used to program DOGfiles and cover things like
-loops, forks and user input.
+When working with DOG in the prompt you typically use the internal
+and external commends, and other programs.
+The batch commands are used to program batch files, called DOGfiles,
+and cover things like loops, forks and user input. They aren't available
+when working on the prompt.
 The external commands are stand-alone executables, but considered
 to be part of DOG, and may access DOG internals where needed.
 
@@ -21,7 +23,7 @@ Syntax:DOG [-P|-E envsz|-A aliassz|-C command line]
 Parameters:
    -P - Makes DOG a PERMANENT shell.
    -E envsz - Makes the environment to envsz bytes (divisible by 16).
-   -A aliassz - Makes the alias space to aliassz bytes (divisble by 16).
+   -A aliassz - Makes the alias space to aliassz bytes (divisible by 16).
    -C command line - Executes the command line and exits.
 
 
@@ -87,7 +89,7 @@ Effect: Changes the current IO terminal to Device.
 Syntax: EH [TEXT]
 Parameters:
    TEXT - Anything you want to type out from a DOG file.
-        - EH by itself wil put a new line.
+        - EH by itself will put a new line.
 
 Use these special characters to format the text:
    $$ - the $ sign.
@@ -171,7 +173,7 @@ Syntax: BP [FREQ [TIME]]
 Parameters:
    FREQ - Frequency of the sound.
    TIME - Duration in milliseconds (1000 ms = 1 second)
-        - Without aparameters BP puts ASCII character 07h into Stdout,
+        - Without parameters BP puts ASCII character 07h into stdout,
           causing a beep as long as the ANSI driver is loaded.
 Effect: Makes a constant sound with frequency FREQ for TIME milliseconds
         through the PC Speaker.
@@ -209,7 +211,7 @@ Parameters:
    -f - force all files to be overwritten
    -i - interactive, asks before copying every file
 Effect: Copies one or more files to the destination.
-        CP asks before overwiting a file (can be overriden with -f).
+        CP asks before overwriting a file (can be overridden with -f).
 Examples:
         cp dog.com wolf.com
         cp dog.com c:dog
@@ -250,7 +252,7 @@ Parameters:
  OPTION can be one of these (in any order):
    -v - print filename of each moved file
 Effect: Moves one or more files to the destination.
-        MV asks before overwiting an existing file.
+        MV asks before overwriting an existing file.
 
 Examples:
         mv dog.com wolf.com
@@ -272,12 +274,12 @@ Parameters:
              * represents 0 or more characters
              e.g. *.dog *.* DO?.COM, *.?
 
-     @FILE - Filename preceeded by '@' which is read and every line is
+     @FILE - Filename preceded by '@' which is read and every line is
              handled like a PATTERN
  OPTION can be one of these (in any order):
    -i - prompt (Yes/No/All) for each file or directory
    -r - recurse into sub-directories.
-        Removes all fines in subdirectories too
+        Removes all files in subdirectories too
    -v - print filename of each removed file
 Effect: Remove the file(s) and/or directory(ies) matching PATTERN
 
@@ -287,13 +289,13 @@ Effect: Remove the file(s) and/or directory(ies) matching PATTERN
 Syntax: RT [OPTION]... <DIRECTORY|@FILE>...
 Parameters:
    DIRECTORY - The directory(s) to delete.
-     @FILE - Filename preceeded by '@' which is read and every line is
+     @FILE - Filename preceded by '@' which is read and every line is
              handled like a DIRECTORY
  OPTION can be one of these (in any order):
    -i - prompt (Yes/No/All) for each file or directory
    -v - print filename of each removed file
 Effect: Removes the tree(s) indicated by DIRECTORY(s) with all their
-        subfolders and files.
+        subdirectories and files.
 
 
 
@@ -306,8 +308,8 @@ Parameters:
              e.g. *.dog *.* DO?.COM, *.?
 
  OPTION can be one of these (in any order):
-   -k - give sizes in kb
-   -m - give sizes in Mb
+   -k - give sizes in KB
+   -m - give sizes in MB
 Effect: Prints the size of the files in the current directory.
 
 
@@ -354,7 +356,7 @@ Parameters:
  CONDITION can take the form:
       ERROR [IS|NOT] <NUMBER>     - NUMBER compared to the ERRORLEVEL
       <VARIABLE> [IS|NOT] <VALUE> - VARIABLE is an environment variable
-                                    and is compard to VALUE
+                                    and is compared to VALUE
       [NOT] EXIST <FILE>          - Returns true as long as FILE exists.
      IS - is optional and has no effect other than makes the statement
           look a little bit more like English.
@@ -402,19 +404,19 @@ Parameters:
  CONDITION can take the form:
       ERROR [IS|NOT] <NUMBER>     - NUMBER compared to the ERRORLEVEL
       <VARIABLE> [IS|NOT] <VALUE> - VARIABLE is an environment variable
-                                 and is compard to VALUE
+                                 and is compared to VALUE
       [NOT] EXIST <FILE>       - Returns true as long as FILE exists.
     IS  - is optional and has no effect other than makes the statement
           look a little bit more like English.
     NOT - reverses the condition value in all cases.
-Efect: If CONDITION is TRUE the COMMAND1 is executed, else COMMAND2 is executed.
+Effect: If CONDITION is TRUE the COMMAND1 is executed, else COMMAND2 is executed.
 
 
 
 
 Syntax: IN <VARIABLE> [PROMPT]
 Parameters:
-   VARIABLE - The environmet variable to store the user input.
+   VARIABLE - The environment variable to store the user input.
    PROMPT   - An optional message to display to the user.
               With no prompt DOG will display 'Enter value for VARIABLE: '
 Effect: Prompts the user for input and saves that input in the environment.

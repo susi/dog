@@ -10,7 +10,7 @@ BYTE *dog_help="\n\nSyntax:DOG [-P|-E envsz|-A aliassz|-C command line]\n"
     "Parameters:\n"
     "   -P - Makes DOG a PERMANENT shell.\n"
     "   -E envsz - Makes the environment to envsz bytes (divisible by 16).\n"
-    "   -A aliassz - Makes the alias space to aliassz bytes (divisble by 16).\n"
+    "   -A aliassz - Makes the alias space to aliassz bytes (divisible by 16).\n"
     "   -C command line - Executes the command line and exits.\n\n";
 
 BYTE int_commands[_NCOMS][3]={
@@ -78,7 +78,7 @@ BYTE *cmd_help[_NCOMS] = {
     "\n\nSyntax: EH [TEXT]\n"
     "Parameters:\n"
     "   TEXT - Anything you want to type out from a DOG file.\n"
-    "        - EH by itself wil put a new line.\n\n"
+    "        - EH by itself will put a new line.\n\n"
     "Use these special characters to format the text:\n"
     "   $$ - the $ sign.\n"
     "   $_ - space\n"
@@ -172,7 +172,7 @@ BYTE *ext_help[_NECOMS] = {
     "Parameters:\n"
     "   FREQ - Frequency of the sound.\n"
     "   TIME - Duration in milliseconds (1000 ms = 1 second)\n"
-    "        - Without aparameters BP puts ASCII character 07h into Stdout,\n"
+    "        - Without parameters BP puts ASCII character 07h into stdout,\n"
     "          causing a beep as long as the ANSI driver is loaded.\n"
     "Effect: Makes a constant sound with frequency FREQ for TIME milliseconds\n"
     "        through the PC Speaker.\n\n",
@@ -199,7 +199,7 @@ BYTE *ext_help[_NECOMS] = {
     "   -f - force all files to be overwritten\n"
     "   -i - interactive, asks before copying every file\n"
     "Effect: Copies one or more files to the destination.\n"
-    "        CP asks before overwiting a file (can be overriden with -f).\n"
+    "        CP asks before overwriting a file (can be overridden with -f).\n"
     "Examples:\n"
     "        cp dog.com wolf.com\n"
     "        cp dog.com c:\dog\n"
@@ -232,7 +232,7 @@ BYTE *ext_help[_NECOMS] = {
     " OPTION can be one of these (in any order):\n"
     "   -v - print filename of each moved file\n"
     "Effect: Moves one or more files to the destination.\n"
-    "        MV asks before overwiting an existing file.\n\n"
+    "        MV asks before overwriting an existing file.\n\n"
     "Examples:\n"
     "        mv dog.com wolf.com\n"
     "        mv dog.com c:\dog\n"
@@ -249,25 +249,25 @@ BYTE *ext_help[_NECOMS] = {
     "             ? represents any single character and\n"
     "             * represents 0 or more characters\n"
     "             e.g. *.dog *.* DO?.COM, *.?\n\n"
-    "     @FILE - Filename preceeded by '@' which is read and every line is\n"
+    "     @FILE - Filename preceded by '@' which is read and every line is\n"
     "             handled like a PATTERN\n"
     " OPTION can be one of these (in any order):\n"
     "   -i - prompt (Yes/No/All) for each file or directory\n"
     "   -r - recurse into sub-directories.\n"
-    "        Removes all fines in subdirectories too\n"
+    "        Removes all files in subdirectories too\n"
     "   -v - print filename of each removed file\n"
     "Effect: Remove the file(s) and/or directory(ies) matching PATTERN\n\n",
 
     "\n\nSyntax: RT [OPTION]... <DIRECTORY|@FILE>...\n"
     "Parameters:\n"
     "   DIRECTORY - The directory(s) to delete.\n"
-    "     @FILE - Filename preceeded by '@' which is read and every line is\n"
+    "     @FILE - Filename preceded by '@' which is read and every line is\n"
     "             handled like a DIRECTORY\n"
     " OPTION can be one of these (in any order):\n"
     "   -i - prompt (Yes/No/All) for each file or directory\n"
     "   -v - print filename of each removed file\n"
     "Effect: Removes the tree(s) indicated by DIRECTORY(s) with all their\n"
-    "        subfolders and files.\n\n",
+    "        subdirectories and files.\n\n",
 
     "\n\nSyntax: SZ [OPTION]... [PATTERN]...\n"
     "Parameters:\n"
@@ -276,8 +276,8 @@ BYTE *ext_help[_NECOMS] = {
     "             * represents 0 or more characters\n"
     "             e.g. *.dog *.* DO?.COM, *.?\n\n"
     " OPTION can be one of these (in any order):\n"
-    "   -k - give sizes in kb\n"
-    "   -m - give sizes in Mb\n"
+    "   -k - give sizes in KB\n"
+    "   -m - give sizes in MB\n"
     "Effect: Prints the size of the files in the current directory.\n\n",
 
     "\n\nSyntax: TP FILE...\n"
@@ -335,7 +335,7 @@ BYTE *bat_help[_NBCOMS]={
     " CONDITION can take the form:\n"
     "      ERROR [IS|NOT] <NUMBER>     - NUMBER compared to the ERRORLEVEL\n"
     "      <VARIABLE> [IS|NOT] <VALUE> - VARIABLE is an environment variable\n"
-    "                                    and is compard to VALUE\n"
+    "                                    and is compared to VALUE\n"
     "      [NOT] EXIST <FILE>          - Returns true as long as FILE exists.\n"
     "     IS - is optional and has no effect other than makes the statement\n"
     "          look a little bit more like English.\n"
@@ -376,16 +376,16 @@ BYTE *bat_help[_NBCOMS]={
     " CONDITION can take the form:\n"
     "      ERROR [IS|NOT] <NUMBER>     - NUMBER compared to the ERRORLEVEL\n"
     "      <VARIABLE> [IS|NOT] <VALUE> - VARIABLE is an environment variable\n"
-    "                                 and is compard to VALUE\n"
+    "                                 and is compared to VALUE\n"
     "      [NOT] EXIST <FILE>       - Returns true as long as FILE exists.\n"
     "    IS  - is optional and has no effect other than makes the statement\n"
     "          look a little bit more like English.\n"
     "    NOT - reverses the condition value in all cases.\n"
-    "Efect: If CONDITION is TRUE the COMMAND1 is executed, else COMMAND2 is executed.\n\n",
+    "Effect: If CONDITION is TRUE the COMMAND1 is executed, else COMMAND2 is executed.\n\n",
 
     "\n\nSyntax: IN <VARIABLE> [PROMPT]\n"
     "Parameters:\n"
-    "   VARIABLE - The environmet variable to store the user input.\n"
+    "   VARIABLE - The environment variable to store the user input.\n"
     "   PROMPT   - An optional message to display to the user.\n"
     "              With no prompt DOG will display 'Enter value for VARIABLE: '\n"
     "Effect: Prompts the user for input and saves that input in the environment.\n\n",
@@ -408,10 +408,10 @@ BYTE *bat_help[_NBCOMS]={
     "        DOGFile execution\n\n",
 };
 
-BYTE *whatisdog = "DOG is an alternative command interpeter.\n"
+BYTE *whatisdog = "DOG is an alternative command interpreter.\n"
     "It works similar to COMMAND.COM or 4DOS, but is different.\n"
     "Note that DOG is not drop-in compatible with either command\n"
-    "interpeter, but instead does things differently.\n"
+    "interpreter, but instead does things differently.\n"
     "DOG commands are always just 2 letters, but still easy to remember\n"
     "DOG also offers external commands allowing them to be more complex.";
 
@@ -421,7 +421,7 @@ BYTE *dogcommands =
     "always in memory and access the internals of DOG.\n"
     "There are 2 kinds of internal commands. Regular user commands and \n"
     "the batch file programming commands.\n\n"
-    "When working with DOG in the prompty you typically use the internal\n"
+    "When working with DOG in the prompt you typically use the internal\n"
     "and external commends, and other programs.\n"
     "The batch commands are used to program batch files, called DOGfiles,\n"
     "and cover things like loops, forks and user input. They aren't available\n"
@@ -437,7 +437,7 @@ main(int argc, char ** argv)
     char *cmd;
     if(1==argc){
 	puts("\nThe help program for DOG is meant to make it easy for\n"
-	     "you to learn how to use DOG. In fact, you dont even need to\n"
+	     "you to learn how to use DOG. In fact, you don't even need to\n"
 	     "know how to spell 'compewter'.\n");
 	puts(whatisdog);
 	puts("\n<<<Press any key to continue...>>>");
@@ -524,3 +524,6 @@ BYTE read_key(void)
     }
     return c;
 }
+
+/*  LocalWords:  Codepage Args codepages codepage cd
+ */
