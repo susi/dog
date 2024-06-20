@@ -1,10 +1,40 @@
-/* DOG Documentation */
+/* DOG Documentation Command
+Copyright (C) 2000 Eugene Wong Wolf Bergenheim
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+This program is part of DOG - The DOG Operating Ground
+
+History
+2000-07-04 - Created by Eugene Wong [EW]
+2024-05-24 - Restructured and expanded to include more verbose documentation. - WB
+2024-05-25 - Added documentation for 44 - WB
+2024-05-26 - Added documentation for DO - WB
+2024-06-01 - Added documentation for RT - WB
+2024-06-01 - Added documentation for TI - WB
+2024-06-15 - Added more verbosity to dogcommands & page break before it. - WB
+2024-06-17 - Spellcheck - WB
+2024-06-20 - Added documentation for DT - WB
+2024-06-20 - Added this log - WB
+*/
 
 #include "util.h"
 
 #define _NCOMS 10
 #define _NBCOMS 8
-#define _NECOMS 12
+#define _NECOMS 13
 
 BYTE *dog_help="\n\nSyntax:DOG [-P|-E envsz|-A aliassz|-C command line]\n"
     "Parameters:\n"
@@ -144,6 +174,7 @@ BYTE ext_commands[_NECOMS][3] = {
     "BR",
     "CL",
     "CP",
+    "DT",
     "LS",
     "MV",
     "RM",
@@ -158,6 +189,7 @@ BYTE ext_command_des[_NECOMS][21] = {
     "BReak               ",
     "CLear screen        ",
     "CoPy                ",
+    "DaTe                ",
     "LiSt files          ",
     "MoVe file (rename)  ",
     "ReMove files        ",
@@ -208,6 +240,15 @@ BYTE *ext_help[_NECOMS] = {
     "        cp dog.* wolf.*\n"
     "        cp dog.* wolf.*\n"
     "        cp *.o *.obj\n\n",
+
+    "\n\nSyntax: DT [OPTION]\n"
+    "Parameters:\n"
+    " OPTION can be one of these:\n"
+    "   -s - set DATE and TIME\n"
+    "   -d - set DATE only\n"
+    "   -t - set TIME only\n"
+    "Effect: DT displays the current date and time. By using the options DT\n"
+    "        can be used to set the DATE and/or TIME\n\n",
 
     "\n\nSyntax: LS [OPTION]... [PATTERN]...\n"
     "Parameters:\n"

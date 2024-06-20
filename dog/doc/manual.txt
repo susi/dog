@@ -224,6 +224,18 @@ Examples:
 
 
 
+Syntax: DT [OPTION]
+Parameters:
+ OPTION can be one of these:
+   -s - set DATE and TIME
+   -d - set DATE only
+   -t - set TIME only
+Effect: DT displays the current date and time. By using the options DT
+        can be used to set the DATE and/or TIME
+
+
+
+
 Syntax: LS [OPTION]... [PATTERN]...
 Parameters:
    PATTERN - Pattern can be a number of paths including wild characters * and ?
