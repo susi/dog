@@ -23,10 +23,8 @@ VERSION=084b
 BIN=DOG$(VERSION)x.zip
 SRC=DOG$(VERSION)s.zip
 
-!if $(BORLAND)
-BCCDIR=$(BORLAND)\BIN
-!else
-BCCDIR=C:\BORLANDC\BIN
+!ifndef BORLAND
+BORLAND=C:\BORLANDC
 !endif
 
 MAKE=$(MAKE) -DBORLAND=$(BORLAND)
@@ -42,7 +40,7 @@ src:
 
 install:
 	cd src
-	$(MAKE) -DCC=$(CC) -DLD=(LD) -DASM=$(ASM) install
+	$(MAKE) install
 	cd ..
 
 bindist: install
@@ -50,11 +48,7 @@ bindist: install
 bin\*.com
 doc\manual.txt
 doc\readme_x.txt
-doc\rn080b.txt
-doc\rn081b.txt
-doc\rn082b.txt
-doc\rn083b.txt
-doc\rn084b.txt
+doc\rn*.txt
 doc\ggpl.txt
 !
 	mkdir DOG
@@ -75,11 +69,7 @@ src\util\*.c
 src\util\*.h
 Makefile
 doc\readme_s.txt
-doc\rn080b.txt
-doc\rn081b.txt
-doc\rn082b.txt
-doc\rn083b.txt
-doc\rn084b.txt
+doc\rn*.txt
 doc\ggpl.txt
 bin
 !
@@ -92,7 +82,4 @@ dist: install bindist srcdist
 
 .ignore
 clean:
-	cd src
-	$(MAKE) -DCC=$(CC) -DLD=(LD) -DASM=$(ASM) clean
-	cd ..
 	$(RM) $(BIN) $(SRC)
