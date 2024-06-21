@@ -7,7 +7,7 @@ DOG also offers external commands allowing them to be more complex.
 DOG consists of 2 classes of commands: INTERNAL and EXTERNAL.
 The internal commands are built-in to the DOG.COM binary and are
 always in memory and access the internals of DOG.
-There are 2 kinds of internal commands. Regular user commands and 
+There are 2 kinds of internal commands. Regular user commands and
 the batch file programming commands.
 
 When working with DOG in the prompt you typically use the internal
@@ -65,7 +65,7 @@ Syntax: CD [Path]
 Parameters:
    Path - The destination path.
           The .. directory can be appended directly to cd like in DOS.
-          e.g. cd... The virtual directory ... means ..\.. 
+          e.g. cd... The virtual directory ... means ..\..
         - cd without Args prints the current directory on the screen.
 
 Effect: Changes the current directory to Path.
@@ -404,7 +404,8 @@ Syntax: GO <LABEL>
 Parameters:
    LABEL - A label in the DOGfile.
 Effect: Jumps the DOGfile processing to the LABEL. A label is identified as
-        line containing 'LABEL:'. DO will jump to the line after the 'LABEL:' line.
+        line containing ':LABEL'. DO will jump to the line after the
+        ':LABEL' line.
 
 
 
@@ -455,5 +456,3 @@ Parameters:
         - Without an argument TI waits forever for a key stroke
 Effect: Waits TIME seconds or for a key press before continuing the
         DOGFile execution
-
-

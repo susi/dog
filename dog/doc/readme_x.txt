@@ -11,7 +11,7 @@ In the directory dog\bin there is a file called dog.dog to be used as an example
 You will probably want to convert your FDAUTO.BAT file to DOG.DOG.
 The example DOG.DOG is loosely based on the FreeDOS 1.3 version of FDAUTO.BAT
 
-Note that the drive and path may varry according to where you put DOG.
+Note that the drive and path may vary according to where you put DOG.
 This line will start DOG as the primary shell next time when DOS restarts.
 
 For more information please refer to the dog website at:

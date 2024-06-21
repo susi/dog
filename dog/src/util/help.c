@@ -407,7 +407,8 @@ BYTE *bat_help[_NBCOMS]={
     "Parameters:\n"
     "   LABEL - A label in the DOGfile.\n"
     "Effect: Jumps the DOGfile processing to the LABEL. A label is identified as\n"
-    "        line containing 'LABEL:'. DO will jump to the line after the 'LABEL:' line.\n",
+    "        line containing ':LABEL'. DO will jump to the line after the\n"
+    "        ':LABEL' line.\n",
 
     "\n\nSyntax: IF CONDITION <COMMAND1> [ELSE <COMMAND2>]\n"
     "Parameters:\n"
