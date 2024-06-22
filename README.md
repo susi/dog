@@ -6,8 +6,8 @@ For the latest information about DOG see the [DOG Operating Guide](https://dog.z
 
 ![DOG logo](https://dog.zumppe.net/img/logo.png)
 
-DOG is a DOS SHELL, or command interpreter. DOG works on most, if not all flavors
-of DOG. I mainly target [FreeDOS](https://freedos.org/), but regularly test on
+DOG is a DOS shell, or command interpreter. DOG works on most, if not all flavors
+of DOS. I mainly target [FreeDOS](https://freedos.org/), but regularly test on
 MS-DOS 3.30 and 6.22 and DR-DOS 6.0 and 7.02.
 
 DOG works similar to COMMAND.COM or 4DOS, but is different. First and probably
@@ -48,5 +48,5 @@ DOG uses the following version scheme:
 
 This versioning scheme means that the maximum version of DOG will be
 `15.15.15f`, in hex that will be `FFFFh`. So far DOG has only release
-alpha (before version 0.8 and beta releases. The first final version
-will be `1.0.0f`.
+alpha before version 0.8 and beta releases after `0.8.0b`. The first
+final version will be `1.0.0f`.
