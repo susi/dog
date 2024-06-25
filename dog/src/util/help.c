@@ -79,7 +79,7 @@ BYTE *cmd_help[_NCOMS] = {
     "Example: 'AL CV CP -v' creates an alias command 'CV' which expands into the\n"
     "         command 'CP -v'.\n\n"
     "         You can also use AL to create an ALIAS of an existing command.\n"
-    "         It has the same effect as if you would have typed the expansion.\n"
+    "         It has the same effect as if typed the expansion.\n"
     "         e.g. 'AL CP CP -v' makes it so that whenever you use just 'CP',\n"
     "         the '-v' option is used, handy for setting default options.\n\n",
 
@@ -96,7 +96,7 @@ BYTE *cmd_help[_NCOMS] = {
     "          e.g. cd... The virtual directory ... means ..\\.. \n"
     "        - cd without Args prints the current directory on the screen.\n\n"
     "Effect: Changes the current directory to Path.\n\n"
-    "Note:   In DOG directories are executable\n"
+    "Note:   In DOG, directories are executable\n"
     "        'dog\\src\\util' implicitly means 'cd dog\\src\\util'\n"
     "        when 'util' is a directory.\n\n",
 
@@ -125,7 +125,7 @@ BYTE *cmd_help[_NCOMS] = {
     "Parameters:\n"
     "   COMMAND - Giving the name of a DOG command will display\n"
     "             detailed help for that command.\n"
-    "           - HH alone simply lists the DOG commands.\n"
+    "           - HH alone displays a list of all DOG commands.\n"
     "Effect: Displays usage information for DOG commands.\n\n",
 
     "\n\nSyntax: MD <DIR>\n"
@@ -135,7 +135,7 @@ BYTE *cmd_help[_NCOMS] = {
 
     "\n\nSyntax: RD <DIR>\n"
     "Parameters:\n"
-    "   DIR - Name or path of EMPTY directory to remove.\n"
+    "   DIR - Name or path of an EMPTY directory to remove.\n"
     "Effect: Removes directory named 'dir'\n\n",
 
     "\n\nSyntax: SE [VARIABLE] [VALUE]\n"
@@ -147,8 +147,8 @@ BYTE *cmd_help[_NCOMS] = {
     "            - Without arguments the command prints all VARIABLEs to the screen.\n\n"
     " Variables set and used by DOG:\n"
     "   COMSPEC - Path to DOG\n"
-    "   PATH    - A list of directories used to search for commands.\n"
-    "             Paths in the list are separated by the ';' character.\n"
+    "   PATH    - The list of paths where to search for commands.\n"
+    "             The paths are separated by the `;` character.\n"
     "   PROMPT  - The string displayed indicating that DOG is waiting for a command\n"
     "             You can use these special characters:\n"
     "      $$ - the $ sign.\n"
@@ -165,8 +165,8 @@ BYTE *cmd_help[_NCOMS] = {
     "Effect: Sets the specified VARIABLE to VALUE in the environment.\n",
 
     "\n\nSyntax: XX\n"
-    "Effect: Exit the current DOG shell.\n"
-    "        Works only if the shell is not a primary shell.\n\n"};
+    "Effect: Exit the current DOG shell, unless it is the primary\n"
+    "        shell, in which case the command has no effect.\n\n"};
 
 /* External commands */
 BYTE ext_commands[_NECOMS][3] = {
@@ -204,8 +204,8 @@ BYTE *ext_help[_NECOMS] = {
     "Parameters:\n"
     "   FREQ - Frequency of the sound.\n"
     "   TIME - Duration in milliseconds (1000 ms = 1 second)\n"
-    "        - Without parameters BP puts ASCII character 07h into stdout,\n"
-    "          causing a beep as long as the ANSI driver is loaded.\n"
+    "        - Without parameters, BP puts ASCII character 07h into stdout,\n"
+    "          causing a beep provided that the ANSI driver is loaded.\n"
     "Effect: Makes a constant sound with frequency FREQ for TIME milliseconds\n"
     "        through the PC Speaker.\n\n",
 
@@ -459,12 +459,12 @@ BYTE *whatisdog = "DOG is an alternative command interpreter.\n"
 
 BYTE *dogcommands =
     "DOG consists of 2 classes of commands: INTERNAL and EXTERNAL.\n"
-    "The internal commands are built-in to the DOG.COM binary and are\n"
+    "The internal commands are built into to the DOG.COM binary and are\n"
     "always in memory and access the internals of DOG.\n"
     "There are 2 kinds of internal commands. Regular user commands and \n"
     "the batch file programming commands.\n\n"
-    "When working with DOG in the prompt you typically use the internal\n"
-    "and external commends, and other programs.\n"
+    "When working with DOG in the prompt, you typically use the internal\n"
+    "and external commands, and other programs.\n"
     "The batch commands are used to program batch files, called DOGfiles,\n"
     "and cover things like loops, forks and user input. They aren't available\n"
     "when working on the prompt.\n"

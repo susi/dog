@@ -5,13 +5,13 @@ interpreter, but instead does things differently.
 DOG commands are always just 2 letters, but still easy to remember
 DOG also offers external commands allowing them to be more complex.
 DOG consists of 2 classes of commands: INTERNAL and EXTERNAL.
-The internal commands are built-in to the DOG.COM binary and are
+The internal commands are built into to the DOG.COM binary and are
 always in memory and access the internals of DOG.
-There are 2 kinds of internal commands. Regular user commands and
+There are 2 kinds of internal commands. Regular user commands and 
 the batch file programming commands.
 
-When working with DOG in the prompt you typically use the internal
-and external commends, and other programs.
+When working with DOG in the prompt, you typically use the internal
+and external commands, and other programs.
 The batch commands are used to program batch files, called DOGfiles,
 and cover things like loops, forks and user input. They aren't available
 when working on the prompt.
@@ -44,7 +44,7 @@ Example: 'AL CV CP -v' creates an alias command 'CV' which expands into the
          command 'CP -v'.
 
          You can also use AL to create an ALIAS of an existing command.
-         It has the same effect as if you would have typed the expansion.
+         It has the same effect as if typed the expansion.
          e.g. 'AL CP CP -v' makes it so that whenever you use just 'CP',
          the '-v' option is used, handy for setting default options.
 
@@ -65,12 +65,12 @@ Syntax: CD [Path]
 Parameters:
    Path - The destination path.
           The .. directory can be appended directly to cd like in DOS.
-          e.g. cd... The virtual directory ... means ..\..
+          e.g. cd... The virtual directory ... means ..\.. 
         - cd without Args prints the current directory on the screen.
 
 Effect: Changes the current directory to Path.
 
-Note:   In DOG directories are executable
+Note:   In DOG, directories are executable
         'dog\src\util' implicitly means 'cd dog\src\util'
         when 'util' is a directory.
 
@@ -110,7 +110,7 @@ Syntax: HH [COMMAND]
 Parameters:
    COMMAND - Giving the name of a DOG command will display
              detailed help for that command.
-           - HH alone simply lists the DOG commands.
+           - HH alone displays a list of all DOG commands.
 Effect: Displays usage information for DOG commands.
 
 
@@ -126,7 +126,7 @@ Effect: Creates a new directory named 'dir'.
 
 Syntax: RD <DIR>
 Parameters:
-   DIR - Name or path of EMPTY directory to remove.
+   DIR - Name or path of an EMPTY directory to remove.
 Effect: Removes directory named 'dir'
 
 
@@ -143,8 +143,8 @@ Parameters:
 
  Variables set and used by DOG:
    COMSPEC - Path to DOG
-   PATH    - A list of directories used to search for commands.
-             Paths in the list are separated by the ';' character.
+   PATH    - The list of paths where to search for commands.
+             The paths are separated by the `;` character.
    PROMPT  - The string displayed indicating that DOG is waiting for a command
              You can use these special characters:
       $$ - the $ sign.
@@ -163,8 +163,8 @@ Effect: Sets the specified VARIABLE to VALUE in the environment.
 
 
 Syntax: XX
-Effect: Exit the current DOG shell.
-        Works only if the shell is not a primary shell.
+Effect: Exit the current DOG shell, unless it is the primary
+        shell, in which case the command has no effect.
 
 
 
@@ -173,8 +173,8 @@ Syntax: BP [FREQ [TIME]]
 Parameters:
    FREQ - Frequency of the sound.
    TIME - Duration in milliseconds (1000 ms = 1 second)
-        - Without parameters BP puts ASCII character 07h into stdout,
-          causing a beep as long as the ANSI driver is loaded.
+        - Without parameters, BP puts ASCII character 07h into stdout,
+          causing a beep provided that the ANSI driver is loaded.
 Effect: Makes a constant sound with frequency FREQ for TIME milliseconds
         through the PC Speaker.
 
@@ -456,3 +456,5 @@ Parameters:
         - Without an argument TI waits forever for a key stroke
 Effect: Waits TIME seconds or for a key press before continuing the
         DOGFile execution
+
+
