@@ -30,6 +30,12 @@ al hhh %DOG%\bin\help.com
 al hd head
 al wh which -f
 
+# Use dir stack, you can bypass the stack by just running the
+# directory, since directories are executable in DOG.
+al cd ds push
+al pd ds pop
+al ld ds list
+
 # freedos aliases
 se dogfile C:\dog.dog
 se cfgfile C:\FDCONFIG.SYS

@@ -36,7 +36,7 @@ LDFLAGS=$(LDFLAGS) -ll -lm -ls -lv
 !endif
 
 PROGS=head.com help.com which.com generr.com
-
+MANUAL=..\..\doc\manual.txt
 .c.com:
 	$(CC) @&&!
 $(CFLAGS)
@@ -79,7 +79,11 @@ install: cp.com $(PROGS)
 	$(CP) which.com ..\..\bin
 	$(CP) generr.com ..\..\bin
 
+man: hh
+	help all > $(MANUAL)
+
 .ignore
 clean: rm
 	rm *.obj
 	rm *.com
+	rm $(MANUAL)

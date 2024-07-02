@@ -28,13 +28,14 @@ History
 2024-06-17 - Spellcheck - WB
 2024-06-20 - Added documentation for DT - WB
 2024-06-20 - Added this log - WB
+2024-06-26 - Added documentation for DS - WB.
 */
 
 #include "util.h"
 
 #define _NCOMS 10
 #define _NBCOMS 8
-#define _NECOMS 13
+#define _NECOMS 14
 
 BYTE *dog_help="\n\nSyntax:DOG [-P|-E envsz|-A aliassz|-C command line]\n"
     "Parameters:\n"
@@ -174,6 +175,7 @@ BYTE ext_commands[_NECOMS][3] = {
     "BR",
     "CL",
     "CP",
+    "DS",
     "DT",
     "LS",
     "MV",
@@ -189,6 +191,7 @@ BYTE ext_command_des[_NECOMS][21] = {
     "BReak               ",
     "CLear screen        ",
     "CoPy                ",
+    "Directory Stack     ",
     "DaTe                ",
     "LiSt files          ",
     "MoVe file (rename)  ",
@@ -240,6 +243,21 @@ BYTE *ext_help[_NECOMS] = {
     "        cp dog.* wolf.*\n"
     "        cp dog.* wolf.*\n"
     "        cp *.o *.obj\n\n",
+
+    "\n\nSyntax: DS push [[D:]PATH]\n"
+    "    or: DS pop\n"
+    "    or: DS clear\n"
+    "    or: DS list\n"
+    "Parameters:\n"
+    "   push - Pushes the current directory on to the Directory Stack\n"
+    "          If the optional absolute or relative path are given\n"
+    "          it also changes to that directory\n"
+    "    pop - Pops a directory off the stack and changes to that directory\n"
+    "  clear - Clears the Directory Stack\n"
+    "   list - Lists the entire Directory Stack\n"
+    "Effect: Manages a directory stack.\n"
+    "        You can push and pop directories to and from the stack.\n"
+    "        You can also clear and list the stack.\n\n",
 
     "\n\nSyntax: DT [OPTION]\n"
     "Parameters:\n"

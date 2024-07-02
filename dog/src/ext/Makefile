@@ -36,7 +36,7 @@ DEBUG=-D_DEBUG_ALL_ -N -Od
 LDFLAGS=$(LDFLAGS) -ll -lm -ls -lv
 !endif
 
-PROGS=bp.com br.com cl.com cp.com dt.com ls.com mv.com rm.com sz.com tp.com vf.com vr.com rt.com
+PROGS=bp.com br.com cl.com cp.com ds.com dt.com ls.com mv.com rm.com sz.com tp.com vf.com vr.com rt.com
 
 .c.com:
 	$(CC) @&&!
@@ -55,6 +55,8 @@ br: br.com
 cl: cl.com
 
 cp: cp.com
+
+ds: ds.com
 
 dt: dt.com
 

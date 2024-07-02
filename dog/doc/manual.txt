@@ -224,6 +224,24 @@ Examples:
 
 
 
+Syntax: DS push [[D:]PATH]
+    or: DS pop
+    or: DS clear
+    or: DS list
+Parameters:
+   push - Pushes the current directory on to the Directory Stack
+          If the optional absolute or relative path are given
+          it also changes to that directory
+    pop - Pops a directory off the stack and changes to that directory
+  clear - Clears the Directory Stack
+   list - Lists the entire Directory Stack
+Effect: Manages a directory stack.
+        You can push and pop directories to and from the stack.
+        You can also clear and list the stack.
+
+
+
+
 Syntax: DT [OPTION]
 Parameters:
  OPTION can be one of these:
