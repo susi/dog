@@ -340,6 +340,7 @@ Parameters:
  OPTION can be one of these (in any order):
    -k - give sizes in KB
    -m - give sizes in MB
+   -z - show human readable sizes (B, KB, MB, GB)
 Effect: Prints the size of the files in the current directory.
 
 

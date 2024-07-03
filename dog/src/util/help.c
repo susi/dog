@@ -337,6 +337,7 @@ BYTE *ext_help[_NECOMS] = {
     " OPTION can be one of these (in any order):\n"
     "   -k - give sizes in KB\n"
     "   -m - give sizes in MB\n"
+    "   -z - show human readable sizes (B, KB, MB, GB)\n"
     "Effect: Prints the size of the files in the current directory.\n\n",
 
     "\n\nSyntax: TP FILE...\n"
