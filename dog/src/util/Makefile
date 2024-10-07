@@ -45,7 +45,7 @@ $(DEBUG)
 $.
 !
 
-all: $(PROGS)
+all: $(PROGS) man
 
 hd: head.com
 

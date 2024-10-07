@@ -19,7 +19,7 @@ RM=bin\rm -v -f
 RT=bin\rt -v
 CP=bin\cp -v -f
 ZIP=zip -9
-VERSION=084b
+VERSION=085b
 BIN=DOG$(VERSION)x.zip
 SRC=DOG$(VERSION)s.zip
 
@@ -46,6 +46,7 @@ install:
 bindist: install
 	$(ZIP) -@ tmp.zip <<!
 bin\*.com
+bin\*.dog
 doc\manual.txt
 doc\readme_x.txt
 doc\rn*.txt
@@ -71,7 +72,7 @@ Makefile
 doc\readme_s.txt
 doc\rn*.txt
 doc\ggpl.txt
-bin
+bin\*.dog
 !
 	mkdir DOG
 	unzip tmp.zip -d DOG
