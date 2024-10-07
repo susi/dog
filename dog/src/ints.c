@@ -285,7 +285,7 @@ localCBreak:
     asm or al, al;
     asm jz cCsetFlag;     /* No we're not, set C-c flag */
     /* We're actually on the command line waiting for input and user pressed C-c */
-    /* save all registers, printprompt migte use them all */
+    /* save all registers, printprompt might use them all */
     asm push ax;
     asm push bx;
     asm push cx;

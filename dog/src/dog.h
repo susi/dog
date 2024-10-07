@@ -232,9 +232,9 @@ struct bfile {
 extern struct bfile *bf;
 
 struct linebuffer {
-    BYTE size;        /* always 200, since that's the size of our buffer */
+    BYTE size;        /* 120, the size of our buffer */
     BYTE length;      /* number of characters read, set by DOS */
-    BYTE buffer[200]; /* the actual buffer ASCIIZ when coming from buffered_input */
+    BYTE buffer[120]; /* the actual buffer used by DOS */
 };
 
 extern struct linebuffer combuffer;

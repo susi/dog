@@ -176,6 +176,7 @@ History
 2024-06-11 - Fixed initialize so that if initial env is 0,
              a new env block of 512 bytes is created, if -E is not given. -WB
 2024-06-15 - Fixed setting up the ENV and COMSPEC when MS-DOS gives us no initial env. -WB
+2024-10-07 - Fixed buffered_input to not clobber the input buffer to make history work - WB
 */
 
 #include "dog.h"
@@ -187,7 +188,7 @@ static BYTE getln(void);
 BYTE Xit = 0, Xitable = 1, eh = 0, D=0, P[MAXDIR]={0};
 struct linebuffer combuffer;
 BYTE *com = NULL, *arg[_NARGS], varg[_NARGS][200], *prompt;
-BYTE comspec[128]={0};
+BYTE comspec[128]={0}, userinput[200]={0};
 #define COMSPEC_SZ 127
 
 BYTE commands[_NCOMS][3] = {
@@ -391,6 +392,10 @@ BYTE initialize(int nargs, char *args[])
 	printf("Sorry your DOS is too lame.\nGet at least version 3.30\n");
 	exit(1);
     }
+
+    /* Set up the int21h/AH=0ah (buffered input) */
+    combuffer.size=120; /* leaving future space, for alias expansion and such*/
+    combuffer.length=0;
 
     j = 0;
     Xitable = 1;
@@ -616,16 +621,16 @@ BYTE initialize(int nargs, char *args[])
 void buffered_input(struct linebuffer *buffer)
 {
 #ifdef DOG_DEBUG
-    printf("calling int21h/ah=0Ah buffer size=%d buffer=%p\n",
-	   buffer->size, buffer->buffer);
+    printf("calling int21h/ah=0Ah buffer size=%d length=%s buffer=%p(%.*s)\n",
+	   buffer->size, buffer->length, buffer->buffer);
 #endif
     asm mov dx, buffer;
     asm mov ah, 0Ah;   /* buffered input */
     asm int 21h;
-    buffer->buffer[buffer->length] = '\0';
     puts("");
 #ifdef DOG_DEBUG
-    printf("int21h/ah=0Ah got %d characters = '%s'\n", buffer->length, buffer->buffer);
+    printf("int21h/ah=0Ah got %d characters = '%.*s'\n",
+	   buffer->length, buffer->length, buffer->buffer);
 #endif
     return;  /* buffer is populated */
 }
@@ -637,17 +642,17 @@ void buffered_input(struct linebuffer *buffer)
  */
 static BYTE getln(void)
 {
-  combuffer.size=120; /* leaving futture space , for alias expansion and such*/
-  combuffer.length=0;
-  com = combuffer.buffer;
+  com = userinput;
 
   in_getln = 1;
   buffered_input(&combuffer);
   in_getln = 0;
+  memcpy(com, combuffer.buffer, combuffer.length);
+  com[combuffer.length] = '\0';
 
 #ifdef DOG_DEBUG
   fprintf(stderr,"getln:2: cb.size: %d cb.length:%d cb.buffer:!%s!\n",
-	  combuffer.size, combuffer.length, combuffer.buffer);
+	  combuffer.size, combuffer.length, com);
 #endif
 
   return combuffer.length;

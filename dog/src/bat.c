@@ -931,6 +931,7 @@ void do_in(BYTE n)
 	printf("Value for %s? ", var);
     }
     buffered_input(&in);
+    in.buffer[in.length] = '\0';
     setevar(var, in.buffer);
     return;
 }
