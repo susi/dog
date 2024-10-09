@@ -66,16 +66,15 @@ struct dosemu_detect {
 
 int main(void)
 {
-    WORD DOG_vr,win_mode,sys_seg,cmd_seg,DR_vrnat, FD_ver_off, FD_ver_seg;
-    BYTE DR_vr,DOS_ma=3,DOS_mi=30,DOS_OEM=0xFD,DOS_rev=0,win_ma=0,win_mi=0, vbe_check,serial[3];
+    WORD DOG_vr,win_mode,sys_seg,cmd_seg,DR_vrnat, kernel_string_off, kernel_string_seg;
+    BYTE DR_vr,DOS_ma=3,DOS_mi=30, DOS_t_ma=0, DOS_t_mi=0, DOS_OEM=0xFD,DOS_rev=0,win_ma=0,win_mi=0, vbe_check,serial[3];
     struct dosemu_detect far* given = (void far*) DOSEMU_MAGIC_LOCATION;
     struct dosemu_detect expect = {DOSEMU_MAGIC};
     char dog_str[161];
     char *drdos_VER, *drdos_OS, *fd_VER;
-    char far *fd_kernel;
+    char far *kernel_str = 0;
 #ifdef VR_DEBUG
-    BYTE DR_nat
-    char *drdos_OS;
+    BYTE DR_nat;
 #endif
 
     /* test for dosemu */
@@ -101,20 +100,44 @@ int main(void)
     /* Try to Get true DOS version */
     asm mov ax,3306h;
     asm int 21h;
-    asm cmp ax, 3306h;
-    asm je old_dos;
     asm cmp al, 0FFh;
-    asm je old_dos;
+    asm je  old_dos;
     asm cmp ah, 00h;
-    asm je old_dos;
-    asm mov DOS_ma, bl;
-    asm mov DOS_mi, bh;
+    asm je  old_dos;
+    asm mov DOS_t_ma, bl;
+    asm mov DOS_t_mi, bh;
     asm and dl, 7h /* bits 0-2 */;
     asm mov DOS_rev, dl;
+#ifdef VR_DEBUG
+    printf("DEBUG: real DOS version %u.%u rev %02Xh\n", DOS_t_ma, DOS_t_mi, DOS_rev);
+#endif
     /* Ignore version flag */
+    /* Try to get (FreeDOS) kernel string */
+    /* NOTE: This is skipped if 3306h is not supported */
+    asm mov ax,33FFh;
+    asm xor dx, dx;        /* It's stored in dx:ax */
+    asm int 21h;
+    asm cmp dx, 0h;
+    asm jz  old_dos;
+    asm mov kernel_string_seg,dx; /* kernel string offset */
+    asm mov kernel_string_off,ax; /* kernel string offset */
+
+    kernel_str = MK_FP(kernel_string_seg, kernel_string_off);
+#ifdef VR_DEBUG
+    printf("DEBUG: kernel string: %Fs", kernel_str);
+#endif
+
   old_dos:
 #ifdef VR_DEBUG
-	printf("DEBUG: DOS version %u.%u rev %02Xh OEM:%02Xh serial: %02X%02X%02Xh\n",DOS_ma,DOS_mi,DOS_rev,DOS_OEM,serial[2],serial[1],serial[0]);
+    if (DOS_t_ma == 0) {
+	printf("DEBUG: DOS version %u.%02u rev %02Xh OEM:%02Xh serial: %02X%02X%02Xh\n",DOS_ma,DOS_mi,DOS_rev,DOS_OEM,serial[2],serial[1],serial[0]);
+    }
+    else {
+	printf("DEBUG: DOS version %u.%02u (compat %u.%02u)\n"
+	       "       rev %02Xh OEM:%02Xh serial: %02X%02X%02Xh\n",
+	       DOS_t_ma, DOS_t_mi, DOS_ma, DOS_mi, DOS_rev,
+	       DOS_OEM, serial[2], serial[1], serial[0]);
+    }
 #endif
 
     /* Check for DOSBox */
@@ -133,11 +156,21 @@ int main(void)
 	printf("DEBUG: Command segment: %04Xh SYS segment: %04Xh\n", cmd_seg, sys_seg);
 #endif
 	if(cmd_seg == 0xf000 && sys_seg == 0x0080) {
-	    printf("DOSBox pretends to be MS-DOS %u.%u\n%s",DOS_ma,DOS_mi,dog_str);
+	    printf("DOSBox pretends to be MS-DOS %u.%02u\n%s", DOS_ma, DOS_mi, dog_str);
 	}
 	/* not DOSBox, continue */
 	else if(DOS_ma < 7) {
-	    printf("%s version %u.%u\n%s", OEM2str(DOS_OEM), DOS_ma,DOS_mi,dog_str);
+	    if (DOS_t_ma == 0) {
+		printf("%s version %u.%02u\n", OEM2str(DOS_OEM), DOS_ma,DOS_mi);
+	    }
+	    else {
+		printf("%s version %u.%02u (with kernel compatibility %u.%02u)\n",
+		       OEM2str(DOS_OEM), DOS_t_ma,DOS_t_mi, DOS_ma,DOS_mi);
+	    }
+	    if (kernel_str != NULL) {
+		printf("%Fs\n", kernel_str);
+	    }
+	    puts(dog_str);
 	}
     }
     else if (DOS_OEM == 0x00 || DOS_OEM == 0xEE || DOS_OEM == 0xEF) { /* DR DOS */
@@ -156,43 +189,47 @@ int main(void)
 #endif
 	switch(DR_vr) {
 	case 0x41:
-	    printf("DOS Plus 1.2\n\tProviding DOS %u.%u interface\n%s",DOS_ma,DOS_mi,dog_str);
+	    printf("DOS Plus 1.2\n\tProviding DOS %u.%u interface\n",DOS_ma,DOS_mi);
 	    break;
 	case 0x60:
-	    printf("DOS Plus 2.?\n\tProviding DOS %u.%u interface\n%s",DOS_ma,DOS_mi,dog_str);
+	    printf("DOS Plus 2.?\n\tProviding DOS %u.%u interface\n",DOS_ma,DOS_mi);
 	    break;
 	case 0x63:
-	    printf("DR DOS 3.41\n\tProviding DOS %u.%u interface\n%s",DOS_ma,DOS_mi,dog_str);
+	    printf("DR DOS 3.41\n\tProviding DOS %u.%u interface\n",DOS_ma,DOS_mi);
 	    break;
 	case 0x64:
-	    printf("DR DOS 3.42\n\tProviding DOS %u.%u interface\n%s",DOS_ma,DOS_mi,dog_str);
+	    printf("DR DOS 3.42\n\tProviding DOS %u.%u interface\n",DOS_ma,DOS_mi);
 	    break;
 	case 0x65:
-	    printf("DR DOS 5.0\n\tProviding DOS %u.%u interface\n%s",DOS_ma,DOS_mi,dog_str);
+	    printf("DR DOS 5.0\n\tProviding DOS %u.%u interface\n",DOS_ma,DOS_mi);
 	    break;
 	case 0x67:
-	    printf("DR DOS 6.0\n\tProviding DOS %u.%u interface\n%s",DOS_ma,DOS_mi,dog_str);
+	    printf("DR DOS 6.0\n\tProviding DOS %u.%u interface\n",DOS_ma,DOS_mi);
 	    break;
 	case 0x70:
-	    printf("PalmDOS 5.0\n\tProviding DOS %u.%u interface\n%s",DOS_ma,DOS_mi,dog_str);
+	    printf("PalmDOS 5.0\n\tProviding DOS %u.%u interface\n",DOS_ma,DOS_mi);
 	    break;
 	case 0x71:
-	    printf("DR DOS 6.0 March 1993 \"business update\"\n\tProviding DOS %u.%u interface\n%s",DOS_ma,DOS_mi,dog_str);
+	    printf("DR DOS 6.0 March 1993 \"business update\"\n\tProviding DOS %u.%u interface\n",DOS_ma,DOS_mi);
 	    break;
 	case 0x72:
-	    printf("DR DOS 7.0\n\tProviding DOS %u.%u interface\n%s",DOS_ma,DOS_mi,dog_str);
+	    printf("DR DOS 7.0\n\tProviding DOS %u.%u interface\n",DOS_ma,DOS_mi);
 	    break;
 	case 0x73:
-	    printf("DR-DOS 7.03\n\tProviding DOS %u.%u interface\n%s",DOS_ma,DOS_mi,dog_str);
+	    printf("DR-DOS 7.03\n\tProviding DOS %u.%u interface\n",DOS_ma,DOS_mi);
 	    break;
 	default:
 	    if (drdos_VER != NULL) {
-		printf("DR DOS %s\n\tProviding DOS %u.%u interface\n%s",drdos_VER,DOS_ma,DOS_mi,dog_str);
+		printf("DR DOS %s\n\tProviding DOS %u.%u interface\n",drdos_VER,DOS_ma,DOS_mi);
 	    }
 	    else {
-		printf("PC-DOS version %u.%u\n%s",DOS_ma,DOS_mi,dog_str);
+		printf("PC-DOS version %u.%u\n",DOS_ma,DOS_mi);
 	    }
 	}
+	if (kernel_str != NULL) {
+	    printf("%Fs\n", kernel_str);
+	}
+	puts(dog_str);
     }
     else if (DOS_OEM == 0xFD) { /* FreeDOS */
 	fd_VER = getenv("OS_VERSION");
@@ -203,23 +240,27 @@ int main(void)
 	if(serial[0] == 0xFF) {
 	    printf("FreeDOS Kernel (build 1993 or prior)\n");
 	}
-	else {
-	    asm mov ax,33FFh;      /* Get FreeDOS kernel string */
-	    asm int 21h;
-	    asm mov FD_ver_seg,dx; /* kernel string offset */
-	    asm mov FD_ver_off,ax; /* kernel string offset */
-
-	    fd_kernel = MK_FP(FD_ver_seg, FD_ver_off);
-	    printf("%Fs\n", fd_kernel);
+	else if (kernel_str != NULL) {
+	    printf("%Fs\n", kernel_str);
 	}
 	puts(dog_str);
     }
     else if(DOS_ma == 5 && DOS_mi == 50) { /* Windows NT reports DOS version 5.50 */
-	printf("DOS Command Prompt under Windows NT\n%s",dog_str);
+	printf("DOS Command Prompt under Windows NT\n%s", dog_str);
 	return 0;
     }
     else if(DOS_OEM != 0xFF) {
-	printf("%s version %u.%u\n%s", OEM2str(DOS_OEM), DOS_ma,DOS_mi,dog_str);
+	if (DOS_t_ma == 0) {
+	    printf("%s version %u.%02u\n", OEM2str(DOS_OEM), DOS_ma,DOS_mi);
+	}
+	else {
+	    printf("%s version %u.%02u (with kernel compatibility %u.%02u)\n",
+		   OEM2str(DOS_OEM), DOS_t_ma,DOS_t_mi, DOS_ma,DOS_mi);
+	}
+	if (kernel_str != NULL) {
+	    printf("%Fs\n", kernel_str);
+	}
+	puts(dog_str);
     }
     else {
 	switch(DOS_ma) {  /*versions 1 - 4 Just print OEM and version*/
@@ -237,7 +278,17 @@ int main(void)
 		printf("OS/2 Warp 4.0 virtual DOS machine\n%s",dog_str);
 	    break;
 	default:
-	    printf("Unknown DOS version %u.%u OEM %02Xh\n%s",DOS_ma,DOS_mi,DOS_OEM,dog_str);
+	    if (DOS_t_ma == 0) {
+		printf("%s version %u.%02u\n", OEM2str(DOS_OEM), DOS_ma,DOS_mi);
+	    }
+	    else {
+		printf("%s version %u.%02u (with kernel compatibility %u.%02u)\n",
+		       OEM2str(DOS_OEM), DOS_t_ma,DOS_t_mi, DOS_ma,DOS_mi);
+	    }
+	    if (kernel_str != NULL) {
+		printf("%Fs\n", kernel_str);
+	    }
+	    puts(dog_str);
 	}
     }
 
@@ -257,8 +308,19 @@ int main(void)
 		printf("Microsoft Windows 95\n%s",dog_str);
 	    else if (DOS_mi==10)
 		printf("Microsoft Windows 98\n%s",dog_str);
-	    else
-		printf("Unknown DOS version %u.%u OEM %02Xh\n%s",DOS_ma,DOS_mi,DOS_OEM,dog_str);
+	    else {
+		if (DOS_t_ma == 0) {
+		    printf("%s version %u.%02u\n", OEM2str(DOS_OEM), DOS_ma,DOS_mi);
+		}
+		else {
+		    printf("%s version %u.%02u (with kernel compatibility %u.%02u)\n",
+			   OEM2str(DOS_OEM), DOS_t_ma,DOS_t_mi, DOS_ma,DOS_mi);
+		}
+		if (kernel_str != NULL) {
+		    printf("%Fs\n", kernel_str);
+		}
+		puts(dog_str);
+	    }
 	}
     }
 
@@ -281,7 +343,7 @@ WORD dog_test(char *dog_str)
     asm int 0d0h     /* DOG service */;
     asm cmp ax,0123h /* AX unchanged, DOG not installed */;
     asm jz no_DOG;
-    /* DOG version is packed as 0x1234 = 1.2.34 or 0x083b = 0.8.3b */
+    /* DOG version is packed as 0x123a = 1.2.3a or 0x083b = 0.8.3b */
     asm mov DOG_vr, ax;
     /* Unpack the dog version */
     asm mov bh,ah;
@@ -293,6 +355,10 @@ WORD dog_test(char *dog_str)
     asm AND ah,0fh;
     asm MOV DOG_mi,ah;
     asm MOV DOG_re,al;
+    asm and al, 0ah;  /* Test if code maturity is reasonable */
+    asm cmp al, 0ah;  /* by anding it with 0ah and checking it */
+    asm jnz no_DOG;   /* it should always be 0ah since */
+                      /* it can only have values 0ah, 0bh or 0fh */
     sprintf(dog_str,"DOG version %u.%u.%02x\n",DOG_ma,DOG_mi,DOG_re);
     return DOG_vr;
 
