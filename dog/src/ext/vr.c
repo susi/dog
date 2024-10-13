@@ -33,6 +33,8 @@ History
 2024-05-10 - Cleaned up code and added DOSBox detection
 2024-05-08 - Improved DR DOS detection
 2024-05-13 - Fixed FreeDOS detection, also print OS_VERSION for FreeDOS
+2024-10-10 - Always try to get true version (int21h/ax=3306h) as well as the kernel
+             string (int21h/ax=33ffh), and display these when successful.
 **************************************************************************/
 
 #include "ext.h"
