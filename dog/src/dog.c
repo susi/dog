@@ -201,6 +201,7 @@ BYTE commands[_NCOMS][3] = {
     "MD",
     "RD",
     "SE",
+    "TN",
     "XX"};
 
 BYTE ext_commands[_NECOMS][3] = {
@@ -229,6 +230,7 @@ BYTE command_des[_NCOMS][21] = {
     "Make Directory      ",
     "Remove Directory    ",
     "Set to Environment  ",
+    "True Name of file   ",
     "eXit                "};
 
 BYTE ext_command_des[_NECOMS][21] = {
@@ -1457,6 +1459,10 @@ void do_command( BYTE na)
 
      case C_SE :
       do_se(na);
+      break;
+
+     case C_TN:
+      do_tn(na);
       break;
 
      case C_XX :

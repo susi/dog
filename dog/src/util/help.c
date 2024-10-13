@@ -33,7 +33,7 @@ History
 
 #include "util.h"
 
-#define _NCOMS 10
+#define _NCOMS 11
 #define _NBCOMS 8
 #define _NECOMS 14
 
@@ -164,6 +164,13 @@ BYTE *cmd_help[_NCOMS] = {
     "      $p - Current drive and path\n"
     "      $c - Current time\n"
     "Effect: Sets the specified VARIABLE to VALUE in the environment.\n",
+
+    "\n\nSyntax: TN <PATH>\n"
+    "Parameters:\n"
+    "   PATH - Name or path of to resolve.\n"
+    "Effect: Returns the 'true name' of the given iput by\n"
+    "        resolving *, . and .. entries and also any\n"
+    "        SUBST, ASSIGN and JOIN are unravelled\n\n",
 
     "\n\nSyntax: XX\n"
     "Effect: Exit the current DOG shell, unless it is the primary\n"

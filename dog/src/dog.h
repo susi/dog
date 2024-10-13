@@ -151,7 +151,7 @@ C:\DOG>_
 */
 
 
-#define _NCOMS 10
+#define _NCOMS 11
 #define _NECOMS 14
 #define _NARGS 20
 #define MAX_ALIAS_LOOPS 21
@@ -200,7 +200,8 @@ extern BYTE flags;
 #define C_MD 6
 #define C_RD 7
 #define C_SE 8
-#define C_XX 9
+#define C_TN 9
+#define C_XX 10
 
 extern BYTE cBreak, in_getln;
 extern WORD drvs,errorlevel,PSP;
@@ -324,6 +325,7 @@ void do_cd(BYTE n);
 void do_hh(BYTE n);
 void do_eh(BYTE n);
 void do_mrd(BYTE n);
+void do_tn(BYTE n);
 void do_xx(void);
 
 /* DOG-file commands */

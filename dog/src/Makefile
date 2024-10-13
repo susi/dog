@@ -29,6 +29,10 @@ CFLAGS=-B -d -f- -mt -O1 -Tml -Tc
 LDFLAGS=/c /m /t /Tdc
 COMOBJ=$(BORLAND)\lib\c0t.obj
 
+DOG=dog.com
+PROGS=$(DOG)
+OBJS=dog.obj bat.obj ints.obj alse.obj cc.obj cmrd.obj ct.obj eh.obj hh.obj xx.obj tn.obj
+
 # See debug.h for all the possible debugs.
 # _DEBUG_ALL_ turns all all debugging and durns off optimization
 !if $(DEBUG)
@@ -48,8 +52,8 @@ COMOBJ=$(BORLAND)\lib\c0s.obj
 !if $(OG)
 MAKEDEBUG=-DOG
 DEBUG=-D_DOG_DEBUG_ -N -Od
-LDFLAGS=$(LDFLAGS) /l /m /s /v
-COMOBJ=$(BORLAND)\lib\c0s.obj
+LDFLAGS=$(LDFLAGS) /l /m /t
+COMOBJ=$(BORLAND)\lib\c0t.obj
 !endif
 
 !if $(BAT)
@@ -64,10 +68,6 @@ CFLAGS=$(CFLAGS) -w
 LDFLAGS=$(LDFLAGS)
 COMOBJ=$(BORLAND)\lib\c0s.obj
 !endif
-
-DOG=dog.com
-PROGS=$(DOG)
-OBJS=dog.obj bat.obj ints.obj alse.obj cc.obj cmrd.obj ct.obj eh.obj hh.obj xx.obj
 
 .c.obj:
 	$(CC) $(CFLAGS) $(DEBUG) -c $.
