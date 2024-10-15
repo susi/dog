@@ -24,7 +24,7 @@ Wolf Bergenheim (WB)
 History
 18.03.00 - Extracted from DOG.C - WB
 2024-05-11 - Building as a module. - WB
-
+2024-10-14 - Add -n to not format - WB
 **************************************************************************/
 
 #include "dog.h"
@@ -33,6 +33,13 @@ void do_eh( BYTE n)
 {
     BYTE i,j;
 
+    if((n > 1) && !strncmp(arg[1], "-n", 2)) {
+	for(i=2;i<n;i++) {
+	    printf("%s ", arg[i]);
+	}
+	puts("");
+	return;
+    }
     for(i=1;i<n;i++) {
         for(j=0;j < strlen(arg[i]);j++) {
             if(arg[i][j] == '$') {

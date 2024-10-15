@@ -177,6 +177,8 @@ History
              a new env block of 512 bytes is created, if -E is not given. -WB
 2024-06-15 - Fixed setting up the ENV and COMSPEC when MS-DOS gives us no initial env. -WB
 2024-10-07 - Fixed buffered_input to not clobber the input buffer to make history work - WB
+2024-10-14 - Fixed dogfile arg parsing and variable initialization.
+             Added PP as an external command -WB
 */
 
 #include "dog.h"
@@ -213,6 +215,7 @@ BYTE ext_commands[_NECOMS][3] = {
     "DT",
     "LS",
     "MV",
+    "PP",
     "RM",
     "RT",
     "SZ",
@@ -242,6 +245,7 @@ BYTE ext_command_des[_NECOMS][21] = {
     "Date and Time       ",
     "LiSt files          ",
     "MoVe file (rename)  ",
+    "get & set PromPt    ",
     "ReMove files        ",
     "Remove Tree         ",
     "SiZe of files in dir",
@@ -442,6 +446,9 @@ BYTE initialize(int nargs, char *args[])
   bf->prev = NULL;
   bf->in = 0;
   bf->nest = 0;
+  for(i=0; i < _NARGS; i++) {
+      bf->args[i] = NULL;
+  }
 
   drvs = 0;
 
@@ -1758,27 +1765,33 @@ void do_exe(BYTE n)
    case DOG:
 #ifdef EXE_DEBUG
     printf("do_exe:26:found %s in %s ->%s\n",fb->ff_name,cpath,dog);
-		printf("do_exe:27:bf->args[i] = %x\n",bf->args);
+    printf("do_exe:27:bf->args = %x\n", bf->args);
 #endif
     bf->na = n;
     bf->line = 0;
     memcpy(bf->cline, com, 200);
     for(i=0;i<_NARGS;i++) {
-      if(arg[i] != NULL) {
-	  /* Transfer the pointers with same offsets.
-	     What could possibly go wrong? >_<
-	   */
-	  bf->args[i] = bf->cline + (arg[i] - com);
+	if(arg[i] != NULL) {
+	    if(bf->args[i] != NULL) {
+		free(bf->args[i]);
+	    }
+	    bf->args[i]=malloc(strlen(arg[i])+1);
+	    strcpy(bf->args[i], arg[i]);
 #ifdef BAT_DEBUG
-        printf("do_exe:28:bf->args[%u](%x) =  bf->cline(%x) + (arg[%u](%x) - com(%x))\n",
-	       i, bf->args[i], bf->cline, i, arg[i], com);
-	printf("do_exe:29:bf->args[i] = %s\n",bf->args[i]);
+	    printf("do_exe:28:bf->args[%u] = %s\n", i, bf->args[i]);
+	    printf("do_exe:29:args[%u] = %s\n", i, arg[i]);
 #endif
-      }
+	}
+	else {
+	    if(bf->args[i] != NULL) {
+		free(bf->args[i]);
+	    }
+	    bf->args[i] = NULL;
+	}
 #ifdef BAT_DEBUG
-      else {
-	  printf("do_exe:30:arg[%u] == 0\n",i);
-      }
+	else {
+	    printf("do_exe:30:arg[%u] == 0\n",i);
+	}
 #endif
     }
 #ifdef EXE_DEBUG

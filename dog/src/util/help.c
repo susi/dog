@@ -35,7 +35,7 @@ History
 
 #define _NCOMS 11
 #define _NBCOMS 8
-#define _NECOMS 14
+#define _NECOMS 15
 
 BYTE *dog_help="\n\nSyntax:DOG [-P|-E envsz|-A aliassz|-C command line]\n"
     "Parameters:\n"
@@ -106,10 +106,12 @@ BYTE *cmd_help[_NCOMS] = {
     "   DEV - The name of the device that I/O is set to. Eg. CON, AUX, NUL\n\n"
     "Effect: Changes the current IO terminal to Device.\n\n",
 
-    "\n\nSyntax: EH [TEXT]\n"
+    "\n\nSyntax: EH [OPTION] [TEXT]\n"
     "Parameters:\n"
     "   TEXT - Anything you want to type out from a DOG file.\n"
-    "        - EH by itself will put a new line.\n\n"
+    "        - EH by itself will put a new line.\n"
+    " OPTION can be one of these (in any order):\n"
+    "   -n - Do not format the text with the special characters\n\n"
     "Use these special characters to format the text:\n"
     "   $$ - the $ sign.\n"
     "   $_ - space\n"
@@ -186,6 +188,7 @@ BYTE ext_commands[_NECOMS][3] = {
     "DT",
     "LS",
     "MV",
+    "PP",
     "RM",
     "RT",
     "SZ",
@@ -202,6 +205,7 @@ BYTE ext_command_des[_NECOMS][21] = {
     "DaTe                ",
     "LiSt files          ",
     "MoVe file (rename)  ",
+    "get & set PromPt    ",
     "ReMove files        ",
     "Remove Tree         ",
     "SiZe of files in dir",
@@ -307,6 +311,25 @@ BYTE *ext_help[_NECOMS] = {
     "        mv dog.* wolf.*\n"
     "        mv dog.* wolf.*\n"
     "        mv *.o *.obj\n\n",
+
+    "\n\nSyntax: PP [PROMPT]\n"
+    "Parameters:\n"
+    "           - PP alone displays the formatting for the current DOG prompt.\n"
+    "   PROMPT  - The string displayed indicating that DOG is waiting for a command\n"
+    "             You can use these special characters:\n"
+    "      $$ - the $ sign.\n"
+    "      $_ - space\n"
+    "      $b - vertical bar '|'\n"
+    "      $e - The ESC character (ASCII 27 = 1b in hex)\n"
+    "      $l - Left angle '<'\n"
+    "      $g - Right angle '>'\n"
+    "      $n - New line\n"
+    "      $r - Carriage return\n"
+    "      $t - Tabulator\n"
+    "      $p - Current drive and path\n"
+    "      $c - Current time\n"
+    "Effect: Displays the PROMPT or sets the PROMPT.\n\n",
+
 
     "\n\nSyntax: RM [OPTION]... <PATTERN|@FILE>...\n"
     "Parameters:\n"

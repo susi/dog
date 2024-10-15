@@ -1,0 +1,25 @@
+# PP.DOG - Part of DOG a Command interpeter for FreeDOS.
+#
+# This file implements the PP command to set and display the prompt
+
+# if no args are given then display the prompt
+#   if the prompt is not set display the default prompt
+#   else display the PROMPT variable
+# else set the prompt
+se IN x%1
+if IN is x go get
+if IN is xdog go setdog
+se PROMPT %1
+go get
+:setdog
+se PROMPT $n$_$_$b\_$n$_$_$b$_.\---.$n$_/$_$_$_,__/$n/$_$_$_/$p$_%%%%$_
+:get
+se PP x%PROMPT%
+if PP is x go dogprompt
+eh -n %PROMPT%
+go end
+:dogprompt
+eh -n $n$_$_$b\_$n$_$_$b$_.\---.$n$_/$_$_$_,__/$n/$_$_$_/$p$_%%%%$_
+:end
+se PP
+se IN

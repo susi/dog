@@ -60,13 +60,15 @@ void parse_vars(void)
 	int i;
 
 	for(i=0;i<bf->na;i++) {
-		strcpy(varg[i],bf->args[i]);
+		strcpy(varg[i], bf->args[i]);
 	}
 	for(;i<_NARGS;i++){
 		varg[i][0] = '\0';
+		if (bf->args[i] != NULL) {
+		    free(bf->args[i]);
+		}
 		bf->args[i] = NULL;
 	}
-
 }
 
 /***************************************************************************/
@@ -191,7 +193,7 @@ end_bat:
     parse_vars();
 
 #ifdef PARSE_DEBUG
-    for(i=0;i<_NARGS;i++)
+    for(i=0;i<_NARGS-1;i++)
 	printf("do_bat:2:bf->args[%d]=(%s) varg[%d]=(%s)\n",i,bf->args[i],i,varg[i]);
 #endif
     /* Check for ctrl break */

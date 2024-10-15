@@ -7,7 +7,7 @@ DOG also offers external commands allowing them to be more complex.
 DOG consists of 2 classes of commands: INTERNAL and EXTERNAL.
 The internal commands are built into to the DOG.COM binary and are
 always in memory and access the internals of DOG.
-There are 2 kinds of internal commands. Regular user commands and 
+There are 2 kinds of internal commands. Regular user commands and
 the batch file programming commands.
 
 When working with DOG in the prompt, you typically use the internal
@@ -65,7 +65,7 @@ Syntax: CD [Path]
 Parameters:
    Path - The destination path.
           The .. directory can be appended directly to cd like in DOS.
-          e.g. cd... The virtual directory ... means ..\.. 
+          e.g. cd... The virtual directory ... means ..\..
         - cd without Args prints the current directory on the screen.
 
 Effect: Changes the current directory to Path.
@@ -86,10 +86,12 @@ Effect: Changes the current IO terminal to Device.
 
 
 
-Syntax: EH [TEXT]
+Syntax: EH [OPTION] [TEXT]
 Parameters:
    TEXT - Anything you want to type out from a DOG file.
         - EH by itself will put a new line.
+ OPTION can be one of these (in any order):
+   -n - Do not format the text with the special characters
 
 Use these special characters to format the text:
    $$ - the $ sign.
@@ -306,6 +308,27 @@ Examples:
 
 
 
+Syntax: PP [PROMPT]
+Parameters:
+           - PP alone displays the formatting for the current DOG prompt.
+   PROMPT  - The string displayed indicating that DOG is waiting for a command
+             You can use these special characters:
+      $$ - the $ sign.
+      $_ - space
+      $b - vertical bar '|'
+      $e - The ESC character (ASCII 27 = 1b in hex)
+      $l - Left angle '<'
+      $g - Right angle '>'
+      $n - New line
+      $r - Carriage return
+      $t - Tabulator
+      $p - Current drive and path
+      $c - Current time
+Effect: Displays the PROMPT or sets the PROMPT.
+
+
+
+
 Syntax: RM [OPTION]... <PATTERN|@FILE>...
 Parameters:
    PATTERN - Pattern can be a number of paths
@@ -486,5 +509,3 @@ Parameters:
         - Without an argument TI waits forever for a key stroke
 Effect: Waits TIME seconds or for a key press before continuing the
         DOGFile execution
-
-
