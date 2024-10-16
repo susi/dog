@@ -2,24 +2,29 @@
 #
 # This file implements the PP command to set and display the prompt
 
-# if no args are given then display the prompt
-#   if the prompt is not set display the default prompt
-#   else display the PROMPT variable
-# else set the prompt
 se IN x%1
+# if no args are given then display the prompt
 if IN is x go get
+# if arg #1 is "dog" set the special DOG prompt.
 if IN is xdog go setdog
+# else set the prompt
 se PROMPT %1
+#   and display it
 go get
 :setdog
+#   set the prompt to the special DOG prompt
 se PROMPT $n$_$_$b\_$n$_$_$b$_.\---.$n$_/$_$_$_,__/$n/$_$_$_/$p$_%%%%$_
 :get
+#   set temp variable to check if PROMPT is set.
 se PP x%PROMPT%
+#   if the prompt is not set display the default DOG prompt
 if PP is x go dogprompt
+#   else print the PROMPT.
 eh -n %PROMPT%
 go end
 :dogprompt
 eh -n $n$_$_$b\_$n$_$_$b$_.\---.$n$_/$_$_$_,__/$n/$_$_$_/$p$_%%%%$_
 :end
+# UNSET temp variables
 se PP
 se IN
