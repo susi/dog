@@ -1,0 +1,20 @@
+# PT.DOG - Part of DOG a Command interpeter for FreeDOS.
+#
+# This file implements the PT command to set and display the PATH
+
+se IN x%1
+# if no args are given then display the prompt
+if IN is x go get
+# check if -a was given
+if IN is x-a go append
+# else set the PATH
+se PATH %1
+go get
+:append
+se PATH %PATH%;%2
+#   and display it
+:get
+#   print the PATH.
+eh %PATH%
+# UNSET temp variables
+se IN

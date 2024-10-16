@@ -28,14 +28,16 @@ History
 2024-06-17 - Spellcheck - WB
 2024-06-20 - Added documentation for DT - WB
 2024-06-20 - Added this log - WB
-2024-06-26 - Added documentation for DS - WB.
+2024-06-26 - Added documentation for DS - WB
+2024-10-14 - Added documentation for PP - WB
+2024-10-16 - Added documentation for PT - WB
 */
 
 #include "util.h"
 
 #define _NCOMS 11
 #define _NBCOMS 8
-#define _NECOMS 15
+#define _NECOMS 16
 
 BYTE *dog_help="\n\nSyntax:DOG [-P|-E envsz|-A aliassz|-C command line]\n"
     "Parameters:\n"
@@ -170,7 +172,7 @@ BYTE *cmd_help[_NCOMS] = {
     "\n\nSyntax: TN <PATH>\n"
     "Parameters:\n"
     "   PATH - Name or path of to resolve.\n"
-    "Effect: Returns the 'true name' of the given iput by\n"
+    "Effect: Returns the 'true name' of the given input by\n"
     "        resolving *, . and .. entries and also any\n"
     "        SUBST, ASSIGN and JOIN are unravelled\n\n",
 
@@ -189,6 +191,7 @@ BYTE ext_commands[_NECOMS][3] = {
     "LS",
     "MV",
     "PP",
+    "PT",
     "RM",
     "RT",
     "SZ",
@@ -205,7 +208,8 @@ BYTE ext_command_des[_NECOMS][21] = {
     "DaTe                ",
     "LiSt files          ",
     "MoVe file (rename)  ",
-    "get & set PromPt    ",
+    "PromPt              ",
+    "PaTh                ",
     "ReMove files        ",
     "Remove Tree         ",
     "SiZe of files in dir",
@@ -330,6 +334,15 @@ BYTE *ext_help[_NECOMS] = {
     "      $c - Current time\n"
     "Effect: Displays the PROMPT or sets the PROMPT.\n\n",
 
+    "\n\nSyntax: PT [OPTION] [PATH]\n"
+    "Parameters:\n"
+    "         - PT alone displays the current PATH"
+    "   PATH  - The list of directories which DOG uses to find programs\n"
+    "           to run. The PATH is a list of directories separated by a ';'\n"
+    "           character.\n"
+    " OPTION can be one of these (in any order):\n"
+    "   -a - Append the given PATH instead of setting it to the PATH.\n"
+    "Effect: Displays or sets the PATH which DOG uses to find programs to run.\n\n",
 
     "\n\nSyntax: RM [OPTION]... <PATTERN|@FILE>...\n"
     "Parameters:\n"
