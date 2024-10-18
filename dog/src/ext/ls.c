@@ -32,6 +32,8 @@ History
 2024-05-14 - Added -w flag, and each pattern shows in a separate block as if
              chaining several commands (it's how it's implemented anyway)
 2024-05-21 - Added -z flag to show human readable sizes.
+2024-10-18 - Added -p flag to page at screen boundary and for each pattern group.
+             Screen length can be found at 0040:0084, unless CGA, then use 25.
 ****************************************************************************/
 
 #include "ext.h"
@@ -42,10 +44,19 @@ void show_long_entry(struct ffblk *fb);
 char *format_size(struct ffblk *fb);
 int init(int nargs, char *arg[]);
 void do_ls(void);
+BYTE read_key(void);
+void pause(BYTE force);
 
 #define FLAG_D 0x01 /* 0000 0001 */
 #define FLAG_W 0x02 /* 0000 0010 */
 #define FLAG_Z 0x04 /* 0000 0100 */
+#define FLAG_P 0x08 /* 0000 1000 */
+
+/* If BYTE ay 0040:0084 is 0, assume a CGA screen with 25 lines */
+#define MAX_Y_P ((BYTE far *)MK_FP(0x40, 0x84))
+#define MAX_Y (*MAX_Y_P == 0 ? 25 : *MAX_Y_P)
+
+#define IS_FLAG(FLAG) ((ls_f.flags & (FLAG)) == (FLAG))
 
 #define GIGA 1073741824
 #define MEGA 1048576
@@ -58,9 +69,9 @@ struct ts_flags
     BYTE npatt;
     BYTE flags;
     BYTE w_entry;
+    BYTE ln;
     char sz[10];
 }ls_f;
-
 
 int main(int nargs, char *argv[])
 {
@@ -79,7 +90,7 @@ int main(int nargs, char *argv[])
  */
 void show_entry(struct ffblk *fb)
 {
-    if ((ls_f.flags & FLAG_W) == FLAG_W) {
+    if (IS_FLAG(FLAG_W)) {
 	show_wide_entry(fb);
     }
     else {
@@ -116,6 +127,7 @@ void show_wide_entry(struct ffblk *fb)
     if (ls_f.w_entry == 4) {
 	printf("%s\n", n);
 	ls_f.w_entry = 0;
+	ls_f.ln++;
     }
     else {
 	printf("%-13s   ", n);
@@ -189,7 +201,7 @@ void show_long_entry(struct ffblk *fb)
     fprintf(stderr,"s_e: fb->name:'%s'\n", fb->ff_name);
 #endif
 
-    if ((ls_f.flags & FLAG_Z) == FLAG_Z) {
+    if (IS_FLAG(FLAG_Z)) {
 	printf("%10s   ", format_size(fb));
     }
     else {
@@ -233,8 +245,35 @@ void show_long_entry(struct ffblk *fb)
     printf("%02d:%02d.%02d   ",h,min,sec);
 
     printf("%s\n",fb->ff_name);
+    ls_f.ln++;
 
     return;
+}
+
+BYTE read_key(void)
+{
+    BYTE c;
+    asm mov ah, 08h; /* read key without echo */
+    asm int 21h;
+    asm mov c,al;
+
+    if(c >= 'a') {
+	c -= ('a' - 'A'); /* uppercase the character */
+    }
+    return c;
+}
+
+void pause(BYTE force)
+{
+    if (IS_FLAG(FLAG_P) && ((ls_f.ln >= (MAX_Y-1)) || force)) {
+#ifdef LS_DEBUG
+	printf("ls_f.ln=%d/%d\n", ls_f.ln, MAX_Y);
+#endif
+	printf("<<<Press any key to continue listing>>>\r");
+	read_key();
+	printf("                                       \r");
+	ls_f.ln = 0;
+    }
 }
 
 /*
@@ -279,12 +318,16 @@ int init(int nargs, char *arg[])
 			   "\t-d: list DIRECTORIES only\n"
 			   "\t-f: list normal FILES only\n"
 			   "\t-l: show volume label\n"
+			   "\t-p: pause at every screen full or pattern\n"
 			   "\t-w: show file names only (6 per row)\n"
 			   "\t-z: show human readable sizes (B, KB, MB, GB)\n");
 		    free(ls_f.patt);
 		    return 1;
 		case 'l':
 		    ls_f.attrs += FA_LABEL;
+		    break;
+		case 'p':
+		    ls_f.flags += FLAG_P;
 		    break;
 		case 'w':
 		    ls_f.flags += FLAG_W;
@@ -342,16 +385,25 @@ void do_ls(void)
     signed char r;
     struct ffblk fb;
     m = 0;
-
-
+    ls_f.ln = 0;
     for(j=0;j < ls_f.npatt;j++) {
+	ls_f.w_entry = 0;
 	if(j > 0) {
-	    if(((ls_f.flags & FLAG_W) == FLAG_W) && (ls_f.w_entry > 0)) printf("\n\n");
-	    else printf("\n");
+	    if((IS_FLAG(FLAG_W)) && (ls_f.w_entry > 0)) {
+		printf("\n\n");
+		ls_f.ln += 2;
+	    }
+	    else {
+		printf("\n");
+		ls_f.ln++;
+	    }
+	    pause(1);
 	}
 	printf("Files matching %s\n\n", strupr(ls_f.patt[j]));
+	ls_f.ln += 2;
 	if ((ls_f.flags & FLAG_W) == 0) {
 	    printf("      size   ASRHD   yyyy-mm-dd   hh:mm.ss   name\n\n");
+	    ls_f.ln += 2;
 	}
 	len = strlen(ls_f.patt[j]);
 #ifdef LS_DEBUG
@@ -389,7 +441,7 @@ void do_ls(void)
 	    fprintf(stderr,"do_ls:5: r=%d\n",r);
 #endif
 	    if(r == 0) { /* TODO: check for possible errors */
-		if(((ls_f.flags & FLAG_D) == FLAG_D) && ((fb.ff_attrib & FA_DIREC) != FA_DIREC)) {
+		if((IS_FLAG(FLAG_D)) && ((fb.ff_attrib & FA_DIREC) != FA_DIREC)) {
 #ifdef LS_DEBUG
 		    fprintf(stderr,"do_ls:6a: r=%d\n found dir (but not showing): %s",r,fb.ff_name);
 #endif
@@ -409,6 +461,7 @@ void do_ls(void)
 		break;
 	    }
 	    r = findnext (&fb);
+	    pause(0);
 	}
 
 #ifdef LS_DEBUG

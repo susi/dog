@@ -277,9 +277,9 @@ Parameters:
    -d - Directories Only
    -f - Files Only
    -l - show volume label
+   -p - pause at every screen full or PATTERN
    -w - show file names only (6 per row)
    -z - show human readable sizes (B, KB, MB, GB)
-search pattern - a list of filenames to find. The * and ? wildcards are OK.
 Effect: List files according to switches and search pattern.
 
 

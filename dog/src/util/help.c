@@ -293,9 +293,9 @@ BYTE *ext_help[_NECOMS] = {
     "   -d - Directories Only\n"
     "   -f - Files Only\n"
     "   -l - show volume label\n"
+    "   -p - pause at every screen full or PATTERN\n"
     "   -w - show file names only (6 per row)\n"
     "   -z - show human readable sizes (B, KB, MB, GB)\n"
-    "search pattern - a list of filenames to find. The * and ? wildcards are OK.\n"
     "Effect: List files according to switches and search pattern.\n\n",
 
     "\n\nSyntax: MV [OPTION]... SOURCE DEST\n"
