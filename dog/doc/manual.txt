@@ -274,12 +274,50 @@ Parameters:
              e.g. *.dog *.* DO?.COM, *.?
 
  OPTION can be one of these (in any order, some don't work together):
+   -c - Use ANSI color to color entries. See COLORS below for format.
    -d - Directories Only
    -f - Files Only
    -l - show volume label
    -p - pause at every screen full or PATTERN
    -w - show file names only (6 per row)
    -z - show human readable sizes (B, KB, MB, GB)
+ COLORS
+  NOTE: Requires NANSI.SYS or equivalent ANSI driver to work
+  Colors are taken from the LSCOLORS env variable and is a CSV of color RULES.
+  RULE is structured as EXT=FG;BG;ATTR where:
+    * EXT is a file extension or a special one for matching on file attributes:
+      * _D - Directory
+      * _S - System file
+      * _L - Label
+      * _H - Hidden file
+      * _A - Archive
+    * FG is the foreground color, one of:
+      * 30 - Black
+      * 31 - Red
+      * 32 - Green
+      * 33 - Yellow
+      * 34 - Blue
+      * 35 - Magenta
+      * 36 - Cyan
+      * 37 - White
+    * BG is the background color, one of:
+      * 40 - Black
+      * 41 - Red
+      * 42 - Green
+      * 43 - Yellow
+      * 44 - Blue
+      * 45 - Magenta
+      * 46 - Cyan
+      * 47 - White
+    * ATTR sets additionnal video attributes:
+      * 0 - Resets attributes and colors to white on black
+      * 1 - Bold/light color
+      * 4 - Underlined text
+      * 5 - Blinking text
+      * 7 - Reverse Video
+  Default rules is LSCOLORS is unset:
+    _D=34;0;1,_H=30;40;8,_R=33;40,_S=31;40;1,_L=32;40,
+    EXE=35;40,COM=35;40,DOG=35;40
 Effect: List files according to switches and search pattern.
 
 

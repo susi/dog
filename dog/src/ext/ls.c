@@ -34,6 +34,8 @@ History
 2024-05-21 - Added -z flag to show human readable sizes.
 2024-10-18 - Added -p flag to page at screen boundary and for each pattern group.
              Screen length can be found at 0040:0084, unless CGA, then use 25.
+2024-10-20 - Added -c flag to use ANSI color.
+             Also added code to parse LSCOLORS env variable color rules. -WB
 ****************************************************************************/
 
 #include "ext.h"
@@ -47,10 +49,63 @@ void do_ls(void);
 BYTE read_key(void);
 void pause(BYTE force);
 
+/* Color via ANSI */
+#define COLOR_FG_BLACK   30
+#define COLOR_FG_RED     31
+#define COLOR_FG_GREEN   32
+#define COLOR_FG_YELLOW  33
+#define COLOR_FG_BLUE    34
+#define COLOR_FG_MAGENTA 35
+#define COLOR_FG_CYAN    36
+#define COLOR_FG_WHITE   37
+
+#define COLOR_BG_BLACK   40
+#define COLOR_BG_RED     41
+#define COLOR_BG_GREEN   42
+#define COLOR_BG_YELLOW  43
+#define COLOR_BG_BLUE    44
+#define COLOR_BG_MAGENTA 45
+#define COLOR_BG_CYAN    46
+#define COLOR_BG_WHITE   47
+
+#define COLOR_NO_STYLE   0
+#define COLOR_BOLD       1
+#define COLOR_UNDERLINE  4
+#define COLOR_BLINK      5
+#define COLOR_REVERSE    7
+#define COLOR_CONCEALED  8
+
+#define COLOR_ESC        0x1b
+#ifdef LS_DEBUG
+#undef COLOR_ESC
+#define COLOR_ESC        'E'
+#endif
+#define COLOR BYTE*
+
+#define COLOR_DEFAULT_RULE "_D=34;0;1,_H=30;40;8,_R=33;40,_S=31;40;1,_L=32;40,EXE=35;40,COM=35;40,DOG=35;40"
+
+struct color_rule {
+    BYTE ext[4];
+    BYTE fg[3];
+    BYTE bg[3];
+    BYTE attr[2];
+};
+
+struct color_rules {
+    BYTE len;
+    struct color_rule *rules;
+}color_rules = {0, NULL};
+
+void color_set(char *cs, const char *s, COLOR fg, COLOR bg, COLOR attr);
+char * color_match(struct ffblk *fb, const char *n);
+BYTE color_build_rules(void);
+
+/* Flags */
 #define FLAG_D 0x01 /* 0000 0001 */
 #define FLAG_W 0x02 /* 0000 0010 */
 #define FLAG_Z 0x04 /* 0000 0100 */
 #define FLAG_P 0x08 /* 0000 1000 */
+#define FLAG_C 0x10 /* 0001 0000 */
 
 /* If BYTE ay 0040:0084 is 0, assume a CGA screen with 25 lines */
 #define MAX_Y_P ((BYTE far *)MK_FP(0x40, 0x84))
@@ -76,14 +131,172 @@ struct ts_flags
 int main(int nargs, char *argv[])
 {
     int r;
+    BYTE n;
     r = init(nargs,argv); /* parses argv and extracts flags and patterns */
     if (r == 0) {
+	if(IS_FLAG(FLAG_C)) {
+	    n = color_build_rules();
+	    if(n != color_rules.len) {
+		printf("ERROR parsing color rules, colors ignored\n");
+	    }
+	}
 	do_ls();
 	free(ls_f.patt);
+	if(color_rules.rules != NULL) {
+	    free(color_rules.rules);
+	}
     }
-
     return r;
 }
+
+
+/*
+ * Set an ANSI color
+ */
+void color_set(char *cs, const char *s, COLOR fg, COLOR bg, COLOR attr)
+{
+    if (*attr == '0') {
+	if (*fg == '0') {
+	    sprintf(cs, "%c[37;%.2sm%s%c[0m", COLOR_ESC, bg, s, COLOR_ESC);
+	} else if (*bg == '0') {
+	    sprintf(cs, "%c[%.2s;40m%s%c[0m", COLOR_ESC, fg, s, COLOR_ESC);
+	} else {
+	    sprintf(cs, "%c[%.2s;%.2sm%s%c[0m", COLOR_ESC, fg, bg, s, COLOR_ESC);
+	}
+    } else {
+	if (*fg == '0') {
+	    sprintf(cs, "%c[%.1s;37;%.2sm%s%c[0m", COLOR_ESC, attr, bg, s, COLOR_ESC);
+	} else if (*bg == '0') {
+	    sprintf(cs, "%c[%.1s;%.2s;40m%s%c[0m", COLOR_ESC, attr, fg, s, COLOR_ESC);
+	} else {
+	    sprintf(cs, "%c[%.1s;%.2s;%.2sm%s%c[0m", COLOR_ESC, attr, fg, bg, s, COLOR_ESC);
+	}
+    }
+}
+
+char * color_match(struct ffblk *fb, const char *n)
+{
+    char *ext=NULL;
+    char *color_fn=NULL;
+    BYTE i;
+    BYTE set_color = 0;
+
+    ext = strrchr(fb->ff_name, '.');
+    if (ext) {
+	ext++;
+    }
+    for (i=0;i<color_rules.len;i++) {
+	if (ext != NULL && strcmp(ext, color_rules.rules[i].ext)==0) {
+	    set_color = 1;
+	} else if(((fb->ff_attrib & FA_DIREC) == FA_DIREC) &&
+		  strcmp("_D", color_rules.rules[i].ext)==0) {
+	    set_color = 1;
+	} else if(((fb->ff_attrib & FA_ARCH) == FA_ARCH) &&
+		  strcmp("_A", color_rules.rules[i].ext)==0) {
+	    set_color = 1;
+	} else if(((fb->ff_attrib & FA_HIDDEN) == FA_HIDDEN) &&
+		  strcmp("_H", color_rules.rules[i].ext)==0) {
+	    set_color = 1;
+	} else if(((fb->ff_attrib & FA_RDONLY) == FA_RDONLY) &&
+		  strcmp("_R", color_rules.rules[i].ext)==0) {
+	    set_color = 1;
+	} else if(((fb->ff_attrib & FA_SYSTEM) == FA_SYSTEM) &&
+		  strcmp("_S", color_rules.rules[i].ext)==0) {
+	    set_color = 1;
+	} else if(((fb->ff_attrib & FA_LABEL) == FA_LABEL) &&
+		  strcmp("_L", color_rules.rules[i].ext)==0) {
+	    set_color = 1;
+	}
+	if (set_color) {
+	    color_fn = malloc(13+15);
+	    color_set(color_fn, n,
+		      color_rules.rules[i].fg,
+		      color_rules.rules[i].bg,
+		      color_rules.rules[i].attr);
+	    return color_fn;
+	}
+    }
+    return NULL;
+}
+
+BYTE color_build_rules(void)
+{
+    BYTE *rules, *p, *q, *s, n, i;
+
+    rules = getenv("LSCOLORS");
+    if (rules == NULL) {
+	rules = COLOR_DEFAULT_RULE;
+    }
+    rules = strdup(rules);
+    n = strlen(rules);
+    for(i=0; i<n; i++) {
+	if(rules[i]==',') {
+	    color_rules.len++;
+	}
+    }
+    color_rules.len++; /* last rule is not followed by a , character */
+    color_rules.rules = calloc(color_rules.len, sizeof(struct color_rule));
+    if(color_rules.rules == NULL) {
+	color_rules.len = 0;
+	return 0;
+    }
+    p = strtok(rules, ",");
+    for(i=0; p!=NULL; i++) {
+#ifdef LS_DEBUG
+	printf("parsing color rule: '%s'\n", p);
+#endif
+	q = strchr(p, '=');
+	if (q==NULL) {
+	    free(color_rules.rules);
+	    color_rules.rules = NULL;
+	    color_rules.len = 0;
+	    printf("ERROR parsing color rule: '%s'\n", p);
+	    return 0; /* bail out if rule values are not properly formed */
+	}
+	strncpy(color_rules.rules[i].ext, p, q-p);
+	s = color_rules.rules[i].fg;
+	while(isdigit(*(++q))){
+	    *s = *q;
+	    s++;
+	}
+	if (s == color_rules.rules[i].fg) {
+	    s[0]='0';
+	    s[1]='\0';
+	}
+	s = color_rules.rules[i].bg;
+	while(isdigit(*(++q))){
+	    *s = *q;
+	    s++;
+	}
+	if (s == color_rules.rules[i].bg) {
+	    s[0]='0';
+	    s[1]='\0';
+	}
+	s = color_rules.rules[i].attr;
+	while(isdigit(*(++q))){
+	    *s = *q;
+	    s++;
+	}
+	if (s == color_rules.rules[i].attr) {
+	    s[0]='0';
+	    s[1]='\0';
+	}
+#ifdef LS_DEBUG
+	printf("color rule[%d]:ext=%.3s fg=%.2s bg=%.2s attr=%.1s\n",
+	       i,
+	       color_rules.rules[i].ext,
+	       color_rules.rules[i].fg,
+	       color_rules.rules[i].bg,
+	       color_rules.rules[i].attr
+	    );
+#endif
+	/* get the next token */
+	p = strtok(NULL, ",");
+    }
+    free(rules);
+    return i; /* number of successfully parsed rules */
+}
+
 
 /*
  * Print a dir entry.
@@ -104,6 +317,9 @@ void show_entry(struct ffblk *fb)
 void show_wide_entry(struct ffblk *fb)
 {
     BYTE n[14] = {"             "};
+    BYTE *fn;
+    BYTE is_colored=0;
+    BYTE width=13;
 
     if ((fb->ff_attrib & FA_DIREC) == FA_DIREC) {
 	sprintf(n, "%s\\", fb->ff_name);
@@ -124,14 +340,32 @@ void show_wide_entry(struct ffblk *fb)
 	sprintf(n, "%s", fb->ff_name);
     }
 
+    if(IS_FLAG(FLAG_C)) {
+	fn = color_match(fb, n);
+	if (fn == NULL) {
+	    fn = n;
+	} else {
+	    is_colored=1;
+	}
+    } else {
+	fn = n;
+    }
+
     if (ls_f.w_entry == 4) {
-	printf("%s\n", n);
+	printf("%s\n", fn);
+
 	ls_f.w_entry = 0;
 	ls_f.ln++;
     }
     else {
-	printf("%-13s   ", n);
+	if(IS_FLAG(FLAG_C) && is_colored) {
+	    width = 13-strlen(n)+strlen(fn);
+	}
+	printf("%-*s   ", width, fn);
 	ls_f.w_entry++;
+    }
+    if(IS_FLAG(FLAG_C) && is_colored) {
+	free(fn);
     }
 
     return;
@@ -181,6 +415,8 @@ char * format_size(struct ffblk *fb)
 void show_long_entry(struct ffblk *fb)
 {
     WORD h, min, sec, y, m, d;
+    BYTE *fn;
+    BYTE is_colored=0;
 #ifdef LS_DEBUG
     BYTE l;
     fprintf(stderr,"s_e: fb->reserved:");
@@ -244,8 +480,21 @@ void show_long_entry(struct ffblk *fb)
 
     printf("%02d:%02d.%02d   ",h,min,sec);
 
-    printf("%s\n",fb->ff_name);
+    if(IS_FLAG(FLAG_C)) {
+	fn = color_match(fb, fb->ff_name);
+	if (fn == NULL) {
+	    fn = fb->ff_name;
+	} else {
+	    is_colored=1;
+	}
+    } else {
+	fn = fb->ff_name;
+    }
+    printf("%s\n",fn);
     ls_f.ln++;
+    if(IS_FLAG(FLAG_C) && is_colored) {
+	free(fn);
+    }
 
     return;
 }
@@ -306,6 +555,9 @@ int init(int nargs, char *arg[])
 		switch(arg[i][1]) {
 		case 'a':
 		    ls_f.attrs = FA_ARCH|FA_SYSTEM|FA_RDONLY|FA_HIDDEN|FA_DIREC|FA_LABEL;
+		    break;
+		case 'c':
+		    ls_f.flags += FLAG_C;
 		    break;
 		case 'd':
 		    ls_f.flags += FLAG_D;
