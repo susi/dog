@@ -279,6 +279,7 @@ Parameters:
    -f - Files Only
    -l - show volume label
    -p - pause at every screen full or PATTERN
+   -s - sort output. See SORTING below for format
    -w - show file names only (6 per row)
    -z - show human readable sizes (B, KB, MB, GB)
  COLORS
@@ -318,6 +319,22 @@ Parameters:
   Default rules is LSCOLORS is unset:
     _D=34;0;1,_H=30;40;8,_R=33;40,_S=31;40;1,_L=32;40,
     EXE=35;40,COM=35;40,DOG=35;40
+ SORTING
+  Sorting format is a single string of the following format:
+   -s[SORTORDER]... - Sort the result with the given rules
+     SORTORDER can be any of these letters:
+      + prefix means ascending, - prefix means descending
+        s = sort by file size
+        a = sort by attribute: Archive, Directory, Hidden,
+                               Label, Read-Only, System
+        d = sort by date
+        t = sort by time
+        f = sort by file name
+        e = sort by file extension
+  Example: -s-d-s sorts by date (newest first) and then
+             file size (largest first)
+  Example: -s-s+e+f sorts by size (largest first) and then
+             by extension and then name (alphapetically)
 Effect: List files according to switches and search pattern.
 
 

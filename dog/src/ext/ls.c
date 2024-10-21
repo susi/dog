@@ -36,6 +36,7 @@ History
              Screen length can be found at 0040:0084, unless CGA, then use 25.
 2024-10-20 - Added -c flag to use ANSI color.
              Also added code to parse LSCOLORS env variable color rules. -WB
+2024-10-21 - Added -s flag to sort the ls output.
 ****************************************************************************/
 
 #include "ext.h"
@@ -100,12 +101,44 @@ void color_set(char *cs, const char *s, COLOR fg, COLOR bg, COLOR attr);
 char * color_match(struct ffblk *fb, const char *n);
 BYTE color_build_rules(void);
 
+#define SORT_SIZE 's'
+#define SORT_ATTR 'a'
+#define SORT_DATE 'd'
+#define SORT_TIME 't'
+#define SORT_FILE 'f'
+#define SORT_EXT  'e'
+
+struct sort_rule {
+    BYTE field;
+    char order;
+};
+
+struct sort_rules {
+    BYTE len;
+    struct sort_rule *rules;
+}sort_rules = {0, NULL};
+
+struct sort_entries {
+    WORD capacity;
+    WORD used;
+    struct ffblk *entries;
+};
+
+char * attr_string(const struct ffblk *fb, char *s);
+int sort_fb(const void *pa, const void *pb);
+BYTE sort_build_rules(const BYTE *sort_string);
+void save_entry(struct sort_entries *se, struct ffblk *fb);
+void sort_entries(struct sort_entries *se);
+void show_entries(struct sort_entries *se);
+DWORD ftime_sec(const struct ffblk *fb);
+
 /* Flags */
 #define FLAG_D 0x01 /* 0000 0001 */
 #define FLAG_W 0x02 /* 0000 0010 */
 #define FLAG_Z 0x04 /* 0000 0100 */
 #define FLAG_P 0x08 /* 0000 1000 */
 #define FLAG_C 0x10 /* 0001 0000 */
+#define FLAG_S 0x20 /* 0010 0000 */
 
 /* If BYTE ay 0040:0084 is 0, assume a CGA screen with 25 lines */
 #define MAX_Y_P ((BYTE far *)MK_FP(0x40, 0x84))
@@ -144,6 +177,9 @@ int main(int nargs, char *argv[])
 	free(ls_f.patt);
 	if(color_rules.rules != NULL) {
 	    free(color_rules.rules);
+	}
+	if(sort_rules.rules != NULL) {
+	    free(sort_rules.rules);
 	}
     }
     return r;
@@ -186,7 +222,7 @@ char * color_match(struct ffblk *fb, const char *n)
 	ext++;
     }
     for (i=0;i<color_rules.len;i++) {
-	if (ext != NULL && strcmp(ext, color_rules.rules[i].ext)==0) {
+	if (ext != NULL && strnicmp(ext, color_rules.rules[i].ext, 3)==0) {
 	    set_color = 1;
 	} else if(((fb->ff_attrib & FA_DIREC) == FA_DIREC) &&
 		  strcmp("_D", color_rules.rules[i].ext)==0) {
@@ -208,7 +244,7 @@ char * color_match(struct ffblk *fb, const char *n)
 	    set_color = 1;
 	}
 	if (set_color) {
-	    color_fn = malloc(13+15);
+	    color_fn = malloc(strlen(n)+20);
 	    color_set(color_fn, n,
 		      color_rules.rules[i].fg,
 		      color_rules.rules[i].bg,
@@ -297,6 +333,201 @@ BYTE color_build_rules(void)
     return i; /* number of successfully parsed rules */
 }
 
+
+BYTE sort_build_rules(const BYTE *rules)
+{
+    BYTE n, i;
+    const BYTE *p;
+
+    if ((rules == NULL) || ((n = strlen(rules)/2)==0)) {
+	rules = "+f";
+	n = 1;
+    }
+#ifdef LS_DEBUG
+    printf("parsing sort string: '%s'\n", rules);
+#endif
+    sort_rules.len = n;
+    sort_rules.rules = calloc(sort_rules.len, sizeof(struct sort_rule));
+    if(sort_rules.rules == NULL) {
+	sort_rules.len = 0;
+	return 0;
+    }
+    for(i=0; i<n; i++) {
+	p=&rules[i*2];
+#ifdef LS_DEBUG
+	printf("parsing sort rule: '%.2s'\n", p);
+#endif
+	if (*p=='+') {
+	    sort_rules.rules[i].order = 1;
+	} else if (*p=='-') {
+	    sort_rules.rules[i].order = -1;
+	} else {
+	    sort_rules.rules[i].order = 0; /* basically don't sort */
+	}
+	sort_rules.rules[i].field = rules[i*2+1];
+
+#ifdef LS_DEBUG
+	printf("sort rule[%d]:field=%c order=%d\n",
+	       i,
+	       sort_rules.rules[i].field,
+	       sort_rules.rules[i].order);
+#endif
+    }
+
+    return i; /* number of successfully parsed rules */
+}
+
+char * attr_string(const struct ffblk *fb, char *s)
+{
+    if ((fb->ff_attrib & FA_ARCH) == FA_ARCH) {
+	s[0] = 'A';
+    } else {
+	s[0] = '_';
+    }
+    if ((fb->ff_attrib & FA_DIREC) == FA_DIREC) {
+	s[1] = 'D';
+    } else {
+	s[1] = '_';
+    }
+    if ((fb->ff_attrib & FA_HIDDEN) == FA_HIDDEN) {
+	s[2] = 'H';
+    } else {
+	s[2] = '_';
+    }
+    if ((fb->ff_attrib & FA_LABEL) == FA_LABEL) {
+	s[3] = 'L';
+    } else {
+	s[3] = '_';
+    }
+    if ((fb->ff_attrib & FA_RDONLY) == FA_RDONLY) {
+	s[4] = 'R';
+    } else {
+	s[4] = '_';
+    }
+    if ((fb->ff_attrib & FA_SYSTEM) == FA_SYSTEM) {
+	s[5] = 'S';
+    } else {
+	s[5] = '_';
+    }
+    s[6] = '\0';
+    return s;
+}
+
+DWORD ftime_sec(const struct ffblk *fb)
+{
+    DWORD h, min, sec;
+    h = (fb->ff_ftime & 0x0F800)>>11;
+    min = (fb->ff_ftime & 0x03E0)>>5;
+    sec = (fb->ff_ftime & 0x001f)<<1; /* *2 */
+    return h*3600+min*60+sec;
+}
+
+int sort_fb(const void *pa, const void *pb)
+{
+    BYTE i;
+    int l;
+    long int ll;
+    const struct ffblk *a, *b;
+    BYTE aattrs[7], battrs[7], *aext, *bext;
+
+    a = (const struct ffblk *)pa;
+    b = (const struct ffblk *)pb;
+
+    for(i=0; i < sort_rules.len; i++) {
+	switch(sort_rules.rules[i].field) {
+	case SORT_SIZE:
+	    if (a->ff_fsize > b->ff_fsize) {
+		l = 1;
+	    } else if (a->ff_fsize == b->ff_fsize) {
+		continue;
+	    } else {
+		l = -1;
+	    }
+	    return sort_rules.rules[i].order * l;
+	case SORT_ATTR:
+	    l = strcmp(attr_string(a, aattrs), attr_string(b, battrs));
+	    if (l==0) {
+		continue;
+	    }
+	    return sort_rules.rules[i].order * l;
+	case SORT_DATE:
+	    l = a->ff_fdate - b->ff_fdate;
+	    if (l==0) {
+		continue;
+	    }
+	    return sort_rules.rules[i].order * l;
+	case SORT_TIME:
+	    if (ftime_sec(a) > ftime_sec(b)) {
+		l = 1;
+	    } else if (ftime_sec(a) == ftime_sec(b)) {
+		continue;
+	    } else {
+	        l = -1;
+	    }
+	    return sort_rules.rules[i].order * l;
+	case SORT_FILE:
+	    l = strcmp(a->ff_name, b->ff_name);
+	    if (l==0) {
+		continue;
+	    }
+	    return sort_rules.rules[i].order * l;
+	case SORT_EXT:
+	    aext = strrchr(a->ff_name, '.');
+	    bext = strrchr(b->ff_name, '.');
+
+	    if (a==b) { /* both are null */
+		continue;
+	    } else if (bext == NULL) { /* both can't be null here anymore*/
+		l = 1;
+	    } else if (aext == NULL) {
+		l = -1;
+	    } else {
+		l = strcmp(aext, bext);
+	    }
+	    if (l==0) {
+		continue;
+	    }
+	    return sort_rules.rules[i].order * l;
+	default:
+	    continue;
+	}
+    }
+    return 0; /* can't sort */
+}
+
+void save_entry(struct sort_entries *se, struct ffblk *fb)
+{
+    struct ffblk *e, *ne;
+    BYTE l;
+    WORD i;
+    if (se->used == se->capacity) {
+	se->capacity += 100;
+	ne = realloc(se->entries, se->capacity * sizeof(struct ffblk ));
+	if(ne == NULL) {
+	    return;
+	}
+	se->entries = ne;
+    }
+    memcpy(&se->entries[se->used], fb, sizeof(struct ffblk));
+    se->used++;
+}
+
+void sort_entries(struct sort_entries *se)
+{
+    qsort(se->entries, se->used, sizeof(struct ffblk ), sort_fb);
+    return;
+}
+
+void show_entries(struct sort_entries *se)
+{
+    WORD i;
+    sort_entries(se);
+
+    for(i=0; i < se->used; i++) {
+	show_entry(&se->entries[i]);
+	pause(0);
+    }
+}
 
 /*
  * Print a dir entry.
@@ -417,7 +648,7 @@ void show_long_entry(struct ffblk *fb)
     WORD h, min, sec, y, m, d;
     BYTE *fn;
     BYTE is_colored=0;
-#ifdef LS_DEBUG
+#ifdef LS_DEBUG_2
     BYTE l;
     fprintf(stderr,"s_e: fb->reserved:");
     for(l=0;l<22;l++) {
@@ -530,7 +761,7 @@ void pause(BYTE force)
  */
 int init(int nargs, char *arg[])
 {
-    BYTE t,i,j,k,*p;
+    BYTE t,i,j,k,n,*p;
 
     ls_f.w_entry = 0;
     ls_f.npatt = 1;
@@ -571,6 +802,7 @@ int init(int nargs, char *arg[])
 			   "\t-f: list normal FILES only\n"
 			   "\t-l: show volume label\n"
 			   "\t-p: pause at every screen full or pattern\n"
+			   "\t-s: sort output\n"
 			   "\t-w: show file names only (6 per row)\n"
 			   "\t-z: show human readable sizes (B, KB, MB, GB)\n");
 		    free(ls_f.patt);
@@ -580,6 +812,14 @@ int init(int nargs, char *arg[])
 		    break;
 		case 'p':
 		    ls_f.flags += FLAG_P;
+		    break;
+		case 's':
+		    ls_f.flags += FLAG_S;
+		    n = sort_build_rules(&arg[i][2]);
+		    if(n != sort_rules.len) {
+			printf("ERROR parsing sort rules, sorting ignored\n");
+			sort_rules.len = 0;
+		    }
 		    break;
 		case 'w':
 		    ls_f.flags += FLAG_W;
@@ -633,12 +873,19 @@ int init(int nargs, char *arg[])
 void do_ls(void)
 {
     BYTE *p, j, m, k;
+    struct sort_entries entries={0, 0, NULL};
     WORD len;
     signed char r;
     struct ffblk fb;
     m = 0;
     ls_f.ln = 0;
+
     for(j=0;j < ls_f.npatt;j++) {
+	if (IS_FLAG(FLAG_S)) {
+#ifdef LS_DEBUG
+	    printf("CAPACITY USED is %d/%d\n", entries.used, entries.capacity);
+#endif
+	}
 	ls_f.w_entry = 0;
 	if(j > 0) {
 	    if((IS_FLAG(FLAG_W)) && (ls_f.w_entry > 0)) {
@@ -703,7 +950,11 @@ void do_ls(void)
 #ifdef LS_DEBUG
 		    fprintf(stderr,"do_ls:6b: r=%d\n",r);
 #endif
-		    show_entry(&fb);
+		    if (IS_FLAG(FLAG_S)) {
+			save_entry(&entries, &fb);
+		    } else {
+			show_entry(&fb);
+		    }
 		}
 	    }
 	    else {
@@ -726,7 +977,10 @@ void do_ls(void)
 	    free(ls_f.patt[j]); /* if patt[j] was previously malloced */
 	    ls_f.patt[j] = NULL;
 	}
+	if (IS_FLAG(FLAG_S)) {
+	    show_entries(&entries);
+	    entries.used=0;
+	}
     }
-
     return;
 }

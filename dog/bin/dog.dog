@@ -17,9 +17,9 @@ if EXIST %EMACS%\emacs.exe se PATH %PATH%;%EMACS%
 se LSCOLORS _D=34;0;1,_H=30;40;8,_R=33;40,_S=31;40;1,_L=32;40,EXE=35;40,COM=35;40,DOG=35;40,C=32;40,H=32;40,OBJ=31;40,_A=33;40
 # Default flags for certain commands through aliases.
 eh common aliases. Try the AL command to see them!
-al l  ls -w -c
-al ls ls -z -c
-al ll ls -a -z -c
+al l  ls -w -c -s+f
+al ll ls -z -c -s+f
+al lll ls -a -z -c -s+f
 # Don't ask to overwrite, just do it like on linux
 al cp cp -f -v
 al mv mv -v
