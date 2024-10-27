@@ -37,6 +37,8 @@ History
 2024-10-20 - Added -c flag to use ANSI color.
              Also added code to parse LSCOLORS env variable color rules. -WB
 2024-10-21 - Added -s flag to sort the ls output.
+2024-10-26 - Added n sort option to sort directories before files. -WB
+2024-10-27 - Added option to quit listing when -p is set by pressing 'q'. -WB
 ****************************************************************************/
 
 #include "ext.h"
@@ -747,7 +749,7 @@ BYTE read_key(void)
     asm int 21h;
     asm mov c,al;
 
-    if(c >= 'a') {
+    if(c >= 'a' && c <= 'z') {
 	c -= ('a' - 'A'); /* uppercase the character */
     }
     return c;
@@ -755,13 +757,17 @@ BYTE read_key(void)
 
 void pause(BYTE force)
 {
+    BYTE k;
     if (IS_FLAG(FLAG_P) && ((ls_f.ln >= (MAX_Y-1)) || force)) {
 #ifdef LS_DEBUG
 	printf("ls_f.ln=%d/%d\n", ls_f.ln, MAX_Y);
 #endif
-	printf("<<<Press any key to continue listing>>>\r");
-	read_key();
-	printf("                                       \r");
+	printf("<<<Press any key to continue listing or 'q' to quit>>>\r");
+	k = read_key();
+	printf("                                                      \r");
+	if (k=='Q') {
+	    exit(-1);
+	}
 	ls_f.ln = 0;
     }
 }
