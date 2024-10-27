@@ -324,6 +324,7 @@ Parameters:
    -s[SORTORDER]... - Sort the result with the given rules
      SORTORDER can be any of these letters:
       + prefix means ascending, - prefix means descending
+        n = sort directories before files
         s = sort by file size
         a = sort by attribute: Archive, Directory, Hidden,
                                Label, Read-Only, System

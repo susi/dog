@@ -340,6 +340,7 @@ BYTE *ext_help[_NECOMS] = {
     "   -s[SORTORDER]... - Sort the result with the given rules\n"
     "     SORTORDER can be any of these letters:\n"
     "      + prefix means ascending, - prefix means descending\n"
+    "        n = sort directories before files\n"
     "        s = sort by file size\n"
     "        a = sort by attribute: Archive, Directory, Hidden,\n"
     "                               Label, Read-Only, System\n"

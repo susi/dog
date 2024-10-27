@@ -101,6 +101,7 @@ void color_set(char *cs, const char *s, COLOR fg, COLOR bg, COLOR attr);
 char * color_match(struct ffblk *fb, const char *n);
 BYTE color_build_rules(void);
 
+#define SORT_DIR_FIRST 'n'
 #define SORT_SIZE 's'
 #define SORT_ATTR 'a'
 #define SORT_DATE 'd'
@@ -340,8 +341,8 @@ BYTE sort_build_rules(const BYTE *rules)
     const BYTE *p;
 
     if ((rules == NULL) || ((n = strlen(rules)/2)==0)) {
-	rules = "+f";
-	n = 1;
+	rules = "+n+f";
+	n = 2;
     }
 #ifdef LS_DEBUG
     printf("parsing sort string: '%s'\n", rules);
@@ -435,6 +436,15 @@ int sort_fb(const void *pa, const void *pb)
 
     for(i=0; i < sort_rules.len; i++) {
 	switch(sort_rules.rules[i].field) {
+	case SORT_DIR_FIRST:
+	    if ((a->ff_attrib & FA_DIREC) == FA_DIREC) {
+		if ((b->ff_attrib & FA_DIREC) == FA_DIREC) {
+		    continue;
+		}
+		return sort_rules.rules[i].order * -1;
+	    } else {
+		return sort_rules.rules[i].order * 1;
+	    }
 	case SORT_SIZE:
 	    if (a->ff_fsize > b->ff_fsize) {
 		l = 1;
