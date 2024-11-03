@@ -39,6 +39,7 @@ History
 2024-10-21 - Added -s flag to sort the ls output.
 2024-10-26 - Added n sort option to sort directories before files. -WB
 2024-10-27 - Added option to quit listing when -p is set by pressing 'q'. -WB
+2024-10-27 - Added ANSI check when -c is given. -WB
 ****************************************************************************/
 
 #include "ext.h"
@@ -53,6 +54,8 @@ BYTE read_key(void);
 void pause(BYTE force);
 
 /* Color via ANSI */
+#define ANSI_GET_POS "%c[6n"
+
 #define COLOR_FG_BLACK   30
 #define COLOR_FG_RED     31
 #define COLOR_FG_GREEN   32
@@ -84,6 +87,7 @@ void pause(BYTE force);
 #define COLOR_ESC        'E'
 #endif
 #define COLOR BYTE*
+#define COLOR_BS         0x08
 
 #define COLOR_DEFAULT_RULE "_D=34;0;1,_H=30;40;8,_R=33;40,_S=31;40;1,_L=32;40,EXE=35;40,COM=35;40,DOG=35;40"
 
@@ -102,6 +106,8 @@ struct color_rules {
 void color_set(char *cs, const char *s, COLOR fg, COLOR bg, COLOR attr);
 char * color_match(struct ffblk *fb, const char *n);
 BYTE color_build_rules(void);
+BYTE test_ansi(void);
+BYTE direct_console_input(void);
 
 #define SORT_DIR_FIRST 'n'
 #define SORT_SIZE 's'
@@ -188,6 +194,53 @@ int main(int nargs, char *argv[])
     return r;
 }
 
+/**
+ * Returns BYTE of direct console input.
+ *              0x0FF when the input buffer is empty.
+ * Uses DOS INT 21h/AH=06,DL=FF
+ */
+BYTE direct_console_input(void)
+{
+    BYTE c;
+    asm mov ah, 06h;    /* Direct Console I/O */
+    asm mov dl, 0FFh;   /* 0x0ff means INPUT */
+    asm int 21h;        /* Fetch 1st character */
+    asm jnz ret_byte;
+    return 0x0ff;       /* Input buffer empty */
+ret_byte:
+    asm mov c, al;
+    return c;
+}
+
+/*
+ * Checks for ANSI.SYS compatible driver and returns FLAG_C is successful, 0 otherwise
+ * Code for this function is inspired by TESTANSI.ASM by Jerome Shidel:
+ *   gitlab.com/DOSx86/donuts/-/blob/master/SOURCE/DONUTS/TestAnsi/TESTANSI.ASM
+ */
+BYTE test_ansi(void)
+{
+    BYTE c, al_c, line[80], col=0, row=0, *qs=ANSI_GET_POS;
+
+    printf("%c[6n", COLOR_ESC);
+    c = direct_console_input();
+    if ((c == 0x0ff) || (c != COLOR_ESC)) {
+	goto test_cleanup;
+    }
+    c = direct_console_input();
+    if ((c == 0x0ff) || (c != '[')) {
+	goto test_cleanup;
+    }
+    do {
+	c = direct_console_input();
+	if(c == 'R') {
+	    return FLAG_C;
+	}
+    } while(c != 0x0ff);
+test_cleanup:
+    printf("%c%c%c%c", COLOR_BS, COLOR_BS, COLOR_BS, COLOR_BS);
+    printf("WARNING: ANSI driver not available, ignoring -c\n");
+    return 0;
+}
 
 /*
  * Set an ANSI color
@@ -804,7 +857,7 @@ int init(int nargs, char *arg[])
 		    ls_f.attrs = FA_ARCH|FA_SYSTEM|FA_RDONLY|FA_HIDDEN|FA_DIREC|FA_LABEL;
 		    break;
 		case 'c':
-		    ls_f.flags += FLAG_C;
+		    ls_f.flags += test_ansi();
 		    break;
 		case 'd':
 		    ls_f.flags += FLAG_D;
