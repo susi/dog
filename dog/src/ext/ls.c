@@ -219,7 +219,7 @@ ret_byte:
  */
 BYTE test_ansi(void)
 {
-    BYTE c, al_c, line[80], col=0, row=0, *qs=ANSI_GET_POS;
+    BYTE c, al_c;
 
     printf("%c[6n", COLOR_ESC);
     c = direct_console_input();
@@ -590,6 +590,7 @@ void show_entries(struct sort_entries *se)
 
     for(i=0; i < se->used; i++) {
 	show_entry(&se->entries[i]);
+	ls_f.ln++;
 	pause(0);
     }
 }
