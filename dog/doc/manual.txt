@@ -212,6 +212,33 @@ Effect: Clears the screen. Works on 50 lines/page screens too.
 
 
 
+Syntax: CM [OPTION]... <ATTRIBUTES> <PATTERN|@FILE>...
+Parameters:
+   ATTRIBUTES - ATTRIBUTES should be preceded by a +,- or = character
+                indicating whether to add, remove or set ATTRIBUTES.
+		Then the list of attributes is given (in any order):
+		- A - Archive
+		- S - System
+		- R - Read-only
+		- H - Hidden
+      PATTERN - Pattern can be a number of paths
+                including wild characters * and ?
+                ? represents any single character an
+                * represents 0 or more characters
+                e.g. *.dog *.* DO?.COM, *.?
+
+        @FILE - Filename preceded by '@' which is read and every line is
+             handled like a PATTERN
+ OPTION can be one of these (in any order):
+   -i - prompt (Yes/No/All) for each file or directory
+   -r - recurs into sub-directories.
+        Setts ATTRIBUTES for all files and directories too
+   -v - print filename of each modified file
+Effect: Changes ATTRIBUTES of the file(s) and/or directory(ies) matching PATTERN
+
+
+
+
 Syntax: CP [OPTION]... SOURCE DEST
     or: CP [OPTION]... [PATH1\]PATTERN1 [PATH2\]PATTERN2
 Parameters:

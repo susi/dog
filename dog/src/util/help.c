@@ -37,7 +37,7 @@ History
 
 #define _NCOMS 11
 #define _NBCOMS 8
-#define _NECOMS 16
+#define _NECOMS 17
 
 BYTE *dog_help="\n\nSyntax:DOG [-P|-E envsz|-A aliassz|-C command line]\n"
     "Parameters:\n"
@@ -185,6 +185,7 @@ BYTE ext_commands[_NECOMS][3] = {
     "BP",
     "BR",
     "CL",
+    "CM",
     "CP",
     "DS",
     "DT",
@@ -203,6 +204,7 @@ BYTE ext_command_des[_NECOMS][21] = {
     "BeeP                ",
     "BReak               ",
     "CLear screen        ",
+    "ChMod               ",
     "CoPy                ",
     "Directory Stack     ",
     "DaTe                ",
@@ -238,6 +240,29 @@ BYTE *ext_help[_NECOMS] = {
 
     "\n\nSyntax: CL\n"
     "Effect: Clears the screen. Works on 50 lines/page screens too.\n\n",
+
+    "\n\nSyntax: CM [OPTION]... <ATTRIBUTES> <PATTERN|@FILE>...\n"
+    "Parameters:\n"
+    "   ATTRIBUTES - ATTRIBUTES should be preceded by a +,- or = character\n"
+    "                indicating whether to add, remove or set ATTRIBUTES.\n"
+    "		Then the list of attributes is given (in any order):\n"
+    "		- A - Archive\n"
+    "		- S - System\n"
+    "		- R - Read-only\n"
+    "		- H - Hidden\n"
+    "      PATTERN - Pattern can be a number of paths\n"
+    "                including wild characters * and ?\n"
+    "                ? represents any single character an\n"
+    "                * represents 0 or more characters\n"
+    "                e.g. *.dog *.* DO?.COM, *.?\n\n"
+    "        @FILE - Filename preceded by '@' which is read and every line is\n"
+    "             handled like a PATTERN\n"
+    " OPTION can be one of these (in any order):\n"
+    "   -i - prompt (Yes/No/All) for each file or directory\n"
+    "   -r - recurs into sub-directories.\n"
+    "        Setts ATTRIBUTES for all files and directories too\n"
+    "   -v - print filename of each modified file\n"
+    "Effect: Changes ATTRIBUTES of the file(s) and/or directory(ies) matching PATTERN\n\n",
 
     "\n\nSyntax: CP [OPTION]... SOURCE DEST\n"
     "    or: CP [OPTION]... [PATH1\\]PATTERN1 [PATH2\\]PATTERN2\n"

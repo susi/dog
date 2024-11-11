@@ -55,11 +55,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 /* EXT specific */
 #define BP_DEBUG
 #define EXT_DEBUG
+#define CM_DEBUG
 #define LS_DEBUG
 #define MV_DEBUG
 #define RM_DEBUG
 #define SZ_DEBUG
 #define TP_DEBUG
+#define VR_DEBUG
 
 #endif /* _DEBUG_ALL_  */
 #endif /* __DOG_DEBUG__  */
