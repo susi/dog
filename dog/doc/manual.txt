@@ -231,6 +231,7 @@ Parameters:
              handled like a PATTERN
  OPTION can be one of these (in any order):
    -i - prompt (Yes/No/All) for each file or directory
+   -a - act on read-only, system and hidden files
    -r - recurs into sub-directories.
         Setts ATTRIBUTES for all files and directories too
    -v - print filename of each modified file
@@ -435,6 +436,7 @@ Parameters:
      @FILE - Filename preceded by '@' which is read and every line is
              handled like a PATTERN
  OPTION can be one of these (in any order):
+   -a - also removes read-only, system and hidden files
    -i - prompt (Yes/No/All) for each file or directory
    -r - recurse into sub-directories.
         Removes all files in subdirectories too

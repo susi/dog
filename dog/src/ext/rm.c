@@ -24,6 +24,8 @@ Wolf Bergenheim (WB)
 History
 18.03.00 - Extracted from DOG.C - WB
 2024-06-01 - Made the RT command buildable and documented.
+2024-11-11 - Added -a flag to (try) to also remove hidden and system files.
+             Read-Only files will get permission denied error.
 **************************************************************************/
 #include "ext.h"
 
@@ -36,6 +38,9 @@ BYTE flag_i = FLAG_UNSET;
 BYTE flag_r = FLAG_UNSET;
 BYTE flag_v = FLAG_UNSET;
 BYTE flag_h = FLAG_UNSET;
+BYTE flag_a = FLAG_UNSET;
+
+BYTE search_attribs = 0;
 
 BYTE rm_dir(BYTE *dir);
 BYTE rm_file(BYTE *patt);
@@ -64,7 +69,7 @@ BYTE rm_file(BYTE *patt)
   printf("rm_file (%d): patt=(%s)[%x]\n",__LINE__,patt,patt);
 #endif
 
-  f=findfirst(patt,&fb,0|FA_DIREC);
+  f=findfirst(patt,&fb,search_attribs|FA_DIREC);
 #ifdef RM_DEBUG
   printf("rm_file (%d): patt=(%s)[%x] f=%x\n",__LINE__,patt,patt,f);
 #endif
@@ -275,6 +280,7 @@ void print_help(BYTE mode) {
 	printf("The OPTIONS are:\n\t-i:  interactive mode: prompt (Yes/No/All) for each file or directory\n");
 	printf("\t-v:  verbose: print filename of each removed file\n");
 	if(mode == MODE_RM) {
+		printf("\t-a:  also remove read-only, system and hidden files\n");
 		printf("\t-r:  recurse sub-directories. Removes all files in subdirectories too\n");
 		printf("\t       if the program is executed as rt, -r is implicit\n");
 	}
@@ -310,6 +316,10 @@ int main(BYTE n,BYTE *arg[])
 			if ((arg[i][0] == '-') || (arg[i][0] == '/')) {
 				for(j=1;arg[i][j]!='\0';j++) {
 					switch(arg[i][j]) {
+					case 'a':
+					    search_attribs = FA_NORMAL | FA_HIDDEN | FA_SYSTEM | FA_RDONLY;
+					    flag_a = FLAG_SET;
+					    break;
 					 case 'i':
 						flag_i = FLAG_SET;
 						break;
