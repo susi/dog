@@ -152,7 +152,7 @@ C:\DOG>_
 
 
 #define _NCOMS 10
-#define _NECOMS 18
+#define _NECOMS 19
 #define _NARGS 20
 #define MAX_ALIAS_LOOPS 21
 
@@ -201,7 +201,7 @@ extern BYTE flags;
 #define C_SE 7
 #define C_TN 8
 #define C_XX 9
-#define C_HH 7
+#define C_HH 8
 
 extern BYTE cBreak, in_getln;
 extern WORD drvs,errorlevel,PSP;

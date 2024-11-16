@@ -284,6 +284,19 @@ Effect: DT displays the current date and time. By using the options DT
 
 
 
+Syntax: HD [OPTION] FILE
+Parameters:
+ OPTION can be one of these:
+   -c <NUM> - Number of characters from the start to display
+   -n <NUM> - Number of lines from the start to display
+   -h       - Display help
+ FILE is the path to a file to display
+Effect: HD Displays the top of a (text) file.
+        By default 10 lines are printed.
+
+
+
+
 Syntax: HH [DOG | ALL | COMMAND]
 Parameters:
        DOG - Gives syntax for DOG.

@@ -63,6 +63,8 @@ ds: ds.com
 
 dt: dt.com
 
+hd: hd.com
+
 hh: hh.com
 
 ls: ls.com

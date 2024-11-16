@@ -1,5 +1,5 @@
 /*
-HEAD.C - version 1.0
+HD.C - version 1.1
     Displays a certain amount of a file.
 
 Copyright (C) 2000 Wolf Bergenheim
@@ -26,8 +26,9 @@ History
 04.08.99 - Added switches.
 12.03.00 - Ported to Borland C++ 3.1
 13.03.00 - Addded arg checking
+2024-11-16 - Made HEAD into an external command HD.
 */
-#include "util.h"
+#include "ext.h"
 
 WORD lines = 10;
 WORD count = 0;
@@ -40,24 +41,24 @@ int main(int nargs,char *args[])
 
     switch(nargs) {
         case 1:
-            puts("HEAD.COM v.1.0 by Wolf Bergenheim. Displays The top of a file.");
-            puts("usage: HEAD [-N lines | -C count | -H | -?] filename.ext");
+            puts("HD - Displays The top of a file.");
+            puts("usage: HD [-N lines | -C count | -H | -?] filename.ext");
             return 1;
         case 2:
             if(stricmp(args[1],"-H") == 0) {
-                puts("HEAD.COM v.1.0 by Wolf Bergenheim. Displays The top of a file.");
+		puts("HD - Displays The top of a file.");
                 puts("usage: HEAD [-N lines | -C count | -H | -?] filename.ext");
                 return 0;
             }
             if(stricmp(args[1],"-?") == 0) {
-                puts("HEAD.COM v.1.0 by Wolf Bergenheim. Displays The top of a file.");
+                puts("HD - Displays The top of a file.");
                 puts("usage: HEAD [-N lines | -C count | -H | -?] filename.ext");
                 return 0;
             }
-            
+
             fp = fopen(args[1],"r");
             if (fp == NULL) {
-                fprintf(stderr,"HEAD.COM: Unable to open file: %s\n",args[1]);
+                fprintf(stderr,"HD: Unable to open file: %s\n",args[1]);
                 return 2;
             }
 
@@ -65,14 +66,14 @@ int main(int nargs,char *args[])
         case 3:
 
             puts("Invalid number of arguments");
-            puts("HEAD.COM v.1.0 by Wolf Bergenheim. Displays The top of a file.");
-            puts("usage: HEAD [-N lines | -C count | -H | -?] filename.ext");
+            puts("HD - Displays The top of a file.");
+            puts("usage: HD [-N lines | -C count | -H | -?] filename.ext");
             return 1;
         case 4:
             if(stricmp(args[1],"-N") == 0) {
                 fp = fopen(args[3],"r");
                 if (fp == NULL) {
-                    fprintf(stderr,"HEAD.COM: Unable to open file: %s\n",args[1]);
+                    fprintf(stderr,"HD: Unable to open file: %s\n",args[1]);
                     return 2;
                 }
                 lines = atoi(args[2]);
@@ -80,7 +81,7 @@ int main(int nargs,char *args[])
             else if(stricmp(args[1],"-C") == 0) {
                 fp = fopen(args[3],"rb");
                 if (fp == NULL) {
-                    fprintf(stderr,"HEAD.COM: Unable to open file: %s\n",args[1]);
+                    fprintf(stderr,"HD: Unable to open file: %s\n",args[1]);
                     return 2;
                 }
                 count  = atoi(args[2]);
@@ -91,14 +92,14 @@ int main(int nargs,char *args[])
             }
             else {
                 printf("Unknown switch \"%s\"\n",args[2]);
-                puts("HEAD.COM v.1.0 by Wolf Bergenheim. Displays The top of a file.");
+                puts("HD - Displays The top of a file.");
                 puts("usage: HEAD [-N lines | -C count | -H | -?] filename.ext");
                 return 1;
             }
             break;
 
         default:
-            puts("HEAD.COM v.1.0 by Wolf Bergenheim. Displays The top of a file.");
+            puts("HD - Displays The top of a file.");
             puts("usage: HEAD [-N lines | -C count | -H | -?] filename.ext");
             return 1;
     }

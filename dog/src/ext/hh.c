@@ -38,7 +38,7 @@ History
 
 #define _NCOMS 10
 #define _NBCOMS 8
-#define _NECOMS 18
+#define _NECOMS 19
 
 BYTE *dog_help="\n\nSyntax:DOG [-P|-E envsz|-A aliassz|-C command line]\n"
     "Parameters:\n"
@@ -183,6 +183,7 @@ BYTE ext_commands[_NECOMS][3] = {
     "CP",
     "DS",
     "DT",
+    "HD",
     "HH",
     "LS",
     "MV",
@@ -203,6 +204,7 @@ BYTE ext_command_des[_NECOMS][21] = {
     "CoPy                ",
     "Directory Stack     ",
     "DaTe                ",
+    "HeaD                ",
     "Help                ",
     "LiSt files          ",
     "MoVe file (rename)  ",
@@ -304,6 +306,16 @@ BYTE *ext_help[_NECOMS] = {
     "   -t - set TIME only\n"
     "Effect: DT displays the current date and time. By using the options DT\n"
     "        can be used to set the DATE and/or TIME\n\n",
+
+    "\n\nSyntax: HD [OPTION] FILE\n"
+    "Parameters:\n"
+    " OPTION can be one of these:\n"
+    "   -c <NUM> - Number of characters from the start to display\n"
+    "   -n <NUM> - Number of lines from the start to display\n"
+    "   -h       - Display help\n"
+    " FILE is the path to a file to display\n"
+    "Effect: HD Displays the top of a (text) file.\n"
+    "        By default 10 lines are printed.\n\n",
 
     "\n\nSyntax: HH [DOG | ALL | COMMAND]\n"
     "Parameters:\n"

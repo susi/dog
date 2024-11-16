@@ -35,7 +35,7 @@ DEBUG=-D_DEBUG_ALL_ -N -Od -w
 LDFLAGS=$(LDFLAGS) -ll -lm -ls -lv
 !endif
 
-PROGS=head.com which.com generr.com
+PROGS=which.com generr.com
 
 .c.com:
 	$(CC) @&&!
@@ -46,8 +46,6 @@ $.
 !
 
 all: $(PROGS)
-
-hd: head.com
 
 wh: which.com
 
@@ -72,7 +70,6 @@ rm.com: cp
 	cd ..\util
 
 install: cp.com $(PROGS) man
-	$(CP) head.com ..\..\bin
 	$(CP) which.com ..\..\bin
 	$(CP) generr.com ..\..\bin
 
