@@ -108,16 +108,6 @@ Effect: Print a (formatted) string to stdout (normally the screen).
 
 
 
-Syntax: HH [COMMAND]
-Parameters:
-   COMMAND - Giving the name of a DOG command will display
-             detailed help for that command.
-           - HH alone displays a list of all DOG commands.
-Effect: Displays usage information for DOG commands.
-
-
-
-
 Syntax: MD <DIR>
 Parameters:
    DIR - Name or Path of new directory.
@@ -294,6 +284,18 @@ Effect: DT displays the current date and time. By using the options DT
 
 
 
+Syntax: HH [DOG | ALL | COMMAND]
+Parameters:
+       DOG - Gives syntax for DOG.
+       ALL - Prints out the full DOG manual.
+   COMMAND - Giving the name of a DOG command will display
+             detailed help for that command.
+           - HH alone starts the DOG introduction.
+Effect: Displays usage information for DOG commands.
+
+
+
+
 Syntax: LS [OPTION]... [PATTERN]...
 Parameters:
    PATTERN - Pattern can be a number of paths including wild characters * and ?
@@ -436,7 +438,7 @@ Parameters:
      @FILE - Filename preceded by '@' which is read and every line is
              handled like a PATTERN
  OPTION can be one of these (in any order):
-   -a - also removes read-only, system and hidden files
+   -a - also remove read-only, system and hidden files
    -i - prompt (Yes/No/All) for each file or directory
    -r - recurse into sub-directories.
         Removes all files in subdirectories too

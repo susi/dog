@@ -179,6 +179,7 @@ History
 2024-10-07 - Fixed buffered_input to not clobber the input buffer to make history work - WB
 2024-10-14 - Fixed dogfile arg parsing and variable initialization.
              Added PP as an external command -WB
+2024-11-16 - Made HH and external command but left a fallback minimal HH - WB
 */
 
 #include "dog.h"
@@ -199,7 +200,6 @@ BYTE commands[_NCOMS][3] = {
     "CD",
     "CT",
     "EH",
-    "HH",
     "MD",
     "RD",
     "SE",
@@ -214,6 +214,7 @@ BYTE ext_commands[_NECOMS][3] = {
     "CP",
     "DS",
     "DT",
+    "HH",
     "LS",
     "MV",
     "PP",
@@ -231,7 +232,6 @@ BYTE command_des[_NCOMS][21] = {
     "Change Directory    ",
     "Change Terminal     ",
     "EcHo                ",
-    "Help                ",
     "Make Directory      ",
     "Remove Directory    ",
     "Set to Environment  ",
@@ -246,6 +246,7 @@ BYTE ext_command_des[_NECOMS][21] = {
     "CoPy                ",
     "Directory Stack     ",
     "Date and Time       ",
+    "Help                ",
     "LiSt files          ",
     "MoVe file (rename)  ",
     "PromPt              ",
@@ -1456,10 +1457,6 @@ void do_command( BYTE na)
       do_eh(na);
       break;
 
-     case C_HH :
-      do_hh(na);
-      break;
-
      case C_MD :
       do_mrd(na);
       break;
@@ -1751,6 +1748,11 @@ void do_exe(BYTE n)
       free(fb);
       return;
     }
+    if(strnicmp(arg[0], ext_commands[C_HH], 2) == 0) {
+	do_hh(n);
+	return;
+    }
+
     printf("%s: Bad command or Filename\n",arg[0]);
     free(fb);
     return;

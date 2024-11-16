@@ -35,8 +35,8 @@ DEBUG=-D_DEBUG_ALL_ -N -Od -w
 LDFLAGS=$(LDFLAGS) -ll -lm -ls -lv
 !endif
 
-PROGS=head.com help.com which.com generr.com
-MANUAL=..\..\doc\manual.txt
+PROGS=head.com which.com generr.com
+
 .c.com:
 	$(CC) @&&!
 $(CFLAGS)
@@ -45,11 +45,9 @@ $(DEBUG)
 $.
 !
 
-all: $(PROGS) man
+all: $(PROGS)
 
 hd: head.com
-
-hh: help.com
 
 wh: which.com
 
@@ -73,17 +71,12 @@ rm.com: cp
 	$(MAKE) clean
 	cd ..\util
 
-install: cp.com $(PROGS)
+install: cp.com $(PROGS) man
 	$(CP) head.com ..\..\bin
-	$(CP) help.com ..\..\bin
 	$(CP) which.com ..\..\bin
 	$(CP) generr.com ..\..\bin
-
-man: hh
-	help all > $(MANUAL)
 
 .ignore
 clean: rm
 	rm *.obj
 	rm *.com
-	rm $(MANUAL)

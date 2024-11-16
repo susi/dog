@@ -31,13 +31,14 @@ History
 2024-06-26 - Added documentation for DS - WB
 2024-10-14 - Added documentation for PP - WB
 2024-10-16 - Added documentation for PT - WB
+2024-11-16 - Made help into the external command HH. - WB
 */
 
-#include "util.h"
+#include "ext.h"
 
-#define _NCOMS 11
+#define _NCOMS 10
 #define _NBCOMS 8
-#define _NECOMS 17
+#define _NECOMS 18
 
 BYTE *dog_help="\n\nSyntax:DOG [-P|-E envsz|-A aliassz|-C command line]\n"
     "Parameters:\n"
@@ -52,10 +53,10 @@ BYTE int_commands[_NCOMS][3]={
     "CD",
     "CT",
     "EH",
-    "HH",
     "MD",
     "RD",
     "SE",
+    "TN",
     "XX"};
 
 BYTE command_des[_NCOMS][21] = {
@@ -64,10 +65,10 @@ BYTE command_des[_NCOMS][21] = {
     "Change Directory    ",
     "Change Terminal     ",
     "EcHo                ",
-    "Help                ",
     "Make Directory      ",
     "Remove Directory    ",
     "Set to Environment  ",
+    "TrueName            ",
     "eXit                "};
 
 BYTE *cmd_help[_NCOMS] = {
@@ -126,13 +127,6 @@ BYTE *cmd_help[_NCOMS] = {
     "   $t - Tabulator\n"
     "Effect: Print a (formatted) string to stdout (normally the screen).\n\n",
 
-    "\n\nSyntax: HH [COMMAND]\n"
-    "Parameters:\n"
-    "   COMMAND - Giving the name of a DOG command will display\n"
-    "             detailed help for that command.\n"
-    "           - HH alone displays a list of all DOG commands.\n"
-    "Effect: Displays usage information for DOG commands.\n\n",
-
     "\n\nSyntax: MD <DIR>\n"
     "Parameters:\n"
     "   DIR - Name or Path of new directory.\n"
@@ -189,6 +183,7 @@ BYTE ext_commands[_NECOMS][3] = {
     "CP",
     "DS",
     "DT",
+    "HH",
     "LS",
     "MV",
     "PP",
@@ -208,6 +203,7 @@ BYTE ext_command_des[_NECOMS][21] = {
     "CoPy                ",
     "Directory Stack     ",
     "DaTe                ",
+    "Help                ",
     "LiSt files          ",
     "MoVe file (rename)  ",
     "PromPt              ",
@@ -308,6 +304,15 @@ BYTE *ext_help[_NECOMS] = {
     "   -t - set TIME only\n"
     "Effect: DT displays the current date and time. By using the options DT\n"
     "        can be used to set the DATE and/or TIME\n\n",
+
+    "\n\nSyntax: HH [DOG | ALL | COMMAND]\n"
+    "Parameters:\n"
+    "       DOG - Gives syntax for DOG.\n"
+    "       ALL - Prints out the full DOG manual.\n"
+    "   COMMAND - Giving the name of a DOG command will display\n"
+    "             detailed help for that command.\n"
+    "           - HH alone starts the DOG introduction.\n"
+    "Effect: Displays usage information for DOG commands.\n\n",
 
     "\n\nSyntax: LS [OPTION]... [PATTERN]...\n"
     "Parameters:\n"

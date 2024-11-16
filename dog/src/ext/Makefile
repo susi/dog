@@ -36,7 +36,8 @@ DEBUG=-D_DEBUG_ALL_ -N -Od
 LDFLAGS=$(LDFLAGS) -ll -lm -ls -lv
 !endif
 
-PROGS=bp.com br.com cl.com cm.com cp.com ds.com dt.com ls.com mv.com rm.com sz.com tp.com vf.com vr.com rt.com
+PROGS=bp.com br.com cl.com cm.com cp.com ds.com dt.com hh.com ls.com mv.com rm.com sz.com tp.com vf.com vr.com rt.com
+MANUAL=..\..\doc\manual.txt
 
 .c.com:
 	$(CC) @&&!
@@ -62,6 +63,8 @@ ds: ds.com
 
 dt: dt.com
 
+hh: hh.com
+
 ls: ls.com
 
 mv: mv.com
@@ -81,10 +84,14 @@ rt.com: rm.com cp.com
 
 rt: rt.com
 
-install: $(PROGS)
+man: hh
+	hh all > $(MANUAL)
+
+install: $(PROGS) man
 	$(CP) *.com ..\..\bin\
 
 .ignore
 clean: rm
 	rm *.OBJ
 	rm *.COM
+	rm $(MANUAL)
