@@ -225,7 +225,9 @@ BYTE ext_commands[_NECOMS][3] = {
     "SZ",
     "TP",
     "VF",
-    "VR"};
+    "VR",
+    "WI",
+};
 
 BYTE command_des[_NCOMS][21] = {
     "ALias               ",
@@ -258,7 +260,9 @@ BYTE ext_command_des[_NECOMS][21] = {
     "SiZe of files in dir",
     "TyPe                ",
     "VeriFy              ",
-    "VeRsion             "};
+    "VeRsion             ",
+    "WhIch               ",
+};
 
 /* BYTE *command_help[_NCOMS]; */
 

@@ -38,7 +38,7 @@ History
 
 #define _NCOMS 10
 #define _NBCOMS 8
-#define _NECOMS 19
+#define _NECOMS 20
 
 BYTE *dog_help="\n\nSyntax:DOG [-P|-E envsz|-A aliassz|-C command line]\n"
     "Parameters:\n"
@@ -194,7 +194,9 @@ BYTE ext_commands[_NECOMS][3] = {
     "SZ",
     "TP",
     "VF",
-    "VR"};
+    "VR",
+    "WI",
+};
 
 BYTE ext_command_des[_NECOMS][21] = {
     "BeeP                ",
@@ -215,7 +217,9 @@ BYTE ext_command_des[_NECOMS][21] = {
     "SiZe of files in dir",
     "TyPe                ",
     "VeriFy              ",
-    "VeRsion             "};
+    "VeRsion             ",
+    "WhIch               ",
+};
 
 BYTE *ext_help[_NECOMS] = {
     "\n\nSyntax: BP [FREQ [TIME]]\n"
@@ -498,7 +502,21 @@ BYTE *ext_help[_NECOMS] = {
 
     "\n\nSyntax: VR\n"
     "Effect: Prints the DOG and DOS version.\n"
-    "        Tries very hard to identify the flavor of DOS.\n\n"};
+    "        Tries very hard to identify the flavor of DOS.\n\n",
+
+    "\n\nSyntax: WI [OPTION]... COMMAND...\n"
+    "Parameters:\n"
+    " COMMAND is a command to look for.\n"
+    " OPTION can be one of these (in any order):\n"
+    "   -a     - Use the APPEND environment variable instead of PATH\n"
+    "   -e ENV - Use the ENV environment variable instead of PATH\n"
+    "   -f     - Print Full file info (date, size and attributes)\n"
+    "   -x     - Look for DOS .BAT files instead of DOGfiles (.DOG)\n"
+    "Effect: Shows which program is run with a command.\n"
+    "        WI looks for programs in the current directory and then\n"
+    "        in each directory of the PATH\n\n",
+
+};
 
 
 BYTE bat_commands[_NBCOMS][3]={

@@ -81,6 +81,8 @@ vf: vf.com
 
 vr: vr.com
 
+wi: wi.com
+
 rt.com: rm.com cp.com
 	$(CP) rm.com rt.com
 

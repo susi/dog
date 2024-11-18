@@ -517,6 +517,21 @@ Effect: Prints the DOG and DOS version.
 
 
 
+Syntax: WI [OPTION]... COMMAND...
+Parameters:
+ COMMAND is a command to look for.
+ OPTION can be one of these (in any order):
+   -a     - Use the APPEND environment variable instead of PATH
+   -e ENV - Use the ENV environment variable instead of PATH
+   -f     - Print Full file info (date, size and attributes)
+   -x     - Look for DOS .BAT files instead of DOGfiles (.DOG)
+Effect: Shows which program is run with a command.
+        WI looks for programs in the current directory and then
+        in each directory of the PATH
+
+
+
+
 Syntax: CA <DOGFILE>
 Parameters:
    DOGFILE - A DOGfile to call.

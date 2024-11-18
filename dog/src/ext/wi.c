@@ -1,5 +1,5 @@
 /*
-WHICH.C - version 1.0
+WI.C - version 1.1
     Finds programs in path-like environment variables.
 
 Copyright (C) 1999  Wolf Bergenheim
@@ -25,8 +25,9 @@ History
 19.07.99 - Created by Wolf Bergenheim
 26.07.99 - Added switches
 2000.10.21 - Ported to BCC - WB
+2024-11-16 - Moved as external command WI - WB
 */
-#include "util.h"
+#include "ext.h"
 
 #define FULL   (1)
 #define NFLAGS 4
@@ -54,19 +55,18 @@ void check(BYTE *p,BYTE ext);
 
 int main(int nargs,char *args[])
 {
-    BYTE i,j,*env_val,*p,env_name[80];
+    BYTE i,j,*env_val,*p,env_name[80],c=0;
 
     if(nargs == 1) {
-        puts("WHICH.COM v.1.0 by Wolf Bergenheim a utilityprogram to DOG.");
-        puts("usage: WHICH [program] [-A | -E env.variable] | -F | -X]");
+        puts("WI - Shows which program is run with a command.");
+        puts("usage: WHICH [-A | -E env.variable] | -F | -X] [program]...");
         puts("\n-F = Full info, -X = use DOS .BAT files in stead of DOG .DOG files");
-        return 0;
+        return 1;
     }
 
     strcpy(env_name,"PATH");
-    strcpy(name,args[1]);
 
-    for(i=2;i<nargs;i++) {
+    for(i=1;i<nargs;i++) {
         for(j=0;j<NFLAGS;j++) {
             if(stricmp(args[i],flags[j])==0)
                 break;
@@ -80,7 +80,7 @@ int main(int nargs,char *args[])
                 strcpy(env_name,args[i]);
                 break;
             case _X:
-                puts("DOG is an alternative for COMMAND.COM.\nPlease see https://dog.zumppe.net/ for more information");
+                puts("\nDOG is an alternative for COMMAND.COM.\nPlease see https://dog.zumppe.net/ for more information");
                 strcpy(e[DOG],".BAT");
                 break;
             case _F:
@@ -89,23 +89,36 @@ int main(int nargs,char *args[])
         }
 
     }
+    for(i=1;i<nargs;i++) {
+	if(args[i][0] == '-') {
+	    if(toupper(args[i][1]) == 'E') {
+		i++;
+	    }
+	    continue;
+	}
+	c=1;
+	strcpy(name,args[i]);
 
+	check(".", COM);
+	check(".", EXE);
+	check(".", DOG);
 
-    check(".", COM);
-    check(".", EXE);
-    check(".", DOG);
+	env_val = getenv(env_name);
+	strupr(env_val);
+	for(p=strtok(env_val,";");;p=strtok(NULL,";")) {
+	    if(p==NULL) break;
 
-    env_val = getenv(env_name);
-    strupr(env_val);
-    for(p=strtok(env_val,";");;p=strtok(NULL,";")) {
-        if(p==NULL) break;
-
-        check(p, COM);
-        check(p, EXE);
-        check(p, DOG);
+	    check(p, COM);
+	    check(p, EXE);
+	    check(p, DOG);
+	}
     }
-
-
+    if (c==0) {
+        puts("WI - Shows which program is run with a command.");
+        puts("usage: WHICH [-A | -E env.variable] | -F | -X] [program]...");
+        puts("\n-F = Full info, -X = use DOS .BAT files in stead of DOG .DOG files");
+	return 1;
+    }
     return 0;
 }
 
@@ -142,8 +155,8 @@ void check(BYTE *p,BYTE ext)
 	    asm mov dl,40;     /* set column 40 */
 	    asm int 10h;
 
-            printf("%02d.%02d.%4d",b.ff_fdate & 0x1F,(b.ff_fdate >> 5) & 0x0f,(b.ff_fdate>>9)+1980);
-            printf(" %2d.%02d ",b.ff_ftime >> 11, (b.ff_ftime & 0x7e0) >> 5);
+            printf("%04d-%02d-%2d",(b.ff_fdate>>9)+1980, (b.ff_fdate >> 5) & 0x0f,b.ff_fdate & 0x1F);
+            printf(" %2d:%02d ",b.ff_ftime >> 11, (b.ff_ftime & 0x7e0) >> 5);
 
 
             if ((b.ff_attrib & FA_ARCH) == FA_ARCH) printf("A");

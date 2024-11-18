@@ -152,7 +152,7 @@ C:\DOG>_
 
 
 #define _NCOMS 10
-#define _NECOMS 19
+#define _NECOMS 20
 #define _NARGS 20
 #define MAX_ALIAS_LOOPS 21
 
