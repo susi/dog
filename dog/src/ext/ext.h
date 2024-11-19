@@ -44,6 +44,7 @@ Wolf Bergenheim (WB)
 #define BYTE unsigned char
 #define WORD unsigned int
 #define DWORD unsigned long
+#define QWORD unsigned long long
 
 /* we want to use the ones in dos.h. not in dir.h */
 #if 0

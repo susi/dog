@@ -310,6 +310,7 @@ BYTE setudata(BYTE *varname, BYTE *value, WORD blockseg)
 	  break;
       }
       else { /* no match; point rest to next */
+	  rest += nlen+1;
 	  while(*(rest++));
       }
     }
@@ -651,7 +652,7 @@ void evarreplace(BYTE *com, BYTE ln)
           j = com[i] - '0' + (10 * j);
         }
         if (j > 19) j=19;
-        strcat(newcom,varg[j]);
+        strcat(newcom, varg[j]);
 #ifdef B_DEBUG
         printf("evarreplace:1:j = %d varg[%d]=(%s) newcom=(%s)\n",j,j,varg[j],newcom);
 #endif

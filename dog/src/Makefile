@@ -59,8 +59,8 @@ COMOBJ=$(BORLAND)\lib\c0t.obj
 !if $(BAT)
 MAKEDEBUG=-DBAT
 DEBUG=-D_BAT_DEBUG_ -N -Od
-LDFLAGS=$(LDFLAGS) /l /m /s /v
-COMOBJ=$(BORLAND)\lib\c0s.obj
+LDFLAGS=$(LDFLAGS) /l /m /v /t
+COMOBJ=$(BORLAND)\lib\c0t.obj
 !endif
 
 !if $(WARN)

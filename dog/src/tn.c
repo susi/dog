@@ -43,10 +43,12 @@ void do_tn(BYTE n)
 
     asm push di;
     asm push si;
+    asm push es;
     asm lds  si, fn;     /* DS:SI is the input */
     asm les  di, tn;     /* ES:DI is a 128 byte buffer for output */
     asm mov  ah, 60h;    /* Function 60h = TRUENAME */
     asm int  21h;
+    asm pop  es;
     asm pop  si;
     asm pop  di;
     asm jc   tn_error;   /* CF set on error */
