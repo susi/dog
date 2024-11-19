@@ -82,7 +82,7 @@ void pause(BYTE force);
 #define COLOR_CONCEALED  8
 
 #define COLOR_ESC        0x1b
-#ifdef LS_DEBUG
+#ifdef LS_DEBUG_ESC
 #undef COLOR_ESC
 #define COLOR_ESC        'E'
 #endif
@@ -321,6 +321,8 @@ BYTE color_build_rules(void)
     }
     rules = strdup(rules);
     n = strlen(rules);
+    /* count commas to find out how many rulese there are */
+    /* rule,rule,rule */
     for(i=0; i<n; i++) {
 	if(rules[i]==',') {
 	    color_rules.len++;
@@ -498,7 +500,11 @@ int sort_fb(const void *pa, const void *pb)
 		}
 		return sort_rules.rules[i].order * -1;
 	    } else {
-		return sort_rules.rules[i].order * 1;
+		if((b->ff_attrib & FA_DIREC) == FA_DIREC) {
+		    return sort_rules.rules[i].order * 1;
+		} else {
+		    continue;
+		}
 	    }
 	case SORT_SIZE:
 	    if (a->ff_fsize > b->ff_fsize) {
@@ -979,7 +985,7 @@ void do_ls(void)
 	fprintf(stderr,"do_ls:1: ls_f.patt[%u]='%s'(%ph) ls_f.patt[%d][%d]='%c'\n",j,ls_f.patt[j],ls_f.patt[j],j,len-1,ls_f.patt[j][len-1]);
 #endif
 	if((ls_f.patt[j][len-1] == '\\') || (ls_f.patt[j][len-1] == ':')) {
-	    p = malloc(sizeof(BYTE)*(len + 3));
+	    p = malloc(sizeof(BYTE)*(len + 4));
 	    if(p == NULL) {
 #ifdef LS_DEBUG
 		fprintf(stderr,"do_ls:2a: malloc failed!\n");
@@ -1040,16 +1046,16 @@ void do_ls(void)
 #ifdef LS_DEBUG
 	fprintf(stderr,"do_ls:7: r=%d\n",r);
 #endif
+	if (IS_FLAG(FLAG_S)) {
+	    show_entries(&entries);
+	    entries.used=0;
+	}
 	if(m == 1) {
 #ifdef LS_DEBUG
 	    fprintf(stderr,"do_ls:8: free malloc:ed patt[%d]: '%s'(%ph)\n",j,ls_f.patt[j],ls_f.patt[j]);
 #endif
 	    free(ls_f.patt[j]); /* if patt[j] was previously malloced */
 	    ls_f.patt[j] = NULL;
-	}
-	if (IS_FLAG(FLAG_S)) {
-	    show_entries(&entries);
-	    entries.used=0;
 	}
     }
     return;
