@@ -26,6 +26,7 @@ Wolf Bergenheim (WB)
 History
 18.03.00 - Extracted from DOG.C - WB
 2024-05-11 - Building as a module. - WB
+2024-11-19 - Added -p to MD to allow creating a full path - WB
 */
 #include "dog.h"
 
@@ -98,62 +99,66 @@ void do_cd( BYTE n)
 
 void do_mrd(BYTE n)
 {
-    BYTE f;
+    BYTE f, r=0, *p, *q;
 
+    f = toupper(arg[0][0]);        /* check the first letter to determine what func*/
+    p = arg[1];
     if (n == 1) {
         puts("Required argument missing");
         return;
     }
-    if (n > 2) {
+    if (n == 3) {
+	if ((arg[1][0] == '-') && (toupper(arg[1][1]) == 'P') && (f == 'M')) {
+	    r = 1;
+	    p = arg[2];
+	}
+    }
+    if ((n > 2) && (r == 0)) {
         puts("Invalid number of arguments.");
         return;
     }
 
-    f = arg[0][0];        /* check the first letter to determine what func*/
+    asm mov AL, f;
+    asm cmp AL, 'C';
+    asm je    do_mrd_cd;
+    asm cmp AL, 'M';
+    asm je    do_mrd_md;
+    asm cmp AL, 'R';
+    asm je    do_mrd_rd;
 
-    asm mov AL,f
-    asm cmp AL,43h        /* C */
-    asm je    do_mrd_cd
-    asm cmp AL,4dh        /* M */
-    asm je    do_mrd_md
-    asm cmp AL,52h        /* R */
-    asm je    do_mrd_rd
-    asm cmp AL,63h        /* c */
-    asm je    do_mrd_cd
-    asm cmp AL,6dh        /* m */
-    asm je    do_mrd_md
-    asm cmp AL,72h        /* r */
-    asm je    do_mrd_rd
+do_mrd_md:
+    asm mov AH, 39h;      /* mkdir */
+    asm jmp do_mrd_doit;
 
-    do_mrd_md:            /* mkdir */
+do_mrd_rd:
+    asm mov AH, 3ah;      /* rmdir */
+    asm jmp do_mrd_doit;
 
-    asm mov AH,39h
-    asm jmp do_mrd_doit
+do_mrd_cd:
+    asm mov AH,3bh;       /* chdir */
 
-    do_mrd_rd:            /* rmdir */
+do_mrd_doit:
+    asm mov DX, p;        /* path to act on */
+    asm int 21h;
+    asm jnc    do_mrd_OK;
+    asm cmp AL, 03h;      /* path not found */
+    asm je    do_mrd_pnf;
+    asm cmp AL,05h;       /* access denied */
+    asm je    do_mrd_ad;
+    asm cmp AL,06h;
+    asm je    do_mrd_ih;   /* invalid handle */
+    asm jmp do_mrd_rcd;    /* rm current dir */
 
-    asm mov AH,3ah
-    asm jmp do_mrd_doit
-
-    do_mrd_cd:            /* chdir */
-
-    asm mov AH,3bh
-
-    do_mrd_doit:
-
-    asm mov DX,arg[2]    /*=arg[1] = first arg after command */
-    asm int 21h
-    asm jnc    do_mrd_OK
-    asm cmp AL,03h
-    asm je    do_mrd_pnf
-    asm cmp AL,05h
-    asm je    do_mrd_ad
-    asm cmp AL,06h
-    asm je    do_mrd_ih
-    asm jmp do_mrd_rcd
-
-    do_mrd_pnf:
-    puts("Invalid path.");
+do_mrd_pnf:
+    if (r == 1) { /* recusrsive path creation was requested */
+	q = strrchr(p, '\\');
+	*q = '\0';
+	do_mrd(n);
+	*q = '\\';
+	do_mrd(n);
+    } else {
+	puts("Invalid path.");
+    }
     return;
     do_mrd_ad:
     puts("Access denied.");
