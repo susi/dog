@@ -344,6 +344,7 @@ BYTE *ext_help[_NECOMS] = {
     "   -p - pause at every screen full or PATTERN\n"
     "   -s - sort output. See SORTING below for format\n"
     "   -w - show file names only (6 per row)\n"
+    "   -x - show sum of file sizes and count of files and dirs\n"
     "   -z - show human readable sizes (B, KB, MB, GB)\n"
     " COLORS\n"
     "  NOTE: Requires NANSI.SYS or equivalent ANSI driver to work\n"

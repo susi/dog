@@ -324,6 +324,7 @@ Parameters:
    -p - pause at every screen full or PATTERN
    -s - sort output. See SORTING below for format
    -w - show file names only (6 per row)
+   -x - show sum of file sizes and count of files and dirs
    -z - show human readable sizes (B, KB, MB, GB)
  COLORS
   NOTE: Requires NANSI.SYS or equivalent ANSI driver to work

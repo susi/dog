@@ -47,7 +47,7 @@ History
 void show_entry(struct ffblk *fb);
 void show_wide_entry(struct ffblk *fb);
 void show_long_entry(struct ffblk *fb);
-char *format_size(struct ffblk *fb);
+char *format_size(QWORD sz);
 int init(int nargs, char *arg[]);
 void do_ls(void);
 BYTE read_key(void);
@@ -148,6 +148,7 @@ DWORD ftime_sec(const struct ffblk *fb);
 #define FLAG_P 0x08 /* 0000 1000 */
 #define FLAG_C 0x10 /* 0001 0000 */
 #define FLAG_S 0x20 /* 0010 0000 */
+#define FLAG_X 0x40 /* 0010 0000 */
 
 /* If BYTE ay 0040:0084 is 0, assume a CGA screen with 25 lines */
 #define MAX_Y_P ((BYTE far *)MK_FP(0x40, 0x84))
@@ -158,6 +159,13 @@ DWORD ftime_sec(const struct ffblk *fb);
 #define GIGA 1073741824
 #define MEGA 1048576
 #define KILO 1024
+
+struct size_stats
+{
+    QWORD total;
+    WORD  files;
+    WORD  dirs;
+};
 
 struct ts_flags
 {
@@ -681,15 +689,13 @@ void show_wide_entry(struct ffblk *fb)
  *  - >1048576 ==> 1MB
  *  - etc.
  */
-char * format_size(struct ffblk *fb)
+char * format_size(QWORD sz)
 {
-    unsigned long int sz;
     unsigned long int f;
     char *s = (char *)ls_f.sz;
 
-    sz = (unsigned long)fb->ff_fsize;
     if (sz < KILO) {
-	sprintf(s, "%lu B ", fb->ff_fsize);
+	sprintf(s, "%lu B ", sz);
     }
     else if (sz < MEGA) {
 	f =  ((sz % KILO) * 10) / KILO; /* 1 decimal point */
@@ -698,7 +704,7 @@ char * format_size(struct ffblk *fb)
     }
     else if (sz < GIGA) {
 	f =  ((sz % MEGA) * 10) / MEGA; /* 1 decimal point */
-	sz = fb->ff_fsize / MEGA;
+	sz = sz / MEGA;
 	sprintf(s, "%lu.%u MB", sz, f);
     }
     else {
@@ -741,7 +747,7 @@ void show_long_entry(struct ffblk *fb)
 #endif
 
     if (IS_FLAG(FLAG_Z)) {
-	printf("%10s   ", format_size(fb));
+	printf("%10s   ", format_size(fb->ff_fsize));
     }
     else {
 	printf("%10lu   ",fb->ff_fsize);
@@ -900,11 +906,14 @@ int init(int nargs, char *arg[])
 		case 'w':
 		    ls_f.flags += FLAG_W;
 		    break;
+		case 'x':
+		    ls_f.flags += FLAG_X;
+		    break;
 		case 'z':
 		    ls_f.flags += FLAG_Z;
 		    break;
 		case '?':
-		    printf("ls [-a|-d|-f|-h|-l|-w|-z|-?] [d:\\dir\\filename.ext]\n");
+		    printf("ls [-a|-d|-f|-h|-l|-w|-x|-z|-?] [d:\\dir\\filename.ext]\n");
 		    free(ls_f.patt);
 		    return 1;
 		default:
@@ -953,10 +962,16 @@ void do_ls(void)
     WORD len;
     signed char r;
     struct ffblk fb;
+    struct size_stats sz={0, 0, 0};
     m = 0;
     ls_f.ln = 0;
 
     for(j=0;j < ls_f.npatt;j++) {
+	if (IS_FLAG(FLAG_X)) {
+	    sz.total = 0;
+	    sz.files = 0;
+	    sz.dirs = 0;
+	}
 	if (IS_FLAG(FLAG_S)) {
 #ifdef LS_DEBUG
 	    printf("CAPACITY USED is %d/%d\n", entries.used, entries.capacity);
@@ -1031,6 +1046,15 @@ void do_ls(void)
 		    } else {
 			show_entry(&fb);
 		    }
+		    if (IS_FLAG(FLAG_X)) {
+			if ((fb.ff_attrib & FA_DIREC) & FA_DIREC) {
+			    sz.dirs++;
+			} else {
+			    sz.files++;
+			    sz.total += (QWORD)fb.ff_fsize;
+			}
+		    }
+
 		}
 	    }
 	    else {
@@ -1050,6 +1074,22 @@ void do_ls(void)
 	    show_entries(&entries);
 	    entries.used=0;
 	}
+	if (IS_FLAG(FLAG_X)) {
+	    if((IS_FLAG(FLAG_W)) && (ls_f.w_entry > 0)) {
+		printf("\n\n");
+	    }
+	    else {
+		puts("==========");
+	    }
+	    if (IS_FLAG(FLAG_Z)) {
+		printf("%10s   ", format_size(sz.total));
+	    }
+	    else {
+		printf("%10lu bytes ",sz.total);
+	    }
+	    printf("in %4d file(s) and %4d dir(s)\n", sz.files, sz.dirs);
+	}
+
 	if(m == 1) {
 #ifdef LS_DEBUG
 	    fprintf(stderr,"do_ls:8: free malloc:ed patt[%d]: '%s'(%ph)\n",j,ls_f.patt[j],ls_f.patt[j]);
