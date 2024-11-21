@@ -67,7 +67,7 @@ rm.com: cp
 	$(MAKE) clean
 	cd ..\util
 
-install: cp.com $(PROGS) man
+install: cp.com $(PROGS)
 	$(CP) generr.com ..\..\bin
 
 .ignore

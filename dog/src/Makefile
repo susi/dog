@@ -81,9 +81,15 @@ $(COMOBJ) $(OBJS),$*,$*,$(BORLAND)\lib\cs.lib
 tint24.com: tint24.c ints.c
 	$(CC) -B -d -mt -f- -tDc -Tt -lt tint24.c ints.c
 
-all: ext util dog tint24
+all: ext util dog tint24 dogdog dosdog
 
 dog: $(DOG) dog.h debug.h
+
+dogdog: dog.dog
+	$(CP) dog.dog ..\bin
+
+dosdog: msdos.dog
+	$(CP) msdos.dog ..\bin
 
 tint24: tint24.com
 
