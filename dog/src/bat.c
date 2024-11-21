@@ -24,7 +24,7 @@ History
 2024-05-25 - Implemented do_44 for the 44 command. -WB
 2024-05-25 - Implemented do_do for the DO command. -WB
 2024-05-31 - Implemented do_in for the IN command. -WB
-
+2024-10-14 - Fixed dogfile arg parsing and variable initialization. -WB
 */
 #include "dog.h"
 
