@@ -1075,19 +1075,30 @@ void do_ls(void)
 	    entries.used=0;
 	}
 	if (IS_FLAG(FLAG_X)) {
-	    if((IS_FLAG(FLAG_W)) && (ls_f.w_entry > 0)) {
-		printf("\n\n");
+	    if(IS_FLAG(FLAG_W)) {
+		if (ls_f.w_entry > 0) {
+		    printf("\n\n");
+		}
+		else {
+		    printf("\n");
+		}
+		if (IS_FLAG(FLAG_Z)) {
+		    printf("%s in ", format_size(sz.total));
+		}
+		else {
+		    printf("%lu bytes in ", sz.total);
+		}
 	    }
 	    else {
-		puts("==========");
+		printf("%-45s==========\n", "==========");
+		if (IS_FLAG(FLAG_Z)) {
+		    printf("%10s%35s", format_size(sz.total)," ");
+		}
+		else {
+		    printf("%10lu%-35s", sz.total, " bytes");
+		}
 	    }
-	    if (IS_FLAG(FLAG_Z)) {
-		printf("%10s   ", format_size(sz.total));
-	    }
-	    else {
-		printf("%10lu bytes ",sz.total);
-	    }
-	    printf("in %4d file(s) and %4d dir(s)\n", sz.files, sz.dirs);
+	    printf("%d file(s) %d dir(s)\n", sz.files, sz.dirs);
 	}
 
 	if(m == 1) {
