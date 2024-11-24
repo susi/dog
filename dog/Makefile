@@ -47,6 +47,7 @@ bindist: install
 	$(ZIP) -@ tmp.zip <<!
 bin\*.com
 bin\*.dog
+bin\*.ico
 doc\manual.txt
 doc\readme_x.txt
 doc\rn*.txt
@@ -62,17 +63,20 @@ srcdist:
 src\Makefile
 src\*.c
 src\*.h
+src\dog.dog
+src\msdos.dog
 src\ext\Makefile
 src\ext\*.c
 src\ext\*.h
+src\ext\*.dog
 src\util\Makefile
 src\util\*.c
 src\util\*.h
 Makefile
+doc\manual.txt
 doc\readme_s.txt
 doc\rn*.txt
 doc\ggpl.txt
-bin\*.dog
 !
 	mkdir DOG
 	unzip tmp.zip -d DOG

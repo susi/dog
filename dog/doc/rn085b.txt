@@ -1,0 +1,36 @@
+Fixes/changes:
+==============
+
+DOG:
+- Fixed dogfile arg parsing and variable initialization.
+- Fixed command line reading so that DOS provided line editing works (F3).
+- Removed util shorthands since they are now external commands (HH, HD & WI).
+- EH: Added -n flag to not format.
+- MD: Added -p flag to make the whole path if any part doesn't exist.
+- TN: New internal command displays the canonical (TRUENAME) of a file
+
+External commands:
+- DS: New command contributed by K. Hari Kiran
+- SZ: New -r and -z flags to recurse into subdirectories and to show human-
+      readable file sizes.
+- VR: Even more accurate version detection and also get kernel string from
+      DR-DOS.
+- PP: A new command for setting and getting the PROMPT. It's written as
+      a DOGFile. It's treated as an external command in documentation.
+      PP is also a demo on what kind of programs can be written in DOG.
+- PT: A new command, like PP, but shows and sets the PATH. Also written in DOG.
+- LS: New flags & features:
+      -p enables a page break for each screen full
+      -s sort output according to different attributes
+      -c use color rules to colorize files
+      -x show file total size and file & dir count
+- CM: New command to change file attributes (CHMOD).
+- RM: New flag -a to also attempt removing  read-only, system, and hidden files.
+- HH: Migrated the HELP utility to external command HH.
+- HD: Migrated the HEAD utility to external command HD.
+- WI: Migrated the WHICH utility to external command WI. Also updated flags
+      to be parsed first.
+
+Utilities:
+- Moved the HELP, HEAD & WHICH to external commands. There are no more
+  non-development utilities.

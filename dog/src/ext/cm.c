@@ -428,7 +428,7 @@ int main(BYTE n,BYTE *arg[])
 		  switch(arg[i][j]) {
 		  case 'a':
 		      search_attribs = FA_NORMAL | FA_HIDDEN | FA_SYSTEM | FA_RDONLY;
-		      flag_f = FLAG_SET;
+		      flag_a = FLAG_SET;
 		      break;
 		  case 'i':
 		      flag_i = FLAG_SET;

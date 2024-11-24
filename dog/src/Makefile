@@ -121,7 +121,7 @@ rm.com: cp.com
 	$(MAKE) clean
 	cd ..
 
-install: dog
+install: dog dogdog dosdog
 	cd ext
 	$(MAKE) install
 	cd ..
