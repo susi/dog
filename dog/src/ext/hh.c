@@ -127,15 +127,17 @@ BYTE *cmd_help[_NCOMS] = {
     "   $t - Tabulator\n"
     "Effect: Print a (formatted) string to stdout (normally the screen).\n\n",
 
-    "\n\nSyntax: MD <DIR>\n"
+    "\n\nSyntax: MD [OPTIONS] <DIR>\n"
     "Parameters:\n"
     "   DIR - Name or Path of new directory.\n"
+    " OPTION can be one of these:\n"
+    "   -p - Create the needed directories in the path\n"
     "Effect: Creates a new directory named 'dir'.\n\n",
 
     "\n\nSyntax: RD <DIR>\n"
     "Parameters:\n"
     "   DIR - Name or path of an EMPTY directory to remove.\n"
-    "Effect: Removes directory named 'dir'\n\n",
+    "Effect: Removes directory named 'DIR'\n\n",
 
     "\n\nSyntax: SE [VARIABLE] [VALUE]\n"
     "Parameters:\n"
@@ -254,7 +256,7 @@ BYTE *ext_help[_NECOMS] = {
     "		- H - Hidden\n"
     "      PATTERN - Pattern can be a number of paths\n"
     "                including wild characters * and ?\n"
-    "                ? represents any single character an\n"
+    "                ? represents any single character and\n"
     "                * represents 0 or more characters\n"
     "                e.g. *.dog *.* DO?.COM, *.?\n\n"
     "        @FILE - Filename preceded by '@' which is read and every line is\n"
@@ -262,7 +264,7 @@ BYTE *ext_help[_NECOMS] = {
     " OPTION can be one of these (in any order):\n"
     "   -i - prompt (Yes/No/All) for each file or directory\n"
     "   -a - act on read-only, system and hidden files\n"
-    "   -r - recurs into sub-directories.\n"
+    "   -r - recurse into sub-directories.\n"
     "        Setts ATTRIBUTES for all files and directories too\n"
     "   -v - print filename of each modified file\n"
     "Effect: Changes ATTRIBUTES of the file(s) and/or directory(ies) matching PATTERN\n\n",
@@ -380,7 +382,7 @@ BYTE *ext_help[_NECOMS] = {
     "      * 4 - Underlined text\n"
     "      * 5 - Blinking text\n"
     "      * 7 - Reverse Video\n"
-    "  Default rules is LSCOLORS is unset:\n"
+    "  Default rules if LSCOLORS is unset:\n"
     "    _D=34;0;1,_H=30;40;8,_R=33;40,_S=31;40;1,_L=32;40,\n"
     "    EXE=35;40,COM=35;40,DOG=35;40\n"
     " SORTING\n"
@@ -485,8 +487,8 @@ BYTE *ext_help[_NECOMS] = {
     " OPTION can be one of these (in any order):\n"
     "   -k - give sizes in KB\n"
     "   -m - give sizes in MB\n"
-    "   -z - show human readable sizes (B, KB, MB, GB)\n"
     "   -r - recurse into sub-directories\n"
+    "   -z - show human readable sizes (B, KB, MB, GB)\n"
     "Effect: Prints the size of the files in the current directory.\n\n",
 
     "\n\nSyntax: TP FILE...\n"

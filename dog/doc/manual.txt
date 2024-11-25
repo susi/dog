@@ -108,9 +108,11 @@ Effect: Print a (formatted) string to stdout (normally the screen).
 
 
 
-Syntax: MD <DIR>
+Syntax: MD [OPTIONS] <DIR>
 Parameters:
    DIR - Name or Path of new directory.
+ OPTION can be one of these:
+   -p - Create the needed directories in the path
 Effect: Creates a new directory named 'dir'.
 
 
@@ -119,7 +121,7 @@ Effect: Creates a new directory named 'dir'.
 Syntax: RD <DIR>
 Parameters:
    DIR - Name or path of an EMPTY directory to remove.
-Effect: Removes directory named 'dir'
+Effect: Removes directory named 'DIR'
 
 
 
@@ -213,7 +215,7 @@ Parameters:
 		- H - Hidden
       PATTERN - Pattern can be a number of paths
                 including wild characters * and ?
-                ? represents any single character an
+                ? represents any single character and
                 * represents 0 or more characters
                 e.g. *.dog *.* DO?.COM, *.?
 
@@ -222,7 +224,7 @@ Parameters:
  OPTION can be one of these (in any order):
    -i - prompt (Yes/No/All) for each file or directory
    -a - act on read-only, system and hidden files
-   -r - recurs into sub-directories.
+   -r - recurse into sub-directories.
         Setts ATTRIBUTES for all files and directories too
    -v - print filename of each modified file
 Effect: Changes ATTRIBUTES of the file(s) and/or directory(ies) matching PATTERN
@@ -360,7 +362,7 @@ Parameters:
       * 4 - Underlined text
       * 5 - Blinking text
       * 7 - Reverse Video
-  Default rules is LSCOLORS is unset:
+  Default rules if LSCOLORS is unset:
     _D=34;0;1,_H=30;40;8,_R=33;40,_S=31;40;1,_L=32;40,
     EXE=35;40,COM=35;40,DOG=35;40
  SORTING
@@ -486,8 +488,8 @@ Parameters:
  OPTION can be one of these (in any order):
    -k - give sizes in KB
    -m - give sizes in MB
-   -z - show human readable sizes (B, KB, MB, GB)
    -r - recurse into sub-directories
+   -z - show human readable sizes (B, KB, MB, GB)
 Effect: Prints the size of the files in the current directory.
 
 
