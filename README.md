@@ -37,7 +37,7 @@ needed through an API.
 DOG uses the following version scheme:
 
 ```
-0.8.4b
+0.8.5b
 ------
 | | ||
 | | |+-- Code maturity allways one of a (=alpha), b (=beta) OR f (=final)
